@@ -752,7 +752,10 @@ function renderExcelGanttMatrix() {
 
     let monthCells = '';
     for (let m = 0; m < 12; m++) {
-      let isTaskActiveMonth = (m >= sIdx && m <= eIdx);
+      let inRange = (m >= sIdx && m <= eIdx);
+      // İlerleme %0 ve tamamlanmamışsa, hücre boşaltılmış (Pasif) kabul edilir
+      let isEmptyProgress = (t.status !== 'Tamamlandı' && t.progress === 0);
+      let isTaskActiveMonth = inRange && !isEmptyProgress;
       let cellContent = '';
 
       if (isTaskActiveMonth) {
