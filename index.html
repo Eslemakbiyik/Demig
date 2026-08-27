@@ -53,11 +53,18 @@
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1">Departman / Rol</label>
         <select id="userDept" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
-          <option value="Proje Yürütücüsü (PI)">Proje Yürütücüsü (PI)</option>
-          <option value="Kıdemli Araştırmacı">Kıdemli Araştırmacı</option>
-          <option value="Araştırma Ortağı / Koordinatör">Araştırma Ortağı / Koordinatör</option>
-          <option value="Yazılım & Veri Ekibi">Yazılım & Veri Ekibi</option>
-          <option value="PURE Anotatör Ekibi">PURE Anotatör Ekibi</option>
+          <option value="Principal Investigator (PI)">Principal Investigator (PI)</option>
+          <option value="Principal Investigator (PI)">Principal Investigator (PI)</option>
+          <option value="Research Partner & Coordinator">Research Partner & Coordinator</option>
+          <option value="Senior Researcher">Senior Researcher</option>
+          <option value="Researcher & Methodologist">Researcher & Methodologist</option>
+          <option value="Researcher & Trainer">Researcher & Trainer</option>
+          <option value="Researcher & Adjudicator">Researcher & Adjudicator</option>
+          <option value="Researcher">Researcher</option>
+          <option value="Legal Counsel">Legal Counsel</option>
+          <option value="CS & AI Consultant">CS & AI Consultant</option>
+          <option value="Developer (Qrateria)">Developer (Qrateria)</option>
+          <option value="Project Assistant">Project Assistant</option>
         </select>
       </div>
       <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-lg shadow-lg shadow-indigo-600/30 transition duration-200 mt-2">
@@ -789,7 +796,6 @@ function renderExcelGanttMatrix() {
     tbody.appendChild(tr);
   });
 }
-
 function toggleMonthState(tIdx, monthIdx) {
   let t = tasks[tIdx];
   if (t.startMonthIdx === undefined) { t.startMonthIdx = 1; t.endMonthIdx = 6; }
@@ -797,13 +803,10 @@ function toggleMonthState(tIdx, monthIdx) {
   if (monthIdx < t.startMonthIdx) t.startMonthIdx = monthIdx;
   else if (monthIdx > t.endMonthIdx) t.endMonthIdx = monthIdx;
   else {
-    if (t.status === 'Tamamlandı') {
-      t.status = 'Devam Ediyor';
-      t.progress = 60;
-    } else {
-      t.status = 'Tamamlandı';
-      t.progress = 100;
-    }
+    let newProgress = t.progress + 5;
+    if (newProgress > 100) newProgress = 0;
+    t.progress = newProgress;
+    t.status = newProgress === 100 ? 'Tamamlandı' : (newProgress === 0 ? 'Planlandı' : 'Devam Ediyor');
   }
   localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
   renderAll();
