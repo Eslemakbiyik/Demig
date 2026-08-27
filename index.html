@@ -752,26 +752,28 @@ function renderExcelGanttMatrix() {
 
     let monthCells = '';
     for (let m = 0; m < 12; m++) {
-      let inRange = (m >= sIdx && m <= eIdx);
-      // İlerleme %0 ve tamamlanmamışsa, hücre boşaltılmış (Pasif) kabul edilir
-      let isEmptyProgress = (t.status !== 'Tamamlandı' && t.progress === 0);
-      let isTaskActiveMonth = inRange && !isEmptyProgress;
-      let cellContent = '';
+      let val;
+      if (t.monthProgress) {
+        val = t.monthProgress[m] || 0;
+      } else {
+        // Henüz hiç tıklanmamış görevler için eski aralık mantığı geçerli
+        let inRange = (m >= sIdx && m <= eIdx);
+        val = inRange ? (t.status === 'Tamamlandı' ? 100 : t.progress) : 0;
+      }
 
-      if (isTaskActiveMonth) {
-        if (t.status === 'Tamamlandı') {
-          cellContent = `
-            <div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-emerald-500 text-slate-950 rounded font-bold flex items-center justify-center text-[10px] shadow" title="Tamamlandı">
-              ✓ %100
-            </div>
-          `;
-        } else {
-          cellContent = `
-            <div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-indigo-600 text-white rounded font-bold flex items-center justify-center text-[10px] shadow" title="Aktif Dönem">
-              %${t.progress}
-            </div>
-          `;
-        }
+      let cellContent = '';
+      if (val === 100) {
+        cellContent = `
+          <div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-emerald-500 text-slate-950 rounded font-bold flex items-center justify-center text-[10px] shadow" title="Tamamlandı">
+            ✓ %100
+          </div>
+        `;
+      } else if (val > 0) {
+        cellContent = `
+          <div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-indigo-600 text-white rounded font-bold flex items-center justify-center text-[10px] shadow" title="Aktif Dönem">
+            %${val}
+          </div>
+        `;
       } else {
         cellContent = `
           <div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:bg-slate-800 transition w-full h-7 bg-slate-900/40 text-slate-600 rounded border border-slate-800/80 flex items-center justify-center text-[10px]" title="Pasif Dönem">
@@ -801,16 +803,22 @@ function renderExcelGanttMatrix() {
 }
 function toggleMonthState(tIdx, monthIdx) {
   let t = tasks[tIdx];
-  if (t.startMonthIdx === undefined) { t.startMonthIdx = 1; t.endMonthIdx = 6; }
 
-  if (monthIdx < t.startMonthIdx) t.startMonthIdx = monthIdx;
-  else if (monthIdx > t.endMonthIdx) t.endMonthIdx = monthIdx;
-  else {
-    let newProgress = t.progress + 5;
-    if (newProgress > 100) newProgress = 0;
-    t.progress = newProgress;
-    t.status = newProgress === 100 ? 'Tamamlandı' : (newProgress === 0 ? 'Planlandı' : 'Devam Ediyor');
+  // İlk kez tıklanıyorsa, eski tek-değerli aralığı 12 ay dizisine çeviriyoruz
+  if (!t.monthProgress) {
+    t.monthProgress = new Array(12).fill(0);
+    const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1;
+    const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
+    for (let m = sIdx; m <= eIdx; m++) {
+      t.monthProgress[m] = t.status === 'Tamamlandı' ? 100 : t.progress;
+    }
   }
+
+  let cur = t.monthProgress[monthIdx] || 0;
+  let next = cur + 5;
+  if (next > 100) next = 0;
+  t.monthProgress[monthIdx] = next;
+
   localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
   renderAll();
 }
