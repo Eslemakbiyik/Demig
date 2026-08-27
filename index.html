@@ -880,11 +880,15 @@ function renderRoadmap() {
   });
 }
 
+let expandedTasks = {};
+
 function renderTasksTable() {
   const tbody = document.getElementById('tasksTableBody');
   tbody.innerHTML = '';
 
   tasks.forEach((t, index) => {
+    if (!t.subtasks) t.subtasks = [];
+
     const tr = document.createElement('tr');
     tr.className = "hover:bg-slate-900/40 transition border-b border-slate-800/60";
     
@@ -899,8 +903,18 @@ function renderTasksTable() {
     const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
     const periodStr = `${monthNames[sIdx]} - ${monthNames[eIdx]}`;
 
+    const doneCount = t.subtasks.filter(s => s.done).length;
+    const subtaskBadge = t.subtasks.length > 0 ? `<span class="ml-1.5 text-[9px] text-slate-400">(${doneCount}/${t.subtasks.length})</span>` : '';
+    const isExpanded = !!expandedTasks[index];
+
     tr.innerHTML = `
-      <td class="p-3 font-mono font-bold text-indigo-400">${t.id}<div class="text-[10px] text-slate-400 font-normal">${t.module}</div></td>
+      <td class="p-3 font-mono font-bold text-indigo-400">
+        <button onclick="toggleSubtaskRow(${index})" class="inline-flex items-center justify-center w-4 h-4 mr-1 text-slate-400 hover:text-white bg-slate-800 rounded transition align-middle">
+          <i data-lucide="${isExpanded ? 'chevron-down' : 'chevron-right'}" class="w-3 h-3"></i>
+        </button>
+        ${t.id}${subtaskBadge}
+        <div class="text-[10px] text-slate-400 font-normal ml-5">${t.module}</div>
+      </td>
       <td class="p-3 font-semibold text-white max-w-xs">
         <input type="text" value="${t.name}" onchange="updateTaskInline(${index}, 'name', this.value)" class="bg-transparent border-b border-transparent hover:border-slate-700 editable-input px-1 py-0.5 rounded w-full">
       </td>
@@ -928,9 +942,71 @@ function renderTasksTable() {
       </td>
     `;
     tbody.appendChild(tr);
+
+    const subTr = document.createElement('tr');
+    subTr.className = isExpanded ? "" : "hidden";
+    const subtaskItemsHTML = t.subtasks.map((s, sIdx) => `
+      <div class="flex items-center justify-between bg-slate-900/70 px-3 py-1.5 rounded-lg border border-slate-800">
+        <label class="flex items-center space-x-2 cursor-pointer flex-1">
+          <input type="checkbox" ${s.done ? 'checked' : ''} onchange="toggleSubtaskDone(${index}, ${sIdx})" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+          <span class="text-xs ${s.done ? 'line-through text-slate-500' : 'text-slate-200'}">${s.name}</span>
+        </label>
+        <button onclick="deleteSubtask(${index}, ${sIdx})" class="text-slate-500 hover:text-red-400 ml-2">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    `).join('');
+
+    subTr.innerHTML = `
+      <td colspan="7" class="p-3 bg-slate-950/60 border-b border-slate-800/60">
+        <div class="ml-6 pl-4 border-l-2 border-indigo-500/30 space-y-2">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Alt Görevler</div>
+          ${subtaskItemsHTML || '<div class="text-xs text-slate-500 italic">Henüz alt görev eklenmedi.</div>'}
+          <div class="flex items-center space-x-2 pt-1">
+            <input type="text" id="newSubtaskInput-${index}" placeholder="Yeni alt görev yaz..." onkeypress="if(event.key==='Enter'){addSubtask(${index}); event.preventDefault();}" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+            <button onclick="addSubtask(${index})" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg flex items-center space-x-1">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Ekle</span>
+            </button>
+          </div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(subTr);
   });
+
+  lucide.createIcons();
 }
 
+function toggleSubtaskRow(idx) {
+  expandedTasks[idx] = !expandedTasks[idx];
+  renderTasksTable();
+}
+
+function addSubtask(idx) {
+  const input = document.getElementById('newSubtaskInput-' + idx);
+  const text = input.value.trim();
+  if (!text) return;
+  if (!tasks[idx].subtasks) tasks[idx].subtasks = [];
+  tasks[idx].subtasks.push({ name: text, done: false });
+  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
+  expandedTasks[idx] = true;
+  renderTasksTable();
+}
+
+function toggleSubtaskDone(idx, subIdx) {
+  tasks[idx].subtasks[subIdx].done = !tasks[idx].subtasks[subIdx].done;
+  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
+  expandedTasks[idx] = true;
+  renderTasksTable();
+}
+
+function deleteSubtask(idx, subIdx) {
+  tasks[idx].subtasks.splice(subIdx, 1);
+  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
+  expandedTasks[idx] = true;
+  renderTasksTable();
+}
 function updateTaskInline(idx, key, val) {
   tasks[idx][key] = val;
   if (key === 'status') {
