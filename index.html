@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>demigproject - Proje Yönetim & İlerleme Portalı v5</title>
+<title>demigproject - Proje Yönetim & İlerleme Portalı v6</title>
+<!-- Tailwind CSS & Lucide Icons & Chart.js -->
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -16,6 +17,7 @@
   ::-webkit-scrollbar-track { background: #0b0f19; }
   ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
   .editable-input:focus { outline: 2px solid #6366f1; background: #1e293b; color: #ffffff; }
+  
   @media print {
     body * { visibility: hidden; }
     #aiReportModal, #aiReportModal * { visibility: visible; }
@@ -26,6 +28,7 @@
 </head>
 <body class="min-h-screen flex bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
 
+<!-- AUTH MODAL / LOGIN SCREEN -->
 <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
   <div class="glass p-8 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl">
     <div class="text-center mb-6">
@@ -35,14 +38,17 @@
       <h2 class="text-2xl font-bold tracking-tight text-white">demigproject Portalı</h2>
       <p class="text-xs text-slate-400 mt-1">Sisteme kayıtlı ad-soyad veya e-posta ile giriş yapın</p>
     </div>
+    
     <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1">Ad Soyad</label>
-        <input type="text" id="userName" required placeholder="Örn: M. Tahir Kılavuz" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+        <input type="text" id="userName" required placeholder="Örn: M. Tahir Kılavuz" 
+          class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1">E-Posta Adresi</label>
-        <input type="email" id="userEmail" required placeholder="ornek@sabanciuniv.edu" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+        <input type="email" id="userEmail" required placeholder="ornek@sabanciuniv.edu" 
+          class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1">Departman / Rol</label>
@@ -67,7 +73,10 @@
   </div>
 </div>
 
+<!-- MAIN CONTAINER WITH SIDEBAR -->
 <div id="app" class="hidden w-full flex min-h-screen">
+
+  <!-- LEFT SIDEBAR NAV -->
   <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between shrink-0">
     <div>
       <div class="p-5 border-b border-slate-800 flex items-center space-x-3">
@@ -79,24 +88,31 @@
           <p class="text-[10px] text-slate-400">Sabancı Univ. DEMIG Group</p>
         </div>
       </div>
+
       <nav class="p-3 space-y-1">
         <button onclick="switchTab('diagrams')" id="tab-diagrams" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 bg-indigo-600 text-white transition">
-          <i data-lucide="bar-chart-2" class="w-4 h-4"></i><span>Diyagram & Grafikler</span>
+          <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+          <span>Diyagram & Grafikler</span>
         </button>
         <button onclick="switchTab('roadmap')" id="tab-roadmap" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
-          <i data-lucide="git-merge" class="w-4 h-4"></i><span>İlerleme Haritası</span>
+          <i data-lucide="git-merge" class="w-4 h-4"></i>
+          <span>İlerleme Haritası</span>
         </button>
         <button onclick="switchTab('tasks')" id="tab-tasks" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
-          <i data-lucide="check-square" class="w-4 h-4"></i><span>Görev Takibi & Veri Girişi</span>
+          <i data-lucide="check-square" class="w-4 h-4"></i>
+          <span>Görev Takibi & Veri Girişi</span>
         </button>
         <button onclick="switchTab('people')" id="tab-people" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
-          <i data-lucide="users" class="w-4 h-4"></i><span>Proje Ekibi</span>
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>Proje Ekibi</span>
         </button>
         <button onclick="switchTab('dashboard')" id="tab-dashboard" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
-          <i data-lucide="pie-chart" class="w-4 h-4"></i><span>Yönetici Özet Raporu</span>
+          <i data-lucide="pie-chart" class="w-4 h-4"></i>
+          <span>Yönetici Özet Raporu</span>
         </button>
       </nav>
     </div>
+
     <div class="p-4 border-t border-slate-800 flex items-center justify-between">
       <div class="truncate">
         <div id="currentUserDisplay" class="text-xs font-semibold text-slate-200 truncate">...</div>
@@ -108,15 +124,20 @@
     </div>
   </aside>
 
+  <!-- MAIN BODY AREA -->
   <main class="flex-1 overflow-y-auto p-8 space-y-6">
 
+    <!-- VIEW 1: DİYAGRAM & GRAFİKLER -->
     <section id="view-diagrams" class="space-y-6">
       <div class="glass p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 border border-indigo-500/20 shadow-xl">
         <div>
           <h2 class="text-xl font-bold text-white flex items-center space-x-2">
-            <i data-lucide="activity" class="w-5 h-5 text-indigo-400"></i><span>Proje İlerlemesi</span>
+            <i data-lucide="activity" class="w-5 h-5 text-indigo-400"></i>
+            <span>Proje İlerlemesi</span>
           </h2>
-          <p class="text-xs text-slate-400 mt-1">DEMIG AI Development Workplan çizelgesi ve güncel ilerleme istatistikleri.</p>
+          <p class="text-xs text-slate-400 mt-1">
+            DEMIG AI Development Workplan çizelgesi ve güncel ilerleme istatistikleri.
+          </p>
         </div>
         <div class="flex items-center space-x-3 bg-slate-900/90 px-4 py-2 rounded-xl border border-slate-800">
           <span class="text-xs font-semibold text-slate-300">Ortalama İlerleme:</span>
@@ -124,17 +145,21 @@
         </div>
       </div>
 
+      <!-- CLEAR PERIOD TIMELINE MATRIX -->
       <div class="glass p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-3 border-b border-slate-800">
           <div>
             <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
-              <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i><span>Project Timeline & Çalışma Takvimi</span>
+              <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i>
+              <span>Project Timeline & Çalışma Takvimi</span>
             </h3>
-            <p class="text-[11px] text-slate-400 mt-0.5">Hangi görevlerin hangi aylarda yapılacağı belirgin renkli bloklarla gösterilmiştir. Bir görevin adının solundaki oka tıklayarak haftalık to-do listesini açabilirsiniz.</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Hangi görevlerin hangi aylarda yapılacağı ve haftalık alt to-do durumları matriste gösterilmektedir.</p>
           </div>
+          
           <div class="flex items-center space-x-3 text-[10px] bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
             <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded bg-emerald-500"></span><span class="text-slate-300">Tamamlandı</span></span>
-            <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded bg-indigo-500"></span><span class="text-slate-300">Aktif/Planlı Dönem</span></span>
+            <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded bg-indigo-500"></span><span class="text-slate-300">Devam Ediyor</span></span>
+            <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded bg-amber-500"></span><span class="text-slate-300">Planlandı</span></span>
             <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded bg-slate-800"></span><span class="text-slate-500">Pasif</span></span>
           </div>
         </div>
@@ -146,7 +171,7 @@
                 <th class="p-2.5 w-48 sticky left-0 bg-slate-900 z-10 border-r border-slate-800">Görev / Adım</th>
                 <th class="p-2.5 text-center w-28">Çalışma Periyodu</th>
                 <th class="p-2.5 text-center w-24">Sorumlu</th>
-                <th class="p-2.5 text-center w-16">Durum</th>
+                <th class="p-2.5 text-center w-28">Haftalık To-Do Durumu</th>
                 <th class="p-2 text-center w-16">Ekim '25</th>
                 <th class="p-2 text-center w-16">Kasım '25</th>
                 <th class="p-2 text-center w-16">Aralık '25</th>
@@ -161,7 +186,9 @@
                 <th class="p-2 text-center w-16">Eylül '26</th>
               </tr>
             </thead>
-            <tbody id="excelGanttMatrixBody" class="divide-y divide-slate-800/60 font-mono text-[11px]"></tbody>
+            <tbody id="excelGanttMatrixBody" class="divide-y divide-slate-800/60 font-mono text-[11px]">
+              <!-- Injected by JS -->
+            </tbody>
           </table>
         </div>
       </div>
@@ -169,42 +196,58 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="glass p-5 rounded-2xl border border-slate-800">
           <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4">Çalışma Paketleri Durum Dağılımı</h3>
-          <div class="h-64 flex justify-center"><canvas id="statusChart"></canvas></div>
+          <div class="h-64 flex justify-center">
+            <canvas id="statusChart"></canvas>
+          </div>
         </div>
+
         <div class="glass p-5 rounded-2xl border border-slate-800">
           <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4">Aşama Bazlı Tamamlanma Yüzdeleri (%)</h3>
-          <div class="h-64 flex justify-center"><canvas id="progressChart"></canvas></div>
+          <div class="h-64 flex justify-center">
+            <canvas id="progressChart"></canvas>
+          </div>
         </div>
       </div>
     </section>
 
+    <!-- VIEW 2: STEP-BY-STEP ROADMAP -->
     <section id="view-roadmap" class="hidden space-y-6">
       <div class="glass p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 border border-indigo-500/20 shadow-xl">
         <div>
           <h2 class="text-xl font-bold text-white flex items-center space-x-2">
-            <i data-lucide="git-merge" class="w-5 h-5 text-indigo-400"></i><span>demigproject İlerleme Haritası</span>
+            <i data-lucide="git-merge" class="w-5 h-5 text-indigo-400"></i>
+            <span>demigproject İlerleme Haritası</span>
           </h2>
-          <p class="text-xs text-slate-400 mt-1">Kartların üzerine tıklayarak başlıkları, notları veya durumları anında güncelleyebilir, haftalık to-do ekleyebilirsiniz.</p>
+          <p class="text-xs text-slate-400 mt-1">
+            Kartların üzerine tıklayarak başlıkları, notları veya haftalık görevleri doğrudan yönetebilirsiniz.
+          </p>
         </div>
         <button onclick="openTaskModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-2 transition shadow-lg shadow-indigo-600/30">
-          <i data-lucide="plus" class="w-4 h-4"></i><span>Yeni Adım / Görev Ekle</span>
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Yeni Adım / Görev Ekle</span>
         </button>
       </div>
+
       <div class="glass p-6 rounded-2xl relative overflow-hidden shadow-xl">
-        <div id="roadmapDiagram" class="space-y-8 relative before:absolute before:inset-0 before:left-8 before:w-1 before:bg-gradient-to-b before:from-emerald-500 before:via-indigo-500 before:to-slate-700 before:z-0"></div>
+        <div id="roadmapDiagram" class="space-y-8 relative before:absolute before:inset-0 before:left-8 before:w-1 before:bg-gradient-to-b before:from-emerald-500 before:via-indigo-500 before:to-slate-700 before:z-0">
+          <!-- Dynamic flow injected by JS -->
+        </div>
       </div>
     </section>
 
+    <!-- VIEW 3: GÖREV TAKİBİ & VERİ GİRİŞİ TABLE -->
     <section id="view-tasks" class="hidden space-y-6">
       <div class="glass p-6 rounded-2xl flex items-center justify-between shadow-xl">
         <div>
           <h2 class="text-lg font-bold text-white">Görev & Süreç Takibi</h2>
-          <p class="text-xs text-slate-400">Verilerin veya linklerin üzerine tıklayarak doğrudan içini güncelleyebilir, oka tıklayarak haftalık to-do listesini açabilirsiniz.</p>
+          <p class="text-xs text-slate-400">Ana görevleri ve altındaki haftalık to-do maddelerini bu ekrandan detaylıca yönetebilirsiniz.</p>
         </div>
         <button onclick="openTaskModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-2 transition shadow-lg shadow-indigo-600/30">
-          <i data-lucide="plus" class="w-4 h-4"></i><span>Yeni Görev Ekle</span>
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Yeni Görev Ekle</span>
         </button>
       </div>
+
       <div class="glass rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs text-slate-300">
@@ -219,22 +262,32 @@
                 <th class="p-3.5 text-right">İşlem</th>
               </tr>
             </thead>
-            <tbody id="tasksTableBody" class="divide-y divide-slate-800/60"></tbody>
+            <tbody id="tasksTableBody" class="divide-y divide-slate-800/60">
+              <!-- Injected by JS -->
+            </tbody>
           </table>
         </div>
       </div>
     </section>
 
+    <!-- VIEW 4: PROJE EKİBİ -->
     <section id="view-people" class="hidden space-y-6">
       <div class="glass p-6 rounded-2xl shadow-xl flex items-center justify-between">
         <div>
           <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-            <i data-lucide="users" class="w-5 h-5 text-indigo-400"></i><span>Proje Ekibi ve Rol Tanımları</span>
+            <i data-lucide="users" class="w-5 h-5 text-indigo-400"></i>
+            <span>Proje Ekibi ve Rol Tanımları</span>
           </h2>
-          <p class="text-xs text-slate-400 mt-1">Tüm kayıtlı araştırmacılar, danışmanlar ve 12 kişilik Sabancı PURE etiketleme ekibi.</p>
+          <p class="text-xs text-slate-400 mt-1">
+            Tüm kayıtlı araştırmacılar, danışmanlar ve 12 kişilik Sabancı PURE etiketleme ekibi.
+          </p>
         </div>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="seniorTeamContainer"></div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="seniorTeamContainer">
+        <!-- Injected via JS -->
+      </div>
+
       <div class="glass p-6 rounded-2xl border border-indigo-500/30 shadow-xl">
         <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
           <div>
@@ -245,22 +298,30 @@
             <p class="text-xs text-slate-400 mt-0.5">3 Aşama Etiketleme ve Hakemleme (Dual Annotation & Adjudication) Sorumluları</p>
           </div>
           <button onclick="togglePureList()" id="togglePureBtn" class="text-xs text-indigo-400 hover:text-white flex items-center space-x-1 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-            <span>Listeyi Daralt/Genişlet</span><i data-lucide="chevron-down" class="w-4 h-4"></i>
+            <span>Listeyi Daralt/Genişlet</span>
+            <i data-lucide="chevron-down" class="w-4 h-4"></i>
           </button>
         </div>
-        <div id="pureTeamGrid" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+
+        <div id="pureTeamGrid" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <!-- Injected via JS -->
+        </div>
       </div>
     </section>
 
+    <!-- VIEW 5: YÖNETİCİ ÖZET RAPORU -->
     <section id="view-dashboard" class="hidden space-y-6">
       <div class="glass p-6 rounded-2xl shadow-xl space-y-6 border border-slate-800">
+        
         <div class="space-y-4 pb-4 border-b border-slate-800">
           <div>
             <h2 class="text-lg font-bold text-white flex items-center space-x-2">
-              <i data-lucide="sparkles" class="w-5 h-5 text-indigo-400"></i><span>Proje Özeti & AI Raporlayıcı</span>
+              <i data-lucide="sparkles" class="w-5 h-5 text-indigo-400"></i>
+              <span>Proje Özeti & AI Raporlayıcı</span>
             </h2>
-            <p class="text-xs text-slate-400 mt-1">İstediğiniz tarih aralığı, belirli görev veya ekip filtrelerini uygulayarak Timeline, İşbirliği ve Haftalık To-Do detaylarını içeren akıllı AI raporu üretin.</p>
+            <p class="text-xs text-slate-400 mt-1">Seçtiğiniz göreve ait haftalık to-do durumları, atanan kişiler, deadline ve bağlantılar rapor özeti olarak listelenir.</p>
           </div>
+
           <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div>
               <label class="block text-[11px] font-semibold text-slate-300 mb-1">Başlangıç Tarihi</label>
@@ -274,15 +335,18 @@
               <label class="block text-[11px] font-semibold text-slate-300 mb-1">Görev / Aşama Filtresi</label>
               <select id="reportTaskFilter" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
                 <option value="ALL">Tüm Görevler ve Aşamalar</option>
+                <!-- Injected via JS -->
               </select>
             </div>
             <div>
               <button onclick="generateAIExecutiveReport()" class="w-full py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-xs rounded-lg shadow-lg flex items-center justify-center space-x-2 transition">
-                <i data-lucide="file-text" class="w-4 h-4"></i><span>Filtreli AI Raporu Üret</span>
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Filtreli AI Raporu Üret</span>
               </button>
             </div>
           </div>
         </div>
+
         <div class="overflow-x-auto">
           <table class="w-full text-left text-xs text-slate-300 border border-slate-800 rounded-xl overflow-hidden">
             <thead class="bg-slate-900 text-slate-400 uppercase tracking-wider">
@@ -290,10 +354,13 @@
                 <th class="p-3 border-b border-slate-800">Çalışma Paketi / Aşama</th>
                 <th class="p-3 border-b border-slate-800">Rapor Statüsü</th>
                 <th class="p-3 border-b border-slate-800">Gantt İlerleme (%)</th>
+                <th class="p-3 border-b border-slate-800">Haftalık To-Do Özeti</th>
                 <th class="p-3 border-b border-slate-800">Kilit Çıktılar & Notlar</th>
               </tr>
             </thead>
-            <tbody id="dashboardSummaryBody" class="divide-y divide-slate-800/60"></tbody>
+            <tbody id="dashboardSummaryBody" class="divide-y divide-slate-800/60">
+              <!-- Injected by JS -->
+            </tbody>
           </table>
         </div>
       </div>
@@ -302,11 +369,14 @@
   </main>
 </div>
 
+<!-- AI REPORT GENERATED MODAL VIEW -->
 <div id="aiReportModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
   <div class="glass p-8 rounded-2xl w-full max-w-4xl border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto space-y-6 text-slate-100">
     <div class="flex items-center justify-between pb-4 border-b border-slate-800 no-print">
       <div class="flex items-center space-x-3">
-        <div class="p-2 bg-indigo-600/30 text-indigo-400 rounded-lg"><i data-lucide="file-check" class="w-6 h-6"></i></div>
+        <div class="p-2 bg-indigo-600/30 text-indigo-400 rounded-lg">
+          <i data-lucide="file-check" class="w-6 h-6"></i>
+        </div>
         <div>
           <h3 class="text-base font-bold text-white">AI Özel Yönetici & Çalışma Raporu</h3>
           <p class="text-xs text-slate-400" id="reportCutoffLabel">Filtrelenmiş Rapor Çıktısı</p>
@@ -314,23 +384,30 @@
       </div>
       <div class="flex items-center space-x-3">
         <button onclick="window.print()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 border border-slate-700">
-          <i data-lucide="printer" class="w-3.5 h-3.5"></i><span>Yazdır / PDF İndir</span>
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+          <span>Yazdır / PDF İndir</span>
         </button>
         <button onclick="closeAIReportModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
     </div>
-    <div id="aiReportContainer" class="space-y-6 bg-slate-950/80 p-6 rounded-xl border border-slate-800 text-xs leading-relaxed"></div>
+
+    <div id="aiReportContainer" class="space-y-6 bg-slate-950/80 p-6 rounded-xl border border-slate-800 text-xs leading-relaxed">
+      <!-- Injected dynamically via JS -->
+    </div>
   </div>
 </div>
 
+<!-- TASK CREATION / EDIT MODAL -->
 <div id="taskModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
   <div class="glass p-6 rounded-2xl w-full max-w-2xl border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
     <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
       <h3 id="modalTaskTitle" class="text-lg font-bold text-white">Görev Ekle / Düzenle</h3>
       <button onclick="closeTaskModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
+    
     <form id="taskForm" onsubmit="saveTask(event)" class="space-y-4">
       <input type="hidden" id="taskId">
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1">Aşama / Paketi</label>
@@ -341,10 +418,14 @@
           <input type="text" id="taskName" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
         </div>
       </div>
+
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1">Sorumlu Kişiler (Sistemdeki Üyeleri Seçin)</label>
-        <div id="assigneesCheckboxes" class="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-900 p-3 rounded-lg border border-slate-800 max-h-36 overflow-y-auto text-xs"></div>
+        <div id="assigneesCheckboxes" class="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-900 p-3 rounded-lg border border-slate-800 max-h-36 overflow-y-auto text-xs">
+          <!-- Injected via JS -->
+        </div>
       </div>
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1">Başlangıç Tarihi</label>
@@ -363,6 +444,7 @@
           </select>
         </div>
       </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1">İlerleme Yüzdesi (%)</label>
@@ -373,10 +455,12 @@
           <input type="url" id="taskLink" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
         </div>
       </div>
+
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1">Açıklama ve Güncelleme Notları</label>
         <textarea id="taskNotes" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"></textarea>
       </div>
+
       <div class="flex justify-end space-x-3 pt-4 border-t border-slate-800">
         <button type="button" onclick="closeTaskModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg">İptal</button>
         <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg">Kaydet</button>
@@ -399,6 +483,7 @@ let registeredPeople = [
   { id: "p10", name: "Eyüp Kun", role: "Legal Counsel", email: "eyup.kun@legal.com", isPure: false },
   { id: "p11", name: "Abdüllatif Köksal", role: "CS & AI Consultant", email: "koksal@cs.tu-darmstadt.de", isPure: false },
   { id: "p12", name: "Arif Yasin Kavdır", role: "Developer (Qrateria)", email: "arif@qrateria.com", isPure: false },
+
   { id: "u1", name: "Kayla Ada Deveci", role: "PURE Intern", dept: "Sabancı Univ. - Political Sci.", email: "ada.deveci@sabanciuniv.edu", isPure: true },
   { id: "u2", name: "Tasnim Jahan Haque Nahia", role: "PURE Intern", dept: "Sabancı Univ. - Political Sci.", email: "tasnim.nahia@sabanciuniv.edu", isPure: true },
   { id: "u3", name: "İbrahim Peker", role: "PURE Intern", dept: "Sabancı Univ. - Econ & PolSci", email: "ibrahim.peker@sabanciuniv.edu", isPure: true },
@@ -414,22 +499,49 @@ let registeredPeople = [
 ];
 
 let initialTasks = [
-  { id: "DEMIG-1.1", module: "1. Constructing Dataset", name: "1.1 Collecting Survey Questionnaires", taggedIds: ["p2", "p5", "p7"], startDate: "2025-11-01", endDate: "2026-03-31", startMonthIdx: 1, endMonthIdx: 5, status: "Tamamlandı", progress: 100, link: "https://qrateria.com/orgs/demig", notes: "356 kaynak, 35.000+ anket sorusu toplandı. %100 tamamlandı." },
-  { id: "DEMIG-1.2", module: "1. Constructing Dataset", name: "1.2 Parsing & Scraping Questions", taggedIds: ["p4", "p8"], startDate: "2025-11-15", endDate: "2026-04-15", startMonthIdx: 1, endMonthIdx: 6, status: "Tamamlandı", progress: 100, link: "https://qrateria.com/orgs/demig", notes: "Ayrıştırma ve scraping işlemleri tamamlandı (%100)." },
-  { id: "DEMIG-1.4", module: "1. Constructing Dataset", name: "1.4 Labeling Questions by Subject", taggedIds: ["p4", "p8"], startDate: "2025-12-01", endDate: "2026-04-30", startMonthIdx: 2, endMonthIdx: 6, status: "Tamamlandı", progress: 90, link: "https://qrateria.com/orgs/demig", notes: "25 ana kategori ve 109 alt kategoriye sınıflandırıldı (%90 tamamlandı)." },
-  { id: "DEMIG-2.1", module: "2. Human Annotation", name: "2.1 Experts Survey (Qualtrics)", taggedIds: ["p1", "p2", "p3", "p6", "p7"], startDate: "2026-03-01", endDate: "2026-05-31", startMonthIdx: 5, endMonthIdx: 7, status: "Tamamlandı", progress: 100, link: "https://sabanciuniv.qualtrics.com", notes: "2.000+ uzmana ulaşıldı, 250 uzmandan yanıt alındı (%100 tamamlandı)." },
-  { id: "DEMIG-2.4", module: "2. Human Annotation", name: "2.4 PURE 3-Stage Annotation", taggedIds: ["p1", "p2", "u1", "u2", "u3", "u4", "u5", "u6"], startDate: "2026-02-01", endDate: "2026-08-31", startMonthIdx: 4, endMonthIdx: 10, status: "Devam Ediyor", progress: 85, link: "https://qrateria.com/orgs/demig", notes: "12 kişilik anotatör ekibi eğitildi. 1.800 soruda 3 aşamalı etiketleme sürüyor (%85)." },
-  { id: "DEMIG-4.1", module: "4. Reward Model", name: "4.1 Reward Model Training", taggedIds: ["p4", "p8", "p11"], startDate: "2026-04-01", endDate: "2026-09-30", startMonthIdx: 6, endMonthIdx: 11, status: "Devam Ediyor", progress: 60, link: "", notes: "Llama-3.2-3b (%37.5 MAE gelişimi) ve Phi-3.5-mini testleri yapıldı (%60)." },
-  { id: "DEMIG-AI-6", module: "6. AI Survey Research", name: "6. Synthetic Agents Conjoint", taggedIds: ["p1", "p5"], startDate: "2026-01-01", endDate: "2026-08-15", startMonthIdx: 3, endMonthIdx: 10, status: "Devam Ediyor", progress: 90, notes: "LLM role-based çerçevesi sunuldu, Türkiye, Cezayir ve Endonezya deneyleri %90 tamam." },
-  { id: "DEMIG-TGSS-7", module: "7. TGSS Research", name: "7. TGSS Immigrants Attitudes Report", taggedIds: ["p1", "p2", "p3"], startDate: "2026-02-01", endDate: "2026-07-31", startMonthIdx: 4, endMonthIdx: 9, status: "Tamamlandı", progress: 100, notes: "Rapor taslağı hazırlandı, Sonbahar 2026'da yayınlanacak (%100 tamam)." }
+  {
+    id: "DEMIG-1.1",
+    module: "1. Constructing Dataset",
+    name: "1.1 Collecting Survey Questionnaires",
+    taggedIds: ["p2", "p5", "p7"],
+    startDate: "2025-11-01",
+    endDate: "2026-03-31",
+    startMonthIdx: 1, // Kas '25
+    endMonthIdx: 5,   // Mar '26
+    status: "Tamamlandı",
+    progress: 100,
+    link: "https://qrateria.com/orgs/demig",
+    notes: "356 kaynak, 35.000+ anket sorusu toplandı. %100 tamamlandı.",
+    subtasks: [
+      { id: "st-1", name: "Kaynak taraması ve kurum tespiti", assignedPersonId: "p2", deadline: "2025-11-15", status: "Tamamlandı", link: "https://qrateria.com", createdBy: "Fatma Eslem Akbıyık" },
+      { id: "st-2", name: "Anket sorularının ham veri formatına çevrilmesi", assignedPersonId: "p5", deadline: "2025-12-20", status: "Tamamlandı", link: "", createdBy: "Fatma Eslem Akbıyık" }
+    ]
+  },
+  {
+    id: "DEMIG-2.4",
+    module: "2. Human Annotation",
+    name: "2.4 PURE 3-Stage Annotation",
+    taggedIds: ["p1", "p2", "u1", "u2", "u3", "u4", "u5", "u6"],
+    startDate: "2026-02-01",
+    endDate: "2026-08-31",
+    startMonthIdx: 4, // Şub '26
+    endMonthIdx: 10,  // Ağu '26
+    status: "Devam Ediyor",
+    progress: 85,
+    link: "https://qrateria.com/orgs/demig",
+    notes: "12 kişilik anotatör ekibi eğitildi. 1.800 soruda 3 aşamalı etiketleme sürüyor (%85).",
+    subtasks: [
+      { id: "st-3", name: "1. Aşama etiketleme kontrolü", assignedPersonId: "u1", deadline: "2026-05-15", status: "Tamamlandı", link: "https://qrateria.com/annotation", createdBy: "M. Tahir Kılavuz" },
+      { id: "st-4", name: "Hakem uyuşmazlık çözümleri", assignedPersonId: "p7", deadline: "2026-06-30", status: "Devam Ediyor", link: "", createdBy: "Fatma Eslem Akbıyık" },
+      { id: "st-5", name: "3. Aşama nihai onaylar", assignedPersonId: "p1", deadline: "2026-07-20", status: "Planlandı", link: "", createdBy: "M. Tahir Kılavuz" }
+    ]
+  }
 ];
 
-let tasks = JSON.parse(localStorage.getItem('demigproject_tasks_v5')) || initialTasks;
+let tasks = JSON.parse(localStorage.getItem('demigproject_tasks_v6')) || initialTasks;
 let currentUser = JSON.parse(localStorage.getItem('demigproject_user')) || null;
 let statusChartObj = null;
 let progressChartObj = null;
-let expandedTasks = {};
-let expandedGantt = {};
 
 const monthNames = ["Ekim '25", "Kasım '25", "Aralık '25", "Ocak '26", "Şubat '26", "Mart '26", "Nisan '26", "Mayıs '26", "Haziran '26", "Temmuz '26", "Ağustos '26", "Eylül '26"];
 
@@ -444,9 +556,41 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+function sendEmailNotification(assignedPerson, subtaskName, deadline, createdBy) {
+  if (!assignedPerson || !assignedPerson.email) return;
+  const mailSubject = encodeURIComponent(`[DEMIG Portalı] Yeni Görev Atandı: ${subtaskName}`);
+  const mailBody = encodeURIComponent(
+    `Merhaba ${assignedPerson.name},\n\n` +
+    `demigproject portalında tarafınıza yeni bir alt görev atanmıştır:\n\n` +
+    `• Görev: ${subtaskName}\n` +
+    `• Son Teslim Tarihi (Deadline): ${deadline || 'Belirtilmedi'}\n` +
+    `• Görevi Atayan: ${createdBy}\n\n` +
+    `Detayları kontrol etmek için demigproject portalına giriş yapabilirsiniz.\n\n` +
+    `İyi çalışmalar,\nDEMIG Proje Yönetim Sistemi`
+  );
+  
+  // Otomatik e-posta istemcisi tetikleme
+  const mailtoUrl = `mailto:${assignedPerson.email}?subject=${mailSubject}&body=${mailBody}`;
+  window.open(mailtoUrl, '_blank');
+}
+
+function recalculateTaskProgress(t) {
+  if (t.subtasks && t.subtasks.length > 0) {
+    const doneCount = t.subtasks.filter(s => s.status === 'Tamamlandı').length;
+    t.progress = Math.round((doneCount / t.subtasks.length) * 100);
+    if (t.progress === 100) t.status = 'Tamamlandı';
+    else if (t.progress > 0) t.status = 'Devam Ediyor';
+    else t.status = 'Planlandı';
+  }
+}
+
 function handleLogin(e) {
   e.preventDefault();
-  currentUser = { name: document.getElementById('userName').value, email: document.getElementById('userEmail').value, dept: document.getElementById('userDept').value };
+  currentUser = {
+    name: document.getElementById('userName').value,
+    email: document.getElementById('userEmail').value,
+    dept: document.getElementById('userDept').value
+  };
   localStorage.setItem('demigproject_user', JSON.stringify(currentUser));
   document.getElementById('authModal').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
@@ -478,6 +622,7 @@ function populateTaskFilterOptions() {
 }
 
 function renderAll() {
+  tasks.forEach(t => recalculateTaskProgress(t));
   renderDiagrams();
   renderExcelGanttMatrix();
   renderRoadmap();
@@ -490,97 +635,57 @@ function renderAll() {
 }
 
 function renderDiagrams() {
-  const avgPct = Math.round(tasks.reduce((acc, curr) => acc + curr.progress, 0) / tasks.length);
+  const avgPct = tasks.length > 0 ? Math.round(tasks.reduce((acc, curr) => acc + curr.progress, 0) / tasks.length) : 0;
   document.getElementById('overallDiagramPct').innerText = '%' + avgPct;
+
   const ctxStatus = document.getElementById('statusChart').getContext('2d');
   const ctxProg = document.getElementById('progressChart').getContext('2d');
+
   if (statusChartObj) statusChartObj.destroy();
   if (progressChartObj) progressChartObj.destroy();
+
   statusChartObj = new Chart(ctxStatus, {
     type: 'doughnut',
-    data: { labels: ['Tamamlandı', 'Devam Ediyor', 'Planlandı'], datasets: [{ data: [tasks.filter(t => t.status === 'Tamamlandı').length, tasks.filter(t => t.status === 'Devam Ediyor').length, tasks.filter(t => t.status === 'Planlandı').length], backgroundColor: ['#10b981', '#6366f1', '#64748b'], borderWidth: 0 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#cbd5e1' } } } }
+    data: {
+      labels: ['Tamamlandı', 'Devam Ediyor', 'Planlandı'],
+      datasets: [{
+        data: [
+          tasks.filter(t => t.status === 'Tamamlandı').length,
+          tasks.filter(t => t.status === 'Devam Ediyor').length,
+          tasks.filter(t => t.status === 'Planlandı').length
+        ],
+        backgroundColor: ['#10b981', '#6366f1', '#f59e0b'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#cbd5e1' } } }
+    }
   });
+
   progressChartObj = new Chart(ctxProg, {
     type: 'bar',
-    data: { labels: tasks.map(t => t.id), datasets: [{ label: 'İlerleme (%)', data: tasks.map(t => t.progress), backgroundColor: tasks.map(t => t.status === 'Tamamlandı' ? '#10b981' : '#6366f1'), borderRadius: 6 }] },
-    options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }, x: { ticks: { color: '#94a3b8' }, grid: { display: false } } }, plugins: { legend: { display: false } } }
+    data: {
+      labels: tasks.map(t => t.id),
+      datasets: [{
+        label: 'İlerleme (%)',
+        data: tasks.map(t => t.progress),
+        backgroundColor: tasks.map(t => t.status === 'Tamamlandı' ? '#10b981' : '#6366f1'),
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { max: 100, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+        x: { ticks: { color: '#94a3b8' }, grid: { display: false } }
+      },
+      plugins: { legend: { display: false } }
+    }
   });
-}
-
-function ensureWeeklyTodos(t) {
-  if (!t.weeklyTodos) t.weeklyTodos = [];
-}
-
-function weeklyTodoListHTML(t, idx) {
-  ensureWeeklyTodos(t);
-  const doneCount = t.weeklyTodos.filter(w => w.done).length;
-  const items = t.weeklyTodos.map((w, wIdx) => `
-    <div class="flex items-center justify-between bg-slate-900/70 px-3 py-1.5 rounded-lg border border-slate-800">
-      <label class="flex items-center space-x-2 cursor-pointer flex-1 min-w-0">
-        <input type="checkbox" ${w.done ? 'checked' : ''} onchange="toggleWeeklyTodo(${idx}, ${wIdx})" class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0 shrink-0">
-        <span class="text-[10px] font-bold text-amber-300 shrink-0">${w.week ? w.week : 'Hafta -'}</span>
-        <span class="text-xs truncate ${w.done ? 'line-through text-slate-500' : 'text-slate-200'}">${w.text}</span>
-      </label>
-      <button onclick="deleteWeeklyTodo(${idx}, ${wIdx})" class="text-slate-500 hover:text-red-400 ml-2 shrink-0">
-        <i data-lucide="x" class="w-3.5 h-3.5"></i>
-      </button>
-    </div>
-  `).join('');
-
-  return `
-    <div class="mt-3 pt-3 border-t border-slate-800/80 space-y-2">
-      <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center space-x-1.5">
-        <i data-lucide="list-checks" class="w-3 h-3"></i>
-        <span>Haftalık To-Do Listesi ${t.weeklyTodos.length > 0 ? `(${doneCount}/${t.weeklyTodos.length})` : ''}</span>
-      </div>
-      <div class="space-y-1.5">
-        ${items || '<div class="text-xs text-slate-500 italic">Henüz haftalık görev eklenmedi.</div>'}
-      </div>
-      <div class="flex items-center space-x-2 pt-1">
-        <input type="text" id="weekLabelInput-${idx}" placeholder="Hafta (örn: 10-16 Kasım)" class="w-32 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-white focus:outline-none focus:border-indigo-500 shrink-0">
-        <input type="text" id="weekTextInput-${idx}" placeholder="Yeni haftalık görev yaz..." onkeypress="if(event.key==='Enter'){addWeeklyTodo(${idx}); event.preventDefault();}" class="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500">
-        <button onclick="addWeeklyTodo(${idx})" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg flex items-center space-x-1 shrink-0">
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Ekle</span>
-        </button>
-      </div>
-    </div>
-  `;
-}
-
-function addWeeklyTodo(idx) {
-  const weekInput = document.getElementById('weekLabelInput-' + idx);
-  const textInput = document.getElementById('weekTextInput-' + idx);
-  const text = textInput.value.trim();
-  if (!text) return;
-  ensureWeeklyTodos(tasks[idx]);
-  tasks[idx].weeklyTodos.push({ week: weekInput.value.trim(), text: text, done: false });
-  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
-  expandedGantt[idx] = true;
-  expandedTasks[idx] = true;
-  renderAll();
-}
-
-function toggleWeeklyTodo(idx, wIdx) {
-  tasks[idx].weeklyTodos[wIdx].done = !tasks[idx].weeklyTodos[wIdx].done;
-  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
-  renderAll();
-}
-
-function deleteWeeklyTodo(idx, wIdx) {
-  tasks[idx].weeklyTodos.splice(wIdx, 1);
-  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
-  renderAll();
-}
-
-function toggleGanttRow(idx) {
-  expandedGantt[idx] = !expandedGantt[idx];
-  renderAll();
-}
-
-function toggleTasksRow(idx) {
-  expandedTasks[idx] = !expandedTasks[idx];
-  renderAll();
 }
 
 function renderExcelGanttMatrix() {
@@ -588,7 +693,6 @@ function renderExcelGanttMatrix() {
   tbody.innerHTML = '';
 
   tasks.forEach((t, tIdx) => {
-    ensureWeeklyTodos(t);
     const tr = document.createElement('tr');
     tr.className = "hover:bg-slate-900/50 transition border-b border-slate-800/40";
 
@@ -600,72 +704,57 @@ function renderExcelGanttMatrix() {
     const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1;
     const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
     const periodLabel = `${monthNames[sIdx].split("'")[0]} - ${monthNames[eIdx].split("'")[0]}`;
-    const doneCount = t.weeklyTodos.filter(w => w.done).length;
-    const todoBadge = t.weeklyTodos.length > 0 ? `<span class="ml-1 text-[9px] text-slate-500 font-sans">(${doneCount}/${t.weeklyTodos.length})</span>` : '';
-    const isExpanded = !!expandedGantt[tIdx];
+
+    const subtasksList = t.subtasks || [];
+    const doneSubCount = subtasksList.filter(s => s.status === 'Tamamlandı').length;
+    const devSubCount = subtasksList.filter(s => s.status === 'Devam Ediyor').length;
+    const planSubCount = subtasksList.filter(s => s.status === 'Planlandı').length;
+
+    const subtaskSummaryTag = `
+      <div class="text-[9px] font-sans font-normal mt-0.5 space-x-1">
+        <span class="text-emerald-400 font-bold" title="Tamamlandı">${doneSubCount}T</span>
+        <span class="text-indigo-400 font-bold" title="Devam Ediyor">${devSubCount}D</span>
+        <span class="text-amber-400 font-bold" title="Planlandı">${planSubCount}P</span>
+      </div>
+    `;
 
     let monthCells = '';
     for (let m = 0; m < 12; m++) {
-      let val;
-      if (t.monthProgress) {
-        val = t.monthProgress[m] || 0;
-      } else {
-        let inRange = (m >= sIdx && m <= eIdx);
-        val = inRange ? (t.status === 'Tamamlandı' ? 100 : t.progress) : 0;
-      }
+      let val = (t.monthProgress && t.monthProgress[m] !== undefined) ? t.monthProgress[m] : ((m >= sIdx && m <= eIdx) ? (t.status === 'Tamamlandı' ? 100 : t.progress) : 0);
+
       let cellContent = '';
       if (val === 100) {
-        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-emerald-500 text-slate-950 rounded font-bold flex items-center justify-center text-[10px] shadow" title="Tamamlandı">✓ %100</div>`;
+        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-emerald-500 text-slate-950 rounded font-bold flex items-center justify-center text-[10px] shadow">✓ %100</div>`;
       } else if (val > 0) {
-        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-indigo-600 text-white rounded font-bold flex items-center justify-center text-[10px] shadow" title="Aktif Dönem">%${val}</div>`;
+        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-indigo-600 text-white rounded font-bold flex items-center justify-center text-[10px] shadow">%${val}</div>`;
       } else {
-        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:bg-slate-800 transition w-full h-7 bg-slate-900/40 text-slate-600 rounded border border-slate-800/80 flex items-center justify-center text-[10px]" title="Pasif Dönem">-</div>`;
+        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:bg-slate-800 transition w-full h-7 bg-slate-900/40 text-slate-600 rounded border border-slate-800/80 flex items-center justify-center text-[10px]">-</div>`;
       }
+
       monthCells += `<td class="p-1 text-center w-16 h-8">${cellContent}</td>`;
     }
 
     tr.innerHTML = `
       <td class="p-2.5 font-sans font-semibold text-white sticky left-0 bg-slate-950 border-r border-slate-800 truncate" title="${t.name}">
-        <button onclick="toggleGanttRow(${tIdx})" class="inline-flex items-center justify-center w-4 h-4 mr-1 text-slate-400 hover:text-white bg-slate-800 rounded transition align-middle">
-          <i data-lucide="${isExpanded ? 'chevron-down' : 'chevron-right'}" class="w-3 h-3"></i>
-        </button>
-        ${t.name}${todoBadge}
+        ${t.name}
       </td>
       <td class="p-2.5 text-center text-indigo-300 font-bold bg-slate-900/40 border-r border-slate-800/60 font-sans text-[10px]">${periodLabel}</td>
       <td class="p-2.5 text-center text-slate-300 font-medium truncate text-[10px]">${assigneesText || '-'}</td>
-      <td class="p-2.5 text-center font-bold text-[10px] ${t.status === 'Tamamlandı' ? 'text-emerald-400' : 'text-indigo-400'}">${t.status === 'Tamamlandı' ? 'Tamam' : '%' + t.progress}</td>
+      <td class="p-2.5 text-center font-bold text-[10px] border-r border-slate-800">${subtaskSummaryTag}</td>
       ${monthCells}
     `;
     tbody.appendChild(tr);
-
-    const subTr = document.createElement('tr');
-    subTr.className = isExpanded ? "" : "hidden";
-    subTr.innerHTML = `
-      <td colspan="16" class="p-3 bg-slate-950/60 border-b border-slate-800/60 font-sans">
-        <div class="ml-6 pl-4 border-l-2 border-indigo-500/30">
-          ${weeklyTodoListHTML(t, tIdx)}
-        </div>
-      </td>
-    `;
-    tbody.appendChild(subTr);
   });
 }
 
 function toggleMonthState(tIdx, monthIdx) {
   let t = tasks[tIdx];
-  if (!t.monthProgress) {
-    t.monthProgress = new Array(12).fill(0);
-    const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1;
-    const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
-    for (let m = sIdx; m <= eIdx; m++) {
-      t.monthProgress[m] = t.status === 'Tamamlandı' ? 100 : t.progress;
-    }
-  }
+  if (!t.monthProgress) t.monthProgress = new Array(12).fill(0);
   let cur = t.monthProgress[monthIdx] || 0;
-  let next = cur + 5;
+  let next = cur + 10;
   if (next > 100) next = 0;
   t.monthProgress[monthIdx] = next;
-  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
+  localStorage.setItem('demigproject_tasks_v6', JSON.stringify(tasks));
   renderAll();
 }
 
@@ -675,14 +764,7 @@ function renderRoadmap() {
 
   tasks.forEach((t, index) => {
     const isDone = t.status === 'Tamamlandı';
-    const taggedNames = t.taggedIds.map(id => {
-      const p = registeredPeople.find(x => x.id === id);
-      return p ? `@${p.name}` : '';
-    }).filter(Boolean).join(', ');
-
-    const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1;
-    const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
-    const periodStr = `${monthNames[sIdx]} - ${monthNames[eIdx]}`;
+    const subtasksList = t.subtasks || [];
 
     const card = document.createElement('div');
     card.className = "relative z-10 ml-12 group";
@@ -690,77 +772,85 @@ function renderRoadmap() {
       <div class="absolute -left-12 top-1.5 w-7 h-7 rounded-full ${isDone ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-indigo-600 text-white'} border-4 border-slate-950 flex items-center justify-center text-xs shadow-lg">
         ${isDone ? '✓' : '➔'}
       </div>
-      <div class="glass-card p-4 rounded-2xl border border-slate-800 hover:border-indigo-500/40 transition">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <div class="glass-card p-4 rounded-2xl border border-slate-800 hover:border-indigo-500/40 transition space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
           <div class="flex items-center space-x-2">
             <span class="px-2 py-0.5 text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">${t.module}</span>
             <span class="text-[11px] text-slate-400 font-mono font-bold">${t.id}</span>
-            <span class="text-[10px] bg-slate-900 px-2 py-0.5 rounded text-amber-300 border border-slate-700 font-sans">🕒 Planlanan Dönem: <strong>${periodStr}</strong></span>
           </div>
-          <div class="flex items-center space-x-2">
-            <select onchange="updateTaskInline(${index}, 'status', this.value)" class="text-[11px] font-bold bg-slate-900 border ${isDone ? 'text-emerald-400 border-emerald-500/30' : 'text-indigo-400 border-indigo-500/30'} px-2 py-0.5 rounded-full">
-              <option value="Tamamlandı" ${t.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
-              <option value="Devam Ediyor" ${t.status === 'Devam Ediyor' ? 'selected' : ''}>Devam Ediyor</option>
-              <option value="Planlandı" ${t.status === 'Planlandı' ? 'selected' : ''}>Planlandı</option>
-            </select>
-            <button onclick="editTask('${t.id}')" class="p-1 text-slate-400 hover:text-white bg-slate-800 rounded hover:bg-slate-700 transition" title="Düzenle">
-              <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
-            </button>
+          <span class="text-xs font-bold ${isDone ? 'text-emerald-400' : 'text-indigo-400'}">%${t.progress} (${t.status})</span>
+        </div>
+
+        <div class="text-sm font-bold text-white mb-1">${t.name}</div>
+
+        <!-- HAFTALIK TO-DO MODÜLÜ -->
+        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-2">
+          <div class="text-[11px] font-semibold text-slate-300 border-b border-slate-800 pb-1">Haftalık Alt Görevler & Kişi Atamaları</div>
+          <div class="space-y-1.5">
+            ${subtasksList.map((s) => {
+              const assigned = registeredPeople.find(p => p.id === s.assignedPersonId);
+              let badgeColor = s.status === 'Tamamlandı' ? 'bg-emerald-500/20 text-emerald-300' : (s.status === 'Devam Ediyor' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-amber-500/20 text-amber-300');
+              return `
+                <div class="flex flex-wrap items-center justify-between text-xs bg-slate-950/60 p-2 rounded-lg border border-slate-800/80 gap-2">
+                  <div class="flex items-center space-x-2">
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-bold ${badgeColor}">${s.status}</span>
+                    <span class="text-slate-200 font-medium">${s.name}</span>
+                  </div>
+                  <div class="flex items-center space-x-2 text-[10px] text-slate-400">
+                    ${assigned ? `<span class="bg-indigo-600/30 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-500/30">@${assigned.name}</span>` : ''}
+                    ${s.deadline ? `<span class="text-amber-300 font-mono">📅 ${s.deadline}</span>` : ''}
+                    ${s.link ? `<a href="${s.link}" target="_blank" class="text-indigo-400 underline">🔗 Link</a>` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('') || '<div class="text-[11px] text-slate-500 italic">Alt görev bulunmuyor.</div>'}
           </div>
         </div>
-        <input type="text" value="${t.name}" onchange="updateTaskInline(${index}, 'name', this.value)" class="text-sm font-bold text-white mb-1.5 bg-transparent border-b border-transparent hover:border-indigo-500 focus:border-indigo-500 editable-input px-1 py-0.5 rounded w-full">
-        <div class="text-[11px] text-indigo-300 font-medium mb-2">${taggedNames || 'Sorumlu atanmadı'}</div>
-        <textarea onchange="updateTaskInline(${index}, 'notes', this.value)" rows="2" class="text-xs text-slate-300 italic bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 editable-input w-full">${t.notes}</textarea>
-        ${weeklyTodoListHTML(t, index)}
       </div>
     `;
     container.appendChild(card);
   });
 }
 
+let expandedTasks = {};
+
 function renderTasksTable() {
   const tbody = document.getElementById('tasksTableBody');
   tbody.innerHTML = '';
 
   tasks.forEach((t, index) => {
-    ensureWeeklyTodos(t);
+    if (!t.subtasks) t.subtasks = [];
+
     const tr = document.createElement('tr');
     tr.className = "hover:bg-slate-900/40 transition border-b border-slate-800/60";
+    
     let statusClass = t.status === 'Tamamlandı' ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" : "bg-blue-500/20 text-blue-300 border-blue-500/30";
+
     const taggedChips = t.taggedIds.map(id => {
       const p = registeredPeople.find(x => x.id === id);
       return p ? `<span class="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 text-[10px] font-medium mr-1 mb-1 inline-block">@${p.name}</span>` : '';
     }).join('');
-    const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1;
-    const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
-    const periodStr = `${monthNames[sIdx]} - ${monthNames[eIdx]}`;
-    const doneCount = t.weeklyTodos.filter(s => s.done).length;
-    const subtaskBadge = t.weeklyTodos.length > 0 ? `<span class="ml-1.5 text-[9px] text-slate-400">(${doneCount}/${t.weeklyTodos.length})</span>` : '';
+
     const isExpanded = !!expandedTasks[index];
 
     tr.innerHTML = `
       <td class="p-3 font-mono font-bold text-indigo-400">
-        <button onclick="toggleTasksRow(${index})" class="inline-flex items-center justify-center w-4 h-4 mr-1 text-slate-400 hover:text-white bg-slate-800 rounded transition align-middle">
+        <button onclick="toggleSubtaskRow(${index})" class="inline-flex items-center justify-center w-4 h-4 mr-1 text-slate-400 hover:text-white bg-slate-800 rounded transition align-middle">
           <i data-lucide="${isExpanded ? 'chevron-down' : 'chevron-right'}" class="w-3 h-3"></i>
         </button>
-        ${t.id}${subtaskBadge}
-        <div class="text-[10px] text-slate-400 font-normal ml-5">${t.module}</div>
+        ${t.id} <span class="text-[10px] text-indigo-300 font-normal">(${t.subtasks.length} Alt Görev)</span>
       </td>
-      <td class="p-3 font-semibold text-white max-w-xs">
-        <input type="text" value="${t.name}" onchange="updateTaskInline(${index}, 'name', this.value)" class="bg-transparent border-b border-transparent hover:border-slate-700 editable-input px-1 py-0.5 rounded w-full">
-      </td>
+      <td class="p-3 font-semibold text-white max-w-xs">${t.name}</td>
       <td class="p-3 max-w-xs"><div class="flex flex-wrap">${taggedChips}</div></td>
-      <td class="p-3 text-amber-300 font-medium text-[11px]">${periodStr}</td>
+      <td class="p-3 text-amber-300 font-medium text-[11px]">${t.startDate} ➔ ${t.endDate}</td>
       <td class="p-3">
-        <select onchange="updateTaskInline(${index}, 'status', this.value)" class="bg-slate-900 text-xs font-semibold rounded border ${statusClass} px-2 py-0.5">
-          <option value="Tamamlandı" ${t.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
-          <option value="Devam Ediyor" ${t.status === 'Devam Ediyor' ? 'selected' : ''}>Devam Ediyor</option>
-          <option value="Planlandı" ${t.status === 'Planlandı' ? 'selected' : ''}>Planlandı</option>
-        </select>
-        <div class="w-16 bg-slate-800 h-1 rounded-full mt-1.5 overflow-hidden"><div class="bg-indigo-500 h-full" style="width: ${t.progress}%"></div></div>
+        <span class="px-2 py-0.5 text-xs font-semibold rounded border ${statusClass}">${t.status}</span>
+        <div class="w-16 bg-slate-800 h-1 rounded-full mt-1.5 overflow-hidden">
+          <div class="bg-indigo-500 h-full" style="width: ${t.progress}%"></div>
+        </div>
       </td>
       <td class="p-3">
-        ${t.link ? `<a href="${t.link}" target="_blank" class="text-indigo-400 hover:underline text-xs flex items-center space-x-1"><i data-lucide="external-link" class="w-3.5 h-3.5"></i><span>Bağlantı</span></a>` : `<span class="text-slate-500 text-[11px]">-</span>`}
+        ${t.link ? `<a href="${t.link}" target="_blank" class="text-indigo-400 hover:underline text-xs">Bağlantı</a>` : `-`}
       </td>
       <td class="p-3 text-right">
         <button onclick="editTask('${t.id}')" class="p-1.5 text-indigo-400 hover:text-white bg-indigo-500/10 rounded-lg hover:bg-indigo-600 transition">
@@ -770,11 +860,75 @@ function renderTasksTable() {
     `;
     tbody.appendChild(tr);
 
+    // ALT GÖREV DETAY SATIRI (FORM & DÜZENLEME)
     const subTr = document.createElement('tr');
     subTr.className = isExpanded ? "" : "hidden";
+    
+    const subtaskItemsHTML = t.subtasks.map((s, sIdx) => {
+      const assigned = registeredPeople.find(p => p.id === s.assignedPersonId);
+      return `
+        <div class="flex flex-col md:flex-row md:items-center justify-between bg-slate-900/80 p-3 rounded-xl border border-slate-800 gap-2">
+          <div class="flex items-center space-x-3 flex-1">
+            <select onchange="updateSubtaskStatus(${index}, ${sIdx}, this.value)" class="bg-slate-950 text-[10px] font-bold border border-slate-700 rounded px-2 py-1 text-white">
+              <option value="Planlandı" ${s.status === 'Planlandı' ? 'selected' : ''}>Planlandı</option>
+              <option value="Devam Ediyor" ${s.status === 'Devam Ediyor' ? 'selected' : ''}>Devam Ediyor</option>
+              <option value="Tamamlandı" ${s.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
+            </select>
+            <span class="text-xs font-semibold ${s.status === 'Tamamlandı' ? 'line-through text-slate-500' : 'text-slate-200'}">${s.name}</span>
+          </div>
+
+          <div class="flex items-center space-x-3 text-[11px]">
+            <span class="bg-indigo-600/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">
+              👤 ${assigned ? assigned.name : 'Atanmadı'}
+            </span>
+            <span class="text-amber-300 font-mono">📅 ${s.deadline || 'Tarih Yok'}</span>
+            ${s.link ? `<a href="${s.link}" target="_blank" class="text-indigo-400 underline flex items-center space-x-1"><i data-lucide="link" class="w-3 h-3"></i><span>Link</span></a>` : ''}
+            <button onclick="deleteSubtask(${index}, ${sIdx})" class="text-slate-500 hover:text-red-400 p-1">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const peopleOptions = registeredPeople.map(p => `<option value="${p.id}">${p.name} (${p.role})</option>`).join('');
+
     subTr.innerHTML = `
-      <td colspan="7" class="p-3 bg-slate-950/60 border-b border-slate-800/60">
-        <div class="ml-6 pl-4 border-l-2 border-indigo-500/30">${weeklyTodoListHTML(t, index)}</div>
+      <td colspan="7" class="p-4 bg-slate-950/80 border-b border-slate-800">
+        <div class="ml-4 pl-4 border-l-2 border-indigo-500/40 space-y-3">
+          <div class="text-xs font-bold text-indigo-400 uppercase tracking-wider">Haftalık To-Do Ekleme & Yönetimi</div>
+          
+          <div class="space-y-2">${subtaskItemsHTML || '<div class="text-xs text-slate-500 italic">Henüz haftalık alt görev eklenmedi.</div>'}</div>
+
+          <!-- YENİ HAFTALIK TO-DO EKLEME FORMU -->
+          <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-2 mt-3">
+            <div class="text-[11px] font-semibold text-slate-300">Yeni Haftalık Alt Görev Tanımla</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+              <input type="text" id="stName-${index}" placeholder="Görev açıklaması..." class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+              
+              <select id="stPerson-${index}" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                <option value="">Atanacak Kişiyi Seç (@Tag)</option>
+                ${peopleOptions}
+              </select>
+
+              <input type="date" id="stDeadline-${index}" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+              
+              <input type="url" id="stLink-${index}" placeholder="https://bağlantı-linki..." class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+              <label class="flex items-center space-x-2 text-[11px] text-slate-400 cursor-pointer">
+                <input type="checkbox" id="stSendMail-${index}" checked class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+                <span>Kişinin e-postasına bildirim gönder (Mailto)</span>
+              </label>
+
+              <button onclick="addDetailedSubtask(${index})" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg flex items-center space-x-1 transition shadow-lg">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Görevi Ata & Kaydet</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </td>
     `;
     tbody.appendChild(subTr);
@@ -783,12 +937,62 @@ function renderTasksTable() {
   lucide.createIcons();
 }
 
-function updateTaskInline(idx, key, val) {
-  tasks[idx][key] = val;
-  if (key === 'status') {
-    tasks[idx].progress = val === 'Tamamlandı' ? 100 : 60;
+function toggleSubtaskRow(idx) {
+  expandedTasks[idx] = !expandedTasks[idx];
+  renderTasksTable();
+}
+
+function addDetailedSubtask(taskIdx) {
+  const nameInput = document.getElementById(`stName-${taskIdx}`);
+  const personSelect = document.getElementById(`stPerson-${taskIdx}`);
+  const deadlineInput = document.getElementById(`stDeadline-${taskIdx}`);
+  const linkInput = document.getElementById(`stLink-${taskIdx}`);
+  const sendMailCheck = document.getElementById(`stSendMail-${taskIdx}`);
+
+  const name = nameInput.value.trim();
+  if (!name) return alert("Lütfen görev açıklamasını girin.");
+
+  const personId = personSelect.value;
+  const deadline = deadlineInput.value;
+  const link = linkInput.value.trim();
+
+  const newSubtask = {
+    id: "st-" + Date.now(),
+    name: name,
+    assignedPersonId: personId,
+    deadline: deadline,
+    status: "Planlandı",
+    link: link,
+    createdBy: currentUser ? currentUser.name : "Sistem Yöneticisi"
+  };
+
+  if (!tasks[taskIdx].subtasks) tasks[taskIdx].subtasks = [];
+  tasks[taskIdx].subtasks.push(newSubtask);
+
+  recalculateTaskProgress(tasks[taskIdx]);
+  localStorage.setItem('demigproject_tasks_v6', JSON.stringify(tasks));
+
+  // E-Posta Bildirimi Gönderme
+  if (sendMailCheck.checked && personId) {
+    const assignedPerson = registeredPeople.find(p => p.id === personId);
+    sendEmailNotification(assignedPerson, name, deadline, newSubtask.createdBy);
   }
-  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
+
+  expandedTasks[taskIdx] = true;
+  renderAll();
+}
+
+function updateSubtaskStatus(taskIdx, subIdx, newStatus) {
+  tasks[taskIdx].subtasks[subIdx].status = newStatus;
+  recalculateTaskProgress(tasks[taskIdx]);
+  localStorage.setItem('demigproject_tasks_v6', JSON.stringify(tasks));
+  renderAll();
+}
+
+function deleteSubtask(taskIdx, subIdx) {
+  tasks[taskIdx].subtasks.splice(subIdx, 1);
+  recalculateTaskProgress(tasks[taskIdx]);
+  localStorage.setItem('demigproject_tasks_v6', JSON.stringify(tasks));
   renderAll();
 }
 
@@ -797,6 +1001,7 @@ function renderPeople() {
   const pureGrid = document.getElementById('pureTeamGrid');
   seniorContainer.innerHTML = '';
   pureGrid.innerHTML = '';
+
   registeredPeople.filter(p => !p.isPure).forEach(p => {
     const card = document.createElement('div');
     card.className = "glass p-4 rounded-2xl border border-slate-800 space-y-2";
@@ -811,6 +1016,7 @@ function renderPeople() {
     `;
     seniorContainer.appendChild(card);
   });
+
   registeredPeople.filter(p => p.isPure).forEach(p => {
     const item = document.createElement('div');
     item.className = "bg-slate-900/80 p-3 rounded-xl border border-slate-800 hover:border-indigo-500/40 transition";
@@ -830,19 +1036,29 @@ function togglePureList() {
 function renderDashboardSummary() {
   const tbody = document.getElementById('dashboardSummaryBody');
   tbody.innerHTML = '';
+
   tasks.forEach(t => {
     const tr = document.createElement('tr');
     tr.className = t.status === 'Tamamlandı' ? "bg-emerald-950/20 font-bold text-slate-100" : "text-slate-300";
+    
+    const subCount = t.subtasks ? t.subtasks.length : 0;
+    const doneSubCount = t.subtasks ? t.subtasks.filter(s => s.status === 'Tamamlandı').length : 0;
+    const todoSummaryText = subCount > 0 ? `${doneSubCount}/${subCount} Alt Görev Tamamlandı` : 'Alt Görev Yok';
+
     tr.innerHTML = `
       <td class="p-3 border-b border-slate-800/60">${t.name}</td>
-      <td class="p-3 border-b border-slate-800/60"><span class="px-2 py-0.5 rounded text-[11px] ${t.status === 'Tamamlandı' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}">${t.status}</span></td>
-      <td class="p-3 border-b border-slate-800/60 font-mono text-indigo-400">${t.progress}%</td>
+      <td class="p-3 border-b border-slate-800/60">
+        <span class="px-2 py-0.5 rounded text-[11px] ${t.status === 'Tamamlandı' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}">${t.status}</span>
+      </td>
+      <td class="p-3 border-b border-slate-800/60 font-mono text-indigo-400">%${t.progress}</td>
+      <td class="p-3 border-b border-slate-800/60 text-xs font-mono text-indigo-300">${todoSummaryText}</td>
       <td class="p-3 border-b border-slate-800/60 text-xs">${t.notes}</td>
     `;
     tbody.appendChild(tr);
   });
 }
 
+// AI EXECUTIVE REPORT GENERATOR WITH DETAILED SUBTASKS & DEADLINES
 function generateAIExecutiveReport() {
   const startDate = document.getElementById('reportStartDate').value || '2025-11-01';
   const endDate = document.getElementById('reportEndDate').value || '2026-08-31';
@@ -857,53 +1073,54 @@ function generateAIExecutiveReport() {
 
   const container = document.getElementById('aiReportContainer');
 
-  let timelineRowsHTML = filteredTasks.map(t => {
-    const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1;
-    const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
-    const periodStr = `${monthNames[sIdx]} - ${monthNames[eIdx]}`;
-    return `
-      <tr class="border-b border-slate-800/60">
-        <td class="p-2 font-bold text-white">${t.id} - ${t.name}</td>
-        <td class="p-2 text-center text-amber-300 font-semibold">${periodStr}</td>
-        <td class="p-2 text-center font-bold ${t.status === 'Tamamlandı' ? 'text-emerald-400' : 'text-indigo-400'}">%${t.progress} (${t.status})</td>
-      </tr>
-    `;
-  }).join('');
+  let timelineRowsHTML = filteredTasks.map(t => `
+    <tr class="border-b border-slate-800/60">
+      <td class="p-2 font-bold text-white">${t.id} - ${t.name}</td>
+      <td class="p-2 text-center text-amber-300 font-semibold">${t.startDate} - ${t.endDate}</td>
+      <td class="p-2 text-center font-bold ${t.status === 'Tamamlandı' ? 'text-emerald-400' : 'text-indigo-400'}">%${t.progress} (${t.status})</td>
+    </tr>
+  `).join('');
 
-  let collaborationHTML = filteredTasks.map(t => {
-    const teamMembers = t.taggedIds.map(id => {
-      const p = registeredPeople.find(x => x.id === id);
-      return p ? `<span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 text-[10px] font-semibold">@${p.name} (${p.role})</span>` : '';
-    }).filter(Boolean).join(' ');
-
-    ensureWeeklyTodos(t);
-    const weeklyRowsHTML = t.weeklyTodos.map(w => `
-      <div class="flex items-center space-x-2 text-[11px] text-slate-300 py-0.5">
-        <span class="${w.done ? 'text-emerald-400' : 'text-slate-500'}">${w.done ? '✓' : '☐'}</span>
-        <span class="text-[10px] font-bold text-amber-300 shrink-0">${w.week ? w.week : 'Hafta -'}</span>
-        <span class="${w.done ? 'line-through text-slate-500' : ''}">${w.text}</span>
-      </div>
-    `).join('');
+  let subtaskReportHTML = filteredTasks.map(t => {
+    const subtasks = t.subtasks || [];
+    const rows = subtasks.map(s => {
+      const assigned = registeredPeople.find(p => p.id === s.assignedPersonId);
+      return `
+        <tr class="border-b border-slate-800/40">
+          <td class="p-2 text-slate-200">${s.name}</td>
+          <td class="p-2 text-indigo-300">@${assigned ? assigned.name : 'Atanmadı'} (${assigned ? assigned.email : '-'})</td>
+          <td class="p-2 text-amber-300 font-mono">${s.deadline || '-'}</td>
+          <td class="p-2 font-bold ${s.status === 'Tamamlandı' ? 'text-emerald-400' : 'text-indigo-400'}">${s.status}</td>
+          <td class="p-2">${s.link ? `<a href="${s.link}" target="_blank" class="text-indigo-400 underline">Bağlantı</a>` : '-'}</td>
+        </tr>
+      `;
+    }).join('');
 
     return `
       <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
           <h5 class="text-xs font-bold text-white flex items-center space-x-2">
             <span class="px-2 py-0.5 bg-indigo-600/30 text-indigo-400 rounded">${t.id}</span>
             <span>${t.name}</span>
           </h5>
           <span class="text-[10px] font-mono text-emerald-400 font-bold">%${t.progress} Tamamlandı</span>
         </div>
-        <div class="text-[11px] text-slate-300">
-          <strong class="text-slate-200">Birlikte Çalışan Ekip Üyeleri:</strong>
-          <div class="flex flex-wrap gap-1 mt-1">${teamMembers || '<span class="text-slate-500">Özel ekip etiketlenmemiş</span>'}</div>
-        </div>
-        <div class="text-[11px] text-slate-300 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60">
-          <strong class="text-amber-300">Yapılan İşler & Kilit Çıktılar:</strong> ${t.notes}
-        </div>
-        <div class="text-[11px] text-slate-300 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60">
-          <strong class="text-indigo-300">Haftalık To-Do Takibi:</strong>
-          <div class="mt-1 space-y-0.5">${weeklyRowsHTML || '<span class="text-slate-500 italic">Bu görev için haftalık to-do eklenmemiş.</span>'}</div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-[11px] text-slate-300">
+            <thead class="bg-slate-950 text-slate-400 uppercase text-[9px]">
+              <tr>
+                <th class="p-1.5">Haftalık Alt Görev</th>
+                <th class="p-1.5">Atanan Personel</th>
+                <th class="p-1.5">Deadline</th>
+                <th class="p-1.5">Durum</th>
+                <th class="p-1.5">Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows || '<tr><td colspan="5" class="p-2 text-slate-500 italic">Alt görev atanmadı.</td></tr>'}
+            </tbody>
+          </table>
         </div>
       </div>
     `;
@@ -912,15 +1129,16 @@ function generateAIExecutiveReport() {
   container.innerHTML = `
     <div class="border-b border-slate-800 pb-4">
       <h2 class="text-xl font-bold text-white mb-1">SABANCI ÜNİVERSİTESİ | DEMIG ARAŞTIRMA GRUBU</h2>
-      <h3 class="text-sm font-semibold text-indigo-400">Yapay Zekâ Özel Çalışma & Ekip İşbirliği Raporu</h3>
+      <h3 class="text-sm font-semibold text-indigo-400">Yapay Zekâ Haftalık Alt Görev & Çalışma Raporu</h3>
       <div class="text-[11px] text-slate-400 mt-2 flex justify-between">
         <span><strong>Raporu Üreten:</strong> ${currentUser ? currentUser.name : 'Sistem Yöneticisi'}</span>
         <span><strong>Filtrelenen Dönem:</strong> ${startDate} - ${endDate}</span>
       </div>
     </div>
+
     <div class="space-y-3">
-      <h4 class="text-xs font-bold text-white uppercase tracking-wider border-l-4 border-indigo-500 pl-2 flex items-center space-x-2">
-        <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i><span>1. Görev Timeline & Zaman Akışı Dökümü</span>
+      <h4 class="text-xs font-bold text-white uppercase tracking-wider border-l-4 border-indigo-500 pl-2">
+        1. Ana Görevler İlerleme Dökümü
       </h4>
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs text-slate-300 border border-slate-800 rounded-xl overflow-hidden">
@@ -931,19 +1149,20 @@ function generateAIExecutiveReport() {
               <th class="p-2 text-center border-b border-slate-800">İlerleme / Durum</th>
             </tr>
           </thead>
-          <tbody>${timelineRowsHTML || '<tr><td colspan="3" class="p-4 text-center text-slate-500">Seçilen filtrelere uygun görev bulunamadı.</td></tr>'}</tbody>
+          <tbody>
+            ${timelineRowsHTML || '<tr><td colspan="3" class="p-4 text-center text-slate-500">Seçilen filtrelere uygun görev bulunamadı.</td></tr>'}
+          </tbody>
         </table>
       </div>
     </div>
+
     <div class="space-y-3">
-      <h4 class="text-xs font-bold text-white uppercase tracking-wider border-l-4 border-emerald-500 pl-2 flex items-center space-x-2">
-        <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i><span>2. Ekip İşbirliği, Yapılan İşler ve Haftalık To-Do Takibi (${filteredTasks.length} Görev)</span>
+      <h4 class="text-xs font-bold text-white uppercase tracking-wider border-l-4 border-emerald-500 pl-2">
+        2. Haftalık Alt Görevler, Atanan Kişiler ve Deadline Takibi
       </h4>
-      <div class="space-y-3">${collaborationHTML || '<p class="text-slate-500">Seçilen kriterlerde görev işbirliği verisi yok.</p>'}</div>
-    </div>
-    <div class="pt-4 border-t border-slate-800 flex justify-between text-[11px] text-slate-400">
-      <span>Proje Yürütücüsü: M. Tahir Kılavuz</span>
-      <span>demigproject Gelişmiş Filtreli AI Raporu</span>
+      <div class="space-y-3">
+        ${subtaskReportHTML || '<p class="text-slate-500">Seçilen kriterlerde görev bulunamadı.</p>'}
+      </div>
     </div>
   `;
 
@@ -966,6 +1185,7 @@ function switchTab(tab) {
 
 function populateModalAssignees() {
   const container = document.getElementById('assigneesCheckboxes');
+  if (!container) return;
   container.innerHTML = '';
   registeredPeople.forEach(p => {
     const label = document.createElement('label');
@@ -994,6 +1214,7 @@ function saveTask(e) {
   e.preventDefault();
   const id = document.getElementById('taskId').value || ('DEMIG-' + String(tasks.length + 1));
   const selectedTagged = Array.from(document.querySelectorAll('.task-person-checkbox:checked')).map(cb => cb.value);
+
   const newTask = {
     id: id,
     module: document.getElementById('taskModule').value,
@@ -1005,16 +1226,18 @@ function saveTask(e) {
     progress: parseInt(document.getElementById('taskProgress').value) || 0,
     link: document.getElementById('taskLink').value,
     notes: document.getElementById('taskNotes').value,
-    weeklyTodos: []
+    subtasks: []
   };
+
   const idx = tasks.findIndex(t => t.id === id);
   if (idx >= 0) {
-    newTask.weeklyTodos = tasks[idx].weeklyTodos || [];
+    newTask.subtasks = tasks[idx].subtasks || [];
     tasks[idx] = newTask;
   } else {
     tasks.push(newTask);
   }
-  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
+
+  localStorage.setItem('demigproject_tasks_v6', JSON.stringify(tasks));
   closeTaskModal();
   renderAll();
 }
@@ -1031,9 +1254,11 @@ function editTask(id) {
   document.getElementById('taskProgress').value = t.progress;
   document.getElementById('taskLink').value = t.link || '';
   document.getElementById('taskNotes').value = t.notes;
+
   document.querySelectorAll('.task-person-checkbox').forEach(cb => {
     cb.checked = t.taggedIds.includes(cb.value);
   });
+
   document.getElementById('modalTaskTitle').innerText = 'Görev Düzenle (' + t.id + ')';
   document.getElementById('taskModal').classList.remove('hidden');
 }
