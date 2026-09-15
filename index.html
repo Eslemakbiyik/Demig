@@ -258,6 +258,1400 @@
           <h2 class="text-lg font-bold text-white flex items-center space-x-2">
             <i data-lucide="users" class="w-5 h-5 text-indigo-400"></i><span>Proje Ekibi ve Rol Tanımları</span>
           </h2>
+          <p class="text-xs text-slate-400 mt-1">Tüm kayıtlı araştırmacılar, danışmanlar ve 12 kişilik Sabancı PURE etiketleme ekibi. E-posta alanına tıklayıp kişinin gerçekte kullandığı adresi girebilirsiniz — haftalık görev ve hatırlatma mailleri buraya gider.</p>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="seniorTeamContainer"></div>
+      <div class="glass p-6 rounded-2xl border border-indigo-500/30 shadow-xl">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center space-x-2">
+              <span class="px-2.5 py-1 bg-indigo-500/20 text-indigo-300 rounded-lg text-xs border border-indigo-500/30">12 Üyeli Ekip</span>
+              <span>PURE & Galata Öğrenci Anotatör Ekibi</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">3 Aşama Etiketleme ve Hakemleme (Dual Annotation & Adjudication) Sorumluları</p>
+          </div>
+          <button onclick="togglePureList()" id="togglePureBtn" class="text-xs text-indigo-400 hover:text-white flex items-center space-x-1 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+            <span>Listeyi Daralt/Genişlet</span><i data-lucide="chevron-down" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <div id="pureTeamGrid" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+      </div>
+    </section>
+
+    <section id="view-dashboard" class="hidden space-y-6">
+      <div class="glass p-6 rounded-2xl shadow-xl space-y-6 border border-slate-800">
+        <div class="space-y-4 pb-4 border-b border-slate-800">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+              <i data-lucide="sparkles" class="w-5 h-5 text-indigo-400"></i><span>Proje Özeti & AI Raporlayıcı</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">İstediğiniz tarih aralığı, belirli görev veya ekip filtrelerini uygulayarak Timeline, İşbirliği ve Haftalık To-Do detaylarını içeren akıllı AI raporu üretin.</p>
+          </div>
+          <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Başlangıç Tarihi</label>
+              <input type="date" id="reportStartDate" value="2025-11-01" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Bitiş Tarihi (Rapor Kesim)</label>
+              <input type="date" id="reportEndDate" value="2026-08-31" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">Görev / Aşama Filtresi</label>
+              <select id="reportTaskFilter" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
+                <option value="ALL">Tüm Görevler ve Aşamalar</option>
+              </select>
+            </div>
+            <div>
+              <button onclick="generateAIExecutiveReport()" class="w-full py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-xs rounded-lg shadow-lg flex items-center justify-center space-x-2 transition">
+                <i data-lucide="file-text" class="w-4 h-4"></i><span>Filtreli AI Raporu Üret</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300 border border-slate-800 rounded-xl overflow-hidden">
+            <thead class="bg-slate-900 text-slate-400 uppercase tracking-wider">
+              <tr>
+                <th class="p-3 border-b border-slate-800">Çalışma Paketi / Aşama</th>
+                <th class="p-3 border-b border-slate-800">Rapor Statüsü</th>
+                <th class="p-3 border-b border-slate-800">Gantt İlerleme (%)</th>
+                <th class="p-3 border-b border-slate-800">Kilit Çıktılar & Notlar</th>
+              </tr>
+            </thead>
+            <tbody id="dashboardSummaryBody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="aiReportModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+  <div class="glass p-8 rounded-2xl w-full max-w-4xl border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto space-y-6 text-slate-100">
+    <div class="flex items-center justify-between pb-4 border-b border-slate-800 no-print">
+      <div class="flex items-center space-x-3">
+        <div class="p-2 bg-indigo-600/30 text-indigo-400 rounded-lg"><i data-lucide="file-check" class="w-6 h-6"></i></div>
+        <div>
+          <h3 class="text-base font-bold text-white">AI Özel Yönetici & Çalışma Raporu</h3>
+          <p class="text-xs text-slate-400" id="reportCutoffLabel">Filtrelenmiş Rapor Çıktısı</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-3">
+        <button onclick="window.print()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 border border-slate-700">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i><span>Yazdır / PDF İndir</span>
+        </button>
+        <button onclick="closeAIReportModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+      </div>
+    </div>
+    <div id="aiReportContainer" class="space-y-6 bg-slate-950/80 p-6 rounded-xl border border-slate-800 text-xs leading-relaxed"></div>
+  </div>
+</div>
+
+<div id="taskModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+  <div class="glass p-6 rounded-2xl w-full max-w-2xl border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+      <h3 id="modalTaskTitle" class="text-lg font-bold text-white">Görev Ekle / Düzenle</h3>
+      <button onclick="closeTaskModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <form id="taskForm" onsubmit="saveTask(event)" class="space-y-4">
+      <input type="hidden" id="taskId">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Aşama / Paketi</label>
+          <input type="text" id="taskModule" required placeholder="Örn: Stage 1: Constructing Dataset" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Görev Adı</label>
+          <input type="text" id="taskName" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Sorumlu Kişiler (Sistemdeki Üyeleri Seçin)</label>
+        <div id="assigneesCheckboxes" class="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-900 p-3 rounded-lg border border-slate-800 max-h-36 overflow-y-auto text-xs"></div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Başlangıç Tarihi</label>
+          <input type="date" id="taskStart" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Bitiş Tarihi</label>
+          <input type="date" id="taskEnd" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Durum</label>
+          <select id="taskStatus" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+            <option value="Tamamlandı">Tamamlandı</option>
+            <option value="Devam Ediyor">Devam Ediyor</option>
+            <option value="Planlandı">Planlandı</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">İlerleme Yüzdesi (%)</label>
+          <input type="number" id="taskProgress" min="0" max="100" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Dosya / Bağlantı Linki (URL)</label>
+          <input type="url" id="taskLink" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Açıklama ve Güncelleme Notları</label>
+        <textarea id="taskNotes" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"></textarea>
+      </div>
+      <div class="flex justify-end space-x-3 pt-4 border-t border-slate-800">
+        <button type="button" onclick="closeTaskModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg">İptal</button>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg">Kaydet</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="weeklyTodoModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+  <div class="glass p-6 rounded-2xl w-full max-w-lg border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+      <h3 id="weeklyTodoModalTitle" class="text-sm font-bold text-white">Haftalık Görev Ekle</h3>
+      <button onclick="closeWeeklyTodoModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <form id="weeklyTodoForm" onsubmit="saveWeeklyTodo(event)" class="space-y-4">
+      <input type="hidden" id="weeklyTodoId">
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Sorumlu Kişi</label>
+        <select id="weeklyTodoAssignee" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"></select>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Başlangıç Tarihi</label>
+          <input type="date" id="weeklyTodoStart" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Bitiş Tarihi</label>
+          <input type="date" id="weeklyTodoEnd" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Öncelik</label>
+          <select id="weeklyTodoPriority" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+            <option value="Yüksek">Yüksek</option>
+            <option value="Orta" selected>Orta</option>
+            <option value="Düşük">Düşük</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Durum</label>
+          <select id="weeklyTodoStatus" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+            <option value="Başlamadı" selected>Başlamadı</option>
+            <option value="Devam Ediyor">Devam Ediyor</option>
+            <option value="Tamamlandı">Tamamlandı</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Dosya / Bağlantı Linki (URL)</label>
+        <input type="url" id="weeklyTodoLink" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Açıklama (Bu hafta ne yapılacak?)</label>
+        <textarea id="weeklyTodoText" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"></textarea>
+      </div>
+      <div class="flex justify-end space-x-3 pt-4 border-t border-slate-800">
+        <button type="button" onclick="closeWeeklyTodoModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg">İptal</button>
+        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg">Kaydet</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+let seedPeople = [
+  { id: "p1", name: "M. Tahir Kılavuz", role: "Principal Investigator (PI)", email: "tahir.kilavuz@sabanciuniv.edu", isPure: false },
+  { id: "p2", name: "Fatma Eslem Akbıyık", role: "Research Partner & Coordinator", email: "eslemakbiyik@galataanket.com", isPure: false },
+  { id: "p3", name: "Ahmet Utku Akbıyık", role: "Senior Researcher", email: "ahmet.akbiyik@galataanket.com", isPure: false },
+  { id: "p4", name: "Selim Yaman", role: "Senior Researcher", email: "selimyaman26@gmail.com", isPure: false },
+  { id: "p5", name: "Betül Sena Köktaş", role: "Researcher & Methodologist", email: "zsenaa0@gmail.com", isPure: false },
+  { id: "p6", name: "Ayşenur Çukur", role: "Researcher & Trainer", email: "aysenur1501@gmail.com", isPure: false },
+  { id: "p7", name: "Mehmet Akif Ezerbolatoğlu", role: "Researcher & Adjudicator", email: "makifezer@gmail.com", isPure: false },
+  { id: "p8", name: "Helin Yaren Ekmen", role: "Researcher", email: "helinyarenekmen@gmail.com", isPure: false },
+  { id: "p9", name: "Zeynep Uzunboy", role: "Researcher & Adjudicator", email: "zeynep.uzunboy@sabanciuniv.edu", isPure: false },
+  { id: "p10", name: "Eyüp Kun", role: "Legal Counsel", email: "eyup.kun@legal.com", isPure: false },
+  { id: "p11", name: "Abdüllatif Köksal", role: "CS & AI Consultant", email: "koksal@cs.tu-darmstadt.de", isPure: false },
+  { id: "p12", name: "Arif Yasin Kavdır", role: "Developer (Qrateria)", email: "arif@qrateria.com", isPure: false },
+  { id: "u1", name: "Kayla Ada Deveci", role: "PURE Intern", dept: "Sabancı Univ. - Political Sci.", email: "ada.deveci@sabanciuniv.edu", isPure: true },
+  { id: "u2", name: "Tasnim Jahan Haque Nahia", role: "PURE Intern", dept: "Sabancı Univ. - Political Sci.", email: "tasnim.nahia@sabanciuniv.edu", isPure: true },
+  { id: "u3", name: "İbrahim Peker", role: "PURE Intern", dept: "Sabancı Univ. - Econ & PolSci", email: "ibrahim.peker@sabanciuniv.edu", isPure: true },
+  { id: "u4", name: "Zeynep Norman", role: "PURE Intern", dept: "Sabancı Univ. - Econ & PolSci", email: "zeynep.norman@sabanciuniv.edu", isPure: true },
+  { id: "u5", name: "Burak Çizmecioğlu", role: "PURE Intern", dept: "Sabancı Univ. - Political Sci.", email: "burak.cizmecioglu@sabanciuniv.edu", isPure: true },
+  { id: "u6", name: "Kerem Zeybek", role: "PURE Intern", dept: "Sabancı Univ. - Data Science", email: "kerem.zeybek@sabanciuniv.edu", isPure: true },
+  { id: "u7", name: "Sabancı Student 7", role: "PURE Intern", dept: "Sabancı Univ. - FASS", email: "student7@sabanciuniv.edu", isPure: true },
+  { id: "u8", name: "Sabancı Student 8", role: "PURE Intern", dept: "Sabancı Univ. - FASS", email: "student8@sabanciuniv.edu", isPure: true },
+  { id: "u9", name: "Elif Öykü Lal Mutlu", role: "Galata Research Intern", dept: "Istanbul Univ. - PolSci", email: "elifoykulal@gmail.com", isPure: true },
+  { id: "u10", name: "Betül Feyza Çoker", role: "Galata Research Intern", dept: "YTÜ - Statistics & Math", email: "betulfeyzacoker@gmail.com", isPure: true },
+  { id: "u11", name: "Sena Yağmur Gökdal", role: "Galata Research Intern", dept: "YTÜ - Statistics", email: "senayagmurgookdal@gmail.com", isPure: true },
+  { id: "u12", name: "Boğaziçi Student", role: "Project Assistant", dept: "Boğaziçi Univ.", email: "assistant@boun.edu.tr", isPure: true }
+];
+
+// Çalışma zamanı listesi: localStorage'da düzenlenmiş kayıt varsa onu kullan, yoksa seed listeye düş
+let registeredPeople = JSON.parse(localStorage.getItem('demigproject_people_v5')) || JSON.parse(JSON.stringify(seedPeople));
+
+function savePeople() {
+  localStorage.setItem('demigproject_people_v5', JSON.stringify(registeredPeople));
+}
+
+function updatePersonEmail(id, newEmail) {
+  const p = registeredPeople.find(x => x.id === id);
+  if (!p) return;
+  p.email = newEmail.trim();
+  savePeople();
+  renderAll();
+}
+
+let initialTasks = [
+  { id: "DEMIG-1.1", module: "1. Constructing Dataset", name: "1.1 Collecting Survey Questionnaires", taggedIds: ["p2", "p5", "p7"], startDate: "2025-11-01", endDate: "2026-03-31", startMonthIdx: 1, endMonthIdx: 5, status: "Tamamlandı", progress: 100, link: "https://qrateria.com/orgs/demig", notes: "356 kaynak, 35.000+ anket sorusu toplandı. %100 tamamlandı." },
+  { id: "DEMIG-1.2", module: "1. Constructing Dataset", name: "1.2 Parsing & Scraping Questions", taggedIds: ["p4", "p8"], startDate: "2025-11-15", endDate: "2026-04-15", startMonthIdx: 1, endMonthIdx: 6, status: "Tamamlandı", progress: 100, link: "https://qrateria.com/orgs/demig", notes: "Ayrıştırma ve scraping işlemleri tamamlandı (%100)." },
+  { id: "DEMIG-1.4", module: "1. Constructing Dataset", name: "1.4 Labeling Questions by Subject", taggedIds: ["p4", "p8"], startDate: "2025-12-01", endDate: "2026-04-30", startMonthIdx: 2, endMonthIdx: 6, status: "Tamamlandı", progress: 90, link: "https://qrateria.com/orgs/demig", notes: "25 ana kategori ve 109 alt kategoriye sınıflandırıldı (%90 tamamlandı)." },
+  { id: "DEMIG-2.1", module: "2. Human Annotation", name: "2.1 Experts Survey (Qualtrics)", taggedIds: ["p1", "p2", "p3", "p6", "p7"], startDate: "2026-03-01", endDate: "2026-05-31", startMonthIdx: 5, endMonthIdx: 7, status: "Tamamlandı", progress: 100, link: "https://sabanciuniv.qualtrics.com", notes: "2.000+ uzmana ulaşıldı, 250 uzmandan yanıt alındı (%100 tamamlandı)." },
+  { id: "DEMIG-2.4", module: "2. Human Annotation", name: "2.4 PURE 3-Stage Annotation", taggedIds: ["p1", "p2", "u1", "u2", "u3", "u4", "u5", "u6"], startDate: "2026-02-01", endDate: "2026-08-31", startMonthIdx: 4, endMonthIdx: 10, status: "Devam Ediyor", progress: 85, link: "https://qrateria.com/orgs/demig", notes: "12 kişilik anotatör ekibi eğitildi. 1.800 soruda 3 aşamalı etiketleme sürüyor (%85)." },
+  { id: "DEMIG-4.1", module: "4. Reward Model", name: "4.1 Reward Model Training", taggedIds: ["p4", "p8", "p11"], startDate: "2026-04-01", endDate: "2026-09-30", startMonthIdx: 6, endMonthIdx: 11, status: "Devam Ediyor", progress: 60, link: "", notes: "Llama-3.2-3b (%37.5 MAE gelişimi) ve Phi-3.5-mini testleri yapıldı (%60)." },
+  { id: "DEMIG-AI-6", module: "6. AI Survey Research", name: "6. Synthetic Agents Conjoint", taggedIds: ["p1", "p5"], startDate: "2026-01-01", endDate: "2026-08-15", startMonthIdx: 3, endMonthIdx: 10, status: "Devam Ediyor", progress: 90, notes: "LLM role-based çerçevesi sunuldu, Türkiye, Cezayir ve Endonezya deneyleri %90 tamam." },
+  { id: "DEMIG-TGSS-7", module: "7. TGSS Research", name: "7. TGSS Immigrants Attitudes Report", taggedIds: ["p1", "p2", "p3"], startDate: "2026-02-01", endDate: "2026-07-31", startMonthIdx: 4, endMonthIdx: 9, status: "Tamamlandı", progress: 100, notes: "Rapor taslağı hazırlandı, Sonbahar 2026'da yayınlanacak (%100 tamam)." }
+];
+
+// =====================================================================
+// EMAILJS AYARLARI — Bu 3 değeri kendi ücretsiz EmailJS hesabınızdan alıp
+// buraya yapıştırın. Detaylı kurulum adımları için sohbetteki talimatlara
+// bakın. Değerler girilmeden e-posta gönderimi devre dışı kalır.
+// =====================================================================
+const EMAILJS_SERVICE_ID = "service_eyr13dv";
+const EMAILJS_TEMPLATE_ID = "template_v1jq6bn";
+const EMAILJS_PUBLIC_KEY = "Ub7uu7-GaHrGxcBsu";
+
+let emailjsReady = false;
+if (window.emailjs && !EMAILJS_PUBLIC_KEY.includes("YOUR_")) {
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+  emailjsReady = true;
+}
+
+let tasks = JSON.parse(localStorage.getItem('demigproject_tasks_v5')) || initialTasks;
+let currentUser = JSON.parse(localStorage.getItem('demigproject_user')) || null;
+let progressChartObj = null;
+let expandedTasks = {};
+let expandedGantt = {};
+let currentWeeklyTodoTaskIdx = null;
+
+const monthNames = ["Ekim '25", "Kasım '25", "Aralık '25", "Ocak '26", "Şubat '26", "Mart '26", "Nisan '26", "Mayıs '26", "Haziran '26", "Temmuz '26", "Ağustos '26", "Eylül '26"];
+
+document.addEventListener("DOMContentLoaded", () => {
+  lucide.createIcons();
+  populateTaskFilterOptions();
+  if (currentUser) {
+    document.getElementById('authModal').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    updateUserBadge();
+    renderAll();
+  }
+});
+
+function handleLogin(e) {
+  e.preventDefault();
+  currentUser = { name: document.getElementById('userName').value, email: document.getElementById('userEmail').value, dept: document.getElementById('userDept').value };
+  localStorage.setItem('demigproject_user', JSON.stringify(currentUser));
+  document.getElementById('authModal').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  updateUserBadge();
+  renderAll();
+}
+
+function logout() {
+  localStorage.removeItem('demigproject_user');
+  location.reload();
+}
+
+function updateUserBadge() {
+  if (!currentUser) return;
+  document.getElementById('currentUserDisplay').innerText = currentUser.name;
+  document.getElementById('currentEmailDisplay').innerText = currentUser.dept;
+}
+
+function populateTaskFilterOptions() {
+  const select = document.getElementById('reportTaskFilter');
+  if (!select) return;
+  select.innerHTML = '<option value="ALL">Tüm Görevler ve Aşamalar</option>';
+  tasks.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.innerText = `${t.id} - ${t.name}`;
+    select.appendChild(opt);
+  });
+}
+
+function renderAll() {
+  renderDiagrams();
+  renderExcelGanttMatrix();
+  renderWeeklyOverviewTable();
+  renderRoadmap();
+  renderTasksTable();
+  renderPeople();
+  renderDashboardSummary();
+  populateModalAssignees();
+  populateTaskFilterOptions();
+  populateSidebarPersonFilter();
+  renderSidebarTodos();
+  lucide.createIcons();
+}
+
+function renderDiagrams() {
+  const avgPct = Math.round(tasks.reduce((acc, curr) => acc + curr.progress, 0) / tasks.length);
+  document.getElementById('overallDiagramPct').innerText = '%' + avgPct;
+
+  const ctxProg = document.getElementById('progressChart').getContext('2d');
+  if (progressChartObj) progressChartObj.destroy();
+  progressChartObj = new Chart(ctxProg, {
+    type: 'bar',
+    data: { labels: tasks.map(t => t.id), datasets: [{ label: 'İlerleme (%)', data: tasks.map(t => t.progress), backgroundColor: tasks.map(t => t.status === 'Tamamlandı' ? '#10b981' : '#6366f1'), borderRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }, x: { ticks: { color: '#94a3b8' }, grid: { display: false } } }, plugins: { legend: { display: false } } }
+  });
+}
+
+// ============ HAFTALIK TO-DO SİSTEMİ ============
+
+function priorityWeight(p) {
+  if (p === 'Yüksek') return 3;
+  if (p === 'Orta') return 2;
+  return 1;
+}
+
+function priorityBadgeClass(p) {
+  if (p === 'Yüksek') return 'bg-red-500/20 text-red-300 border-red-500/30';
+  if (p === 'Orta') return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+  return 'bg-slate-600/30 text-slate-300 border-slate-600/40';
+}
+
+function statusBadgeClass(s) {
+  if (s === 'Tamamlandı') return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+  if (s === 'Devam Ediyor') return 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
+  return 'bg-slate-600/30 text-slate-400 border-slate-600/40';
+}
+
+function migrateWeeklyTodoItem(w) {
+  if (w.priority === undefined && w.text !== undefined) {
+    return {
+      id: w.id || ('w' + Math.random().toString(36).slice(2)),
+      assigneeId: w.assigneeId || '',
+      startDate: w.startDate || w.week || '',
+      endDate: w.endDate || '',
+      priority: 'Orta',
+      status: w.done ? 'Tamamlandı' : 'Başlamadı',
+      link: w.link || '',
+      text: w.text || ''
+    };
+  }
+  if (!w.id) w.id = 'w' + Math.random().toString(36).slice(2);
+  if (w.status === undefined) w.status = w.done ? 'Tamamlandı' : 'Başlamadı';
+  if (w.priority === undefined) w.priority = 'Orta';
+  if (w.assigneeId === undefined) w.assigneeId = '';
+  if (w.link === undefined) w.link = '';
+  return w;
+}
+
+function ensureWeeklyTodos(t) {
+  if (!t.weeklyTodos) t.weeklyTodos = [];
+  t.weeklyTodos = t.weeklyTodos.map(migrateWeeklyTodoItem);
+}
+
+function sortWeeklyTodos(t) {
+  t.weeklyTodos.sort((a, b) => priorityWeight(b.priority) - priorityWeight(a.priority));
+}
+
+function weeklyTodoListHTML(t, taskIdx) {
+  ensureWeeklyTodos(t);
+  sortWeeklyTodos(t);
+  const doneCount = t.weeklyTodos.filter(w => w.status === 'Tamamlandı').length;
+
+  const items = t.weeklyTodos.map((w) => {
+    const p = registeredPeople.find(x => x.id === w.assigneeId);
+    const personLabel = p ? '@' + p.name : '<span class="text-slate-500">Atanmadı</span>';
+    const dateLabel = (w.startDate || w.endDate) ? `${w.startDate || '?'} → ${w.endDate || '?'}` : '';
+    return `
+      <div class="bg-slate-900/70 px-3 py-2 rounded-lg border border-slate-800 space-y-1.5">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border ${priorityBadgeClass(w.priority)}">${w.priority}</span>
+            <span class="text-[11px] font-semibold text-indigo-300">${personLabel}</span>
+            ${dateLabel ? `<span class="text-[10px] text-slate-400 font-mono">${dateLabel}</span>` : ''}
+            ${w.link ? `<a href="${w.link}" target="_blank" class="text-slate-400 hover:text-indigo-400"><i data-lucide="link" class="w-3 h-3"></i></a>` : ''}
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <button onclick="sendReminderEmail(${taskIdx}, '${w.id}')" class="text-slate-500 hover:text-amber-400" title="Hatırlatma Gönder"><i data-lucide="bell" class="w-3.5 h-3.5"></i></button>
+            <button onclick="openWeeklyTodoModal(${taskIdx}, '${w.id}')" class="text-slate-500 hover:text-white" title="Düzenle"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+            <button onclick="deleteWeeklyTodo(${taskIdx}, '${w.id}')" class="text-slate-500 hover:text-red-400" title="Sil"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+          </div>
+        </div>
+        <div class="text-xs text-slate-200">${w.text || '<span class="text-slate-500 italic">Açıklama girilmedi</span>'}</div>
+        <select onchange="updateWeeklyTodoStatus(${taskIdx}, '${w.id}', this.value)" class="text-[10px] font-semibold rounded border px-2 py-0.5 bg-slate-900 ${statusBadgeClass(w.status)}">
+          <option value="Başlamadı" ${w.status === 'Başlamadı' ? 'selected' : ''}>Başlamadı</option>
+          <option value="Devam Ediyor" ${w.status === 'Devam Ediyor' ? 'selected' : ''}>Devam Ediyor</option>
+          <option value="Tamamlandı" ${w.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
+        </select>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="mt-3 pt-3 border-t border-slate-800/80 space-y-2">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1.5">
+          <i data-lucide="list-checks" class="w-3 h-3"></i>
+          <span>Haftalık To-Do Listesi ${t.weeklyTodos.length > 0 ? `(${doneCount}/${t.weeklyTodos.length})` : ''}</span>
+        </div>
+        <button onclick="openWeeklyTodoModal(${taskIdx})" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-semibold rounded-lg flex items-center space-x-1">
+          <i data-lucide="plus" class="w-3 h-3"></i><span>Haftalık Görev Ekle</span>
+        </button>
+      </div>
+      <div class="space-y-1.5">
+        ${items || '<div class="text-xs text-slate-500 italic">Henüz haftalık görev eklenmedi.</div>'}
+      </div>
+    </div>
+  `;
+}
+
+function sendTodoEmail(taskIdx, todoId, isReminder) {
+  const t = tasks[taskIdx];
+  const w = t.weeklyTodos.find(x => x.id === todoId);
+  if (!w) return;
+  const p = registeredPeople.find(x => x.id === w.assigneeId);
+  if (!p || !p.email) {
+    alert('Bu göreve atanmış bir kişi veya e-posta adresi bulunamadı. Önce "Sorumlu Kişi" alanını doldurun.');
+    return;
+  }
+  if (!emailjsReady) {
+    alert('E-posta gönderimi henüz yapılandırılmadı. index.html içindeki EMAILJS_SERVICE_ID / EMAILJS_TEMPLATE_ID / EMAILJS_PUBLIC_KEY değerlerini kendi EmailJS hesabınızdan doldurmanız gerekiyor.');
+    return;
+  }
+  const params = {
+    to_email: p.email,
+    to_name: p.name,
+    task_name: t.name,
+    todo_text: w.text || '(açıklama girilmedi)',
+    start_date: w.startDate || '-',
+    end_date: w.endDate || '-',
+    priority: w.priority,
+    status: w.status,
+    link: w.link || '',
+    subject_type: isReminder ? 'Hatırlatma' : 'Yeni Atama',
+    sender_name: currentUser ? currentUser.name : 'demigproject Sistemi',
+    reply_to: currentUser && currentUser.email ? currentUser.email : ''
+  };
+  emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params)
+    .then(() => {
+      alert((isReminder ? 'Hatırlatma' : 'Atama') + ' e-postası ' + p.name + ' (' + p.email + ') adresine gönderildi.');
+    })
+    .catch(err => {
+      console.error(err);
+      alert('E-posta gönderilemedi: ' + (err && err.text ? err.text : JSON.stringify(err)));
+    });
+}
+
+function sendReminderEmail(taskIdx, todoId) {
+  sendTodoEmail(taskIdx, todoId, true);
+}
+
+function updateWeeklyTodoStatus(taskIdx, todoId, status) {
+  const item = tasks[taskIdx].weeklyTodos.find(w => w.id === todoId);
+  if (item) item.status = status;
+  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
+  renderAll();
+}
+
+function deleteWeeklyTodo(taskIdx, todoId) {
+  tasks[taskIdx].weeklyTodos = tasks[taskIdx].weeklyTodos.filter(w => w.id !== todoId);
+  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
+  renderAll();
+}
+
+function toggleGanttRow(idx) {
+  expandedGantt[idx] = !expandedGantt[idx];
+  renderAll();
+}
+
+function toggleTasksRow(idx) {
+  expandedTasks[idx] = !expandedTasks[idx];
+  renderAll();
+}
+
+function populateWeeklyTodoAssigneeSelect() {
+  const sel = document.getElementById('weeklyTodoAssignee');
+  sel.innerHTML = '<option value="">Atanmadı</option>';
+  registeredPeople.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.innerText = p.name;
+    sel.appendChild(opt);
+  });
+}
+
+function openWeeklyTodoModal(taskIdx, todoId) {
+  currentWeeklyTodoTaskIdx = taskIdx;
+  document.getElementById('weeklyTodoForm').reset();
+  document.getElementById('weeklyTodoId').value = '';
+  populateWeeklyTodoAssigneeSelect();
+  document.getElementById('weeklyTodoModalTitle').innerText = 'Haftalık Görev Ekle — ' + tasks[taskIdx].name;
+
+  if (todoId) {
+    const w = tasks[taskIdx].weeklyTodos.find(x => x.id === todoId);
+    if (w) {
+      document.getElementById('weeklyTodoId').value = w.id;
+      document.getElementById('weeklyTodoAssignee').value = w.assigneeId || '';
+      document.getElementById('weeklyTodoStart').value = w.startDate || '';
+      document.getElementById('weeklyTodoEnd').value = w.endDate || '';
+      document.getElementById('weeklyTodoPriority').value = w.priority || 'Orta';
+      document.getElementById('weeklyTodoStatus').value = w.status || 'Başlamadı';
+      document.getElementById('weeklyTodoLink').value = w.link || '';
+      document.getElementById('weeklyTodoText').value = w.text || '';
+      document.getElementById('weeklyTodoModalTitle').innerText = 'Haftalık Görev Düzenle — ' + tasks[taskIdx].name;
+    }
+  }
+  document.getElementById('weeklyTodoModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closeWeeklyTodoModal() {
+  document.getElementById('weeklyTodoModal').classList.add('hidden');
+}
+
+function saveWeeklyTodo(e) {
+  e.preventDefault();
+  const taskIdx = currentWeeklyTodoTaskIdx;
+  ensureWeeklyTodos(tasks[taskIdx]);
+  const id = document.getElementById('weeklyTodoId').value;
+  const isNew = !id;
+  const previousAssigneeId = isNew ? null : (tasks[taskIdx].weeklyTodos.find(w => w.id === id) || {}).assigneeId;
+  const item = {
+    id: id || ('w' + Date.now() + Math.floor(Math.random() * 1000)),
+    assigneeId: document.getElementById('weeklyTodoAssignee').value,
+    startDate: document.getElementById('weeklyTodoStart').value,
+    endDate: document.getElementById('weeklyTodoEnd').value,
+    priority: document.getElementById('weeklyTodoPriority').value,
+    status: document.getElementById('weeklyTodoStatus').value,
+    link: document.getElementById('weeklyTodoLink').value,
+    text: document.getElementById('weeklyTodoText').value
+  };
+  if (id) {
+    const idx = tasks[taskIdx].weeklyTodos.findIndex(w => w.id === id);
+    if (idx >= 0) tasks[taskIdx].weeklyTodos[idx] = item;
+  } else {
+    tasks[taskIdx].weeklyTodos.push(item);
+  }
+  sortWeeklyTodos(tasks[taskIdx]);
+  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
+  closeWeeklyTodoModal();
+  expandedGantt[taskIdx] = true;
+  expandedTasks[taskIdx] = true;
+  renderAll();
+
+  // Yeni bir atama yapıldıysa veya sorumlu kişi değiştiyse, atanan kişiye otomatik mail gönder
+  const assigneeChanged = item.assigneeId && item.assigneeId !== previousAssigneeId;
+  if ((isNew || assigneeChanged) && item.assigneeId) {
+    sendTodoEmail(taskIdx, item.id, false);
+  }
+}
+
+function renderWeeklyOverviewTable() {
+  const tbody = document.getElementById('weeklyOverviewBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  let rows = [];
+  tasks.forEach(t => {
+    ensureWeeklyTodos(t);
+    t.weeklyTodos.forEach(w => {
+      const p = registeredPeople.find(x => x.id === w.assigneeId);
+      rows.push({ person: p ? p.name : 'Atanmadı', task: t.name, text: w.text, priority: w.priority, status: w.status, start: w.startDate, end: w.endDate });
+    });
+  });
+  rows.sort((a, b) => priorityWeight(b.priority) - priorityWeight(a.priority));
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="p-3 text-center text-slate-500">Henüz haftalık görev eklenmedi.</td></tr>';
+    return;
+  }
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.className = "border-b border-slate-800/50";
+    tr.innerHTML = `
+      <td class="p-1.5 font-semibold text-indigo-300 whitespace-nowrap">${r.person}</td>
+      <td class="p-1.5 text-slate-300 truncate max-w-[120px]" title="${r.task}">${r.task}</td>
+      <td class="p-1.5 text-slate-400 truncate max-w-[160px]" title="${r.text}">${r.text || '-'}</td>
+      <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold border whitespace-nowrap ${priorityBadgeClass(r.priority)}">${r.priority}</span></td>
+      <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold border whitespace-nowrap ${statusBadgeClass(r.status)}">${r.status}</span></td>
+      <td class="p-1.5 font-mono text-[10px] text-slate-400 whitespace-nowrap">${r.start || '?'} → ${r.end || '?'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function getCurrentPersonId() {
+  if (!currentUser) return null;
+  const email = (currentUser.email || '').trim().toLowerCase();
+  let p = registeredPeople.find(x => x.email && x.email.trim().toLowerCase() === email);
+  if (!p && currentUser.name) {
+    p = registeredPeople.find(x => x.name.trim().toLowerCase() === currentUser.name.trim().toLowerCase());
+  }
+  return p ? p.id : null;
+}
+
+function populateSidebarPersonFilter() {
+  const sel = document.getElementById('sidebarPersonFilter');
+  if (!sel) return;
+  const prevValue = sel.value;
+  sel.innerHTML = '';
+  const meOpt = document.createElement('option');
+  meOpt.value = 'me';
+  meOpt.innerText = "Benim To-Do'larım";
+  sel.appendChild(meOpt);
+  const allOpt = document.createElement('option');
+  allOpt.value = 'all';
+  allOpt.innerText = 'Tüm Ekip';
+  sel.appendChild(allOpt);
+  registeredPeople.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.innerText = p.name;
+    sel.appendChild(opt);
+  });
+  if (prevValue) sel.value = prevValue;
+}
+
+function renderSidebarTodos() {
+  const list = document.getElementById('sidebarTodoList');
+  if (!list) return;
+  const sel = document.getElementById('sidebarPersonFilter');
+  const filterVal = sel ? sel.value : 'me';
+  let targetId = null;
+  if (filterVal === 'me') {
+    targetId = getCurrentPersonId();
+  } else if (filterVal !== 'all') {
+    targetId = filterVal;
+  }
+
+  if (filterVal === 'me' && !targetId) {
+    list.innerHTML = '<div class="text-[10px] text-slate-500 italic">Kayıtlı e-postanız ekip listesiyle eşleşmedi. "Tüm Ekip" seçip kendinizi bulabilirsiniz.</div>';
+    return;
+  }
+
+  let items = [];
+  tasks.forEach(t => {
+    ensureWeeklyTodos(t);
+    t.weeklyTodos.forEach(w => {
+      if (filterVal === 'all' || w.assigneeId === targetId) {
+        items.push({ task: t.name, text: w.text, priority: w.priority, status: w.status });
+      }
+    });
+  });
+  items.sort((a, b) => priorityWeight(b.priority) - priorityWeight(a.priority));
+
+  if (items.length === 0) {
+    list.innerHTML = '<div class="text-[10px] text-slate-500 italic">Gösterilecek to-do yok.</div>';
+    return;
+  }
+
+  list.innerHTML = items.map(it => `
+    <div class="bg-slate-800/60 px-2 py-1.5 rounded-lg border border-slate-700/60">
+      <div class="flex items-center gap-1 mb-0.5">
+        <span class="px-1 py-0.5 rounded text-[8px] font-bold border ${priorityBadgeClass(it.priority)}">${it.priority}</span>
+        <span class="px-1 py-0.5 rounded text-[8px] font-bold border ${statusBadgeClass(it.status)}">${it.status}</span>
+      </div>
+      <div class="text-[10px] text-slate-300 truncate" title="${it.task}">${it.task}</div>
+      <div class="text-[10px] text-slate-400 truncate" title="${it.text}">${it.text || '-'}</div>
+    </div>
+  `).join('');
+}
+
+// ============ GANTT / TIMELINE ============
+
+function renderExcelGanttMatrix() {
+  const tbody = document.getElementById('excelGanttMatrixBody');
+  tbody.innerHTML = '';
+
+  tasks.forEach((t, tIdx) => {
+    ensureWeeklyTodos(t);
+    const tr = document.createElement('tr');
+    tr.className = "hover:bg-slate-900/50 transition border-b border-slate-800/40";
+
+    const assigneesText = t.taggedIds.map(id => {
+      const p = registeredPeople.find(x => x.id === id);
+      return p ? p.name.split(' ')[0] : '';
+    }).filter(Boolean).join(', ');
+
+    const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1;
+    const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
+    const periodLabel = `${monthNames[sIdx].split("'")[0]} - ${monthNames[eIdx].split("'")[0]}`;
+    const doneCount = t.weeklyTodos.filter(w => w.status === 'Tamamlandı').length;
+    const todoBadge = t.weeklyTodos.length > 0 ? `<span class="ml-1 text-[9px] text-slate-500 font-sans">(${doneCount}/${t.weeklyTodos.length})</span>` : '';
+    const isExpanded = !!expandedGantt[tIdx];
+
+    let monthCells = '';
+    for (let m = 0; m < 12; m++) {
+      let val;
+      if (t.monthProgress) {
+        val = t.monthProgress[m] || 0;
+      } else {
+        let inRange = (m >= sIdx && m <= eIdx);
+        val = inRange ? (t.status === 'Tamamlandı' ? 100 : t.progress) : 0;
+      }
+      let cellContent = '';
+      if (val === 100) {
+        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-emerald-500 text-slate-950 rounded font-bold flex items-center justify-center text-[10px] shadow" title="Tamamlandı">✓ %100</div>`;
+      } else if (val > 0) {
+        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-indigo-600 text-white rounded font-bold flex items-center justify-center text-[10px] shadow" title="Aktif Dönem">%${val}</div>`;
+      } else {
+        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:bg-slate-800 transition w-full h-7 bg-slate-900/40 text-slate-600 rounded border border-slate-800/80 flex items-center justify-center text-[10px]" title="Pasif Dönem">-</div>`;
+      }
+      monthCells += `<td class="p-1 text-center w-16 h-8">${cellContent}</td>`;
+    }
+
+    tr.innerHTML = `
+      <td class="p-2.5 font-sans font-semibold text-white sticky left-0 bg-slate-950 border-r border-slate-800 truncate" title="${t.name}">
+        <button onclick="toggleGanttRow(${tIdx})" class="inline-flex items-center justify-center w-4 h-4 mr-1 text-slate-400 hover:text-white bg-slate-800 rounded transition align-middle">
+          <i data-lucide="${isExpanded ? 'chevron-down' : 'chevron-right'}" class="w-3 h-3"></i>
+        </button>
+        ${t.name}${todoBadge}
+      </td>
+      <td class="p-2.5 text-center text-indigo-300 font-bold bg-slate-900/40 border-r border-slate-800/60 font-sans text-[10px]">${periodLabel}</td>
+      <td class="p-2.5 text-center text-slate-300 font-medium truncate text-[10px]">${assigneesText || '-'}</td>
+      <td class="p-2.5 text-center font-bold text-[10px] ${t.status === 'Tamamlandı' ? 'text-emerald-400' : 'text-indigo-400'}">${t.status === 'Tamamlandı' ? 'Tamam' : '%' + t.progress}</td>
+      ${monthCells}
+    `;
+    tbody.appendChild(tr);
+
+    const subTr = document.createElement('tr');
+    subTr.className = isExpanded ? "" : "hidden";
+    subTr.innerHTML = `
+      <td colspan="16" class="p-3 bg-slate-950/60 border-b border-slate-800/60 font-sans">
+        <div class="ml-6 pl-4 border-l-2 border-indigo-500/30">${weeklyTodoListHTML(t, tIdx)}</div>
+      </td>
+    `;
+    tbody.appendChild(subTr);
+  });
+}
+
+function toggleMonthState(tIdx, monthIdx) {
+  let t = tasks[tIdx];
+  if (!t.monthProgress) {
+    t.monthProgress = new Array(12).fill(0);
+    const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1;
+    const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
+    for (let m = sIdx; m <= eIdx; m++) {
+      t.monthProgress[m] = t.status === 'Tamamlandı' ? 100 : t.progress;
+    }
+  }
+  let cur = t.monthProgress[monthIdx] || 0;
+  let next = cur + 5;
+  if (next > 100) next = 0;
+  t.monthProgress[monthIdx] = next;
+  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
+  renderAll();
+}
+
+function renderRoadmap() {
+  const container = document.getElementById('roadmapDiagram');
+  container.innerHTML = '';
+
+  tasks.forEach((t, index) => {
+    const isDone = t.status === 'Tamamlandı';
+    const taggedNames = t.taggedIds.map(id => {
+      const p = registeredPeople.find(x => x.id === id);
+      return p ? `@${p.name}` : '';
+    }).filter(Boolean).join(', ');
+
+    const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1;
+    const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
+    const periodStr = `${monthNames[sIdx]} - ${monthNames[eIdx]}`;
+
+    const card = document.createElement('div');
+    card.className = "relative z-10 ml-12 group";
+    card.innerHTML = `
+      <div class="absolute -left-12 top-1.5 w-7 h-7 rounded-full ${isDone ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-indigo-600 text-white'} border-4 border-slate-950 flex items-center justify-center text-xs shadow-lg">
+        ${isDone ? '✓' : '➔'}
+      </div>
+      <div class="glass-card p-4 rounded-2xl border border-slate-800 hover:border-indigo-500/40 transition">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <div class="flex items-center space-x-2">
+            <span class="px-2 py-0.5 text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">${t.module}</span>
+            <span class="text-[11px] text-slate-400 font-mono font-bold">${t.id}</span>
+            <span class="text-[10px] bg-slate-900 px-2 py-0.5 rounded text-amber-300 border border-slate-700 font-sans">🕒 Planlanan Dönem: <strong>${periodStr}</strong></span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <select onchange="updateTaskInline(${index}, 'status', this.value)" class="text-[11px] font-bold bg-slate-900 border ${isDone ? 'text-emerald-400 border-emerald-500/30' : 'text-indigo-400 border-indigo-500/30'} px-2 py-0.5 rounded-full">
+              <option value="Tamamlandı" ${t.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
+              <option value="Devam Ediyor" ${t.status === 'Devam Ediyor' ? 'selected' : ''}>Devam Ediyor</option>
+              <option value="Planlandı" ${t.status === 'Planlandı' ? 'selected' : ''}>Planlandı</option>
+            </select>
+            <button onclick="editTask('${t.id}')" class="p-1 text-slate-400 hover:text-white bg-slate-800 rounded hover:bg-slate-700 transition" title="Düzenle">
+              <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+        <input type="text" value="${t.name}" onchange="updateTaskInline(${index}, 'name', this.value)" class="text-sm font-bold text-white mb-1.5 bg-transparent border-b border-transparent hover:border-indigo-500 focus:border-indigo-500 editable-input px-1 py-0.5 rounded w-full">
+        <div class="text-[11px] text-indigo-300 font-medium mb-2">${taggedNames || 'Sorumlu atanmadı'}</div>
+        <textarea onchange="updateTaskInline(${index}, 'notes', this.value)" rows="2" class="text-xs text-slate-300 italic bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 editable-input w-full">${t.notes}</textarea>
+        ${weeklyTodoListHTML(t, index)}
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderTasksTable() {
+  const tbody = document.getElementById('tasksTableBody');
+  tbody.innerHTML = '';
+
+  tasks.forEach((t, index) => {
+    ensureWeeklyTodos(t);
+    const tr = document.createElement('tr');
+    tr.className = "hover:bg-slate-900/40 transition border-b border-slate-800/60";
+    let statusClass = t.status === 'Tamamlandı' ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" : "bg-blue-500/20 text-blue-300 border-blue-500/30";
+    const taggedChips = t.taggedIds.map(id => {
+      const p = registeredPeople.find(x => x.id === id);
+      return p ? `<span class="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 text-[10px] font-medium mr-1 mb-1 inline-block">@${p.name}</span>` : '';
+    }).join('');
+    const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1;
+    const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
+    const periodStr = `${monthNames[sIdx]} - ${monthNames[eIdx]}`;
+    const doneCount = t.weeklyTodos.filter(s => s.status === 'Tamamlandı').length;
+    const subtaskBadge = t.weeklyTodos.length > 0 ? `<span class="ml-1.5 text-[9px] text-slate-400">(${doneCount}/${t.weeklyTodos.length})</span>` : '';
+    const isExpanded = !!expandedTasks[index];
+
+    tr.innerHTML = `
+      <td class="p-3 font-mono font-bold text-indigo-400">
+        <button onclick="toggleTasksRow(${index})" class="inline-flex items-center justify-center w-4 h-4 mr-1 text-slate-400 hover:text-white bg-slate-800 rounded transition align-middle">
+          <i data-lucide="${isExpanded ? 'chevron-down' : 'chevron-right'}" class="w-3 h-3"></i>
+        </button>
+        ${t.id}${subtaskBadge}
+        <div class="text-[10px] text-slate-400 font-normal ml-5">${t.module}</div>
+      </td>
+      <td class="p-3 font-semibold text-white max-w-xs">
+        <input type="text" value="${t.name}" onchange="updateTaskInline(${index}, 'name', this.value)" class="bg-transparent border-b border-transparent hover:border-slate-700 editable-input px-1 py-0.5 rounded w-full">
+      </td>
+      <td class="p-3 max-w-xs"><div class="flex flex-wrap">${taggedChips}</div></td>
+      <td class="p-3 text-amber-300 font-medium text-[11px]">${periodStr}</td>
+      <td class="p-3">
+        <select onchange="updateTaskInline(${index}, 'status', this.value)" class="bg-slate-900 text-xs font-semibold rounded border ${statusClass} px-2 py-0.5">
+          <option value="Tamamlandı" ${t.status === 'Tamamlandı' ? 'selected' : ''}>Tamamlandı</option>
+          <option value="Devam Ediyor" ${t.status === 'Devam Ediyor' ? 'selected' : ''}>Devam Ediyor</option>
+          <option value="Planlandı" ${t.status === 'Planlandı' ? 'selected' : ''}>Planlandı</option>
+        </select>
+        <div class="w-16 bg-slate-800 h-1 rounded-full mt-1.5 overflow-hidden"><div class="bg-indigo-500 h-full" style="width: ${t.progress}%"></div></div>
+      </td>
+      <td class="p-3">
+        ${t.link ? `<a href="${t.link}" target="_blank" class="text-indigo-400 hover:underline text-xs flex items-center space-x-1"><i data-lucide="external-link" class="w-3.5 h-3.5"></i><span>Bağlantı</span></a>` : `<span class="text-slate-500 text-[11px]">-</span>`}
+      </td>
+      <td class="p-3 text-right">
+        <button onclick="editTask('${t.id}')" class="p-1.5 text-indigo-400 hover:text-white bg-indigo-500/10 rounded-lg hover:bg-indigo-600 transition">
+          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+
+    const subTr = document.createElement('tr');
+    subTr.className = isExpanded ? "" : "hidden";
+    subTr.innerHTML = `
+      <td colspan="7" class="p-3 bg-slate-950/60 border-b border-slate-800/60">
+        <div class="ml-6 pl-4 border-l-2 border-indigo-500/30">${weeklyTodoListHTML(t, index)}</div>
+      </td>
+    `;
+    tbody.appendChild(subTr);
+  });
+
+  lucide.createIcons();
+}
+
+function updateTaskInline(idx, key, val) {
+  tasks[idx][key] = val;
+  if (key === 'status') {
+    tasks[idx].progress = val === 'Tamamlandı' ? 100 : 60;
+  }
+  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
+  renderAll();
+}
+
+function renderPeople() {
+  const seniorContainer = document.getElementById('seniorTeamContainer');
+  const pureGrid = document.getElementById('pureTeamGrid');
+  seniorContainer.innerHTML = '';
+  pureGrid.innerHTML = '';
+  registeredPeople.filter(p => !p.isPure).forEach(p => {
+    const card = document.createElement('div');
+    card.className = "glass p-4 rounded-2xl border border-slate-800 space-y-2";
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 class="text-sm font-bold text-white">${p.name}</h3>
+          <span class="text-xs text-indigo-400 font-semibold">${p.role}</span>
+        </div>
+        <input type="email" value="${p.email}" onchange="updatePersonEmail('${p.id}', this.value)" title="Bu kişinin gerçekte kullandığı e-posta adresini girin — hatırlatma mailleri buraya gider" class="text-[10px] text-slate-300 bg-slate-800/80 px-2 py-1 rounded border border-slate-700 font-mono w-44 text-right focus:outline-none focus:border-indigo-500 focus:text-white">
+      </div>
+    `;
+    seniorContainer.appendChild(card);
+  });
+  registeredPeople.filter(p => p.isPure).forEach(p => {
+    const item = document.createElement('div');
+    item.className = "bg-slate-900/80 p-3 rounded-xl border border-slate-800 hover:border-indigo-500/40 transition";
+    item.innerHTML = `
+      <div class="font-bold text-white text-xs">${p.name}</div>
+      <div class="text-[10px] text-indigo-300 mt-0.5">${p.dept}</div>
+      <input type="email" value="${p.email}" onchange="updatePersonEmail('${p.id}', this.value)" title="Bu kişinin gerçekte kullandığı e-posta adresini girin" class="text-[10px] text-slate-400 bg-slate-950/60 px-1.5 py-1 rounded border border-slate-800 font-mono mt-1 w-full focus:outline-none focus:border-indigo-500 focus:text-white">
+    `;
+    pureGrid.appendChild(item);
+  });
+}
+
+function togglePureList() {
+  document.getElementById('pureTeamGrid').classList.toggle('hidden');
+}
+
+function renderDashboardSummary() {
+  const tbody = document.getElementById('dashboardSummaryBody');
+  tbody.innerHTML = '';
+  tasks.forEach(t => {
+    const tr = document.createElement('tr');
+    tr.className = t.status === 'Tamamlandı' ? "bg-emerald-950/20 font-bold text-slate-100" : "text-slate-300";
+    tr.innerHTML = `
+      <td class="p-3 border-b border-slate-800/60">${t.name}</td>
+      <td class="p-3 border-b border-slate-800/60"><span class="px-2 py-0.5 rounded text-[11px] ${t.status === 'Tamamlandı' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'}">${t.status}</span></td>
+      <td class="p-3 border-b border-slate-800/60 font-mono text-indigo-400">${t.progress}%</td>
+      <td class="p-3 border-b border-slate-800/60 text-xs">${t.notes}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function generateAIExecutiveReport() {
+  const startDate = document.getElementById('reportStartDate').value || '2025-11-01';
+  const endDate = document.getElementById('reportEndDate').value || '2026-08-31';
+  const selectedTaskId = document.getElementById('reportTaskFilter').value;
+
+  document.getElementById('reportCutoffLabel').innerText = `Rapor Dönemi: ${startDate} ➔ ${endDate} | Filtre: ${selectedTaskId === 'ALL' ? 'Tüm Görevler' : selectedTaskId}`;
+
+  let filteredTasks = tasks.filter(t => t.startDate <= endDate && t.endDate >= startDate);
+  if (selectedTaskId !== 'ALL') {
+    filteredTasks = filteredTasks.filter(t => t.id === selectedTaskId);
+  }
+
+  const container = document.getElementById('aiReportContainer');
+
+  let timelineRowsHTML = filteredTasks.map(t => {
+    const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1;
+    const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
+    const periodStr = `${monthNames[sIdx]} - ${monthNames[eIdx]}`;
+    return `
+      <tr class="border-b border-slate-800/60">
+        <td class="p-2 font-bold text-white">${t.id} - ${t.name}</td>
+        <td class="p-2 text-center text-amber-300 font-semibold">${periodStr}</td>
+        <td class="p-2 text-center font-bold ${t.status === 'Tamamlandı' ? 'text-emerald-400' : 'text-indigo-400'}">%${t.progress} (${t.status})</td>
+      </tr>
+    `;
+  }).join('');
+
+  let collaborationHTML = filteredTasks.map(t => {
+    const teamMembers = t.taggedIds.map(id => {
+      const p = registeredPeople.find(x => x.id === id);
+      return p ? `<span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 text-[10px] font-semibold">@${p.name} (${p.role})</span>` : '';
+    }).filter(Boolean).join(' ');
+
+    ensureWeeklyTodos(t);
+    const weeklyRowsHTML = t.weeklyTodos.map(w => {
+      const p = registeredPeople.find(x => x.id === w.assigneeId);
+      return `
+        <div class="flex items-center flex-wrap gap-2 text-[11px] text-slate-300 py-0.5">
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border ${priorityBadgeClass(w.priority)}">${w.priority}</span>
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border ${statusBadgeClass(w.status)}">${w.status}</span>
+          <span class="text-indigo-300 font-semibold">${p ? '@' + p.name : 'Atanmadı'}</span>
+          <span class="text-[10px] text-slate-400 font-mono">${w.startDate || '?'} → ${w.endDate || '?'}</span>
+          <span>${w.text}</span>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
+        <div class="flex items-center justify-between">
+          <h5 class="text-xs font-bold text-white flex items-center space-x-2">
+            <span class="px-2 py-0.5 bg-indigo-600/30 text-indigo-400 rounded">${t.id}</span>
+            <span>${t.name}</span>
+          </h5>
+          <span class="text-[10px] font-mono text-emerald-400 font-bold">%${t.progress} Tamamlandı</span>
+        </div>
+        <div class="text-[11px] text-slate-300">
+          <strong class="text-slate-200">Birlikte Çalışan Ekip Üyeleri:</strong>
+          <div class="flex flex-wrap gap-1 mt-1">${teamMembers || '<span class="text-slate-500">Özel ekip etiketlenmemiş</span>'}</div>
+        </div>
+        <div class="text-[11px] text-slate-300 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60">
+          <strong class="text-amber-300">Yapılan İşler & Kilit Çıktılar:</strong> ${t.notes}
+        </div>
+        <div class="text-[11px] text-slate-300 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60">
+          <strong class="text-indigo-300">Haftalık To-Do Takibi:</strong>
+          <div class="mt-1 space-y-0.5">${weeklyRowsHTML || '<span class="text-slate-500 italic">Bu görev için haftalık to-do eklenmemiş.</span>'}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="border-b border-slate-800 pb-4">
+      <h2 class="text-xl font-bold text-white mb-1">SABANCI ÜNİVERSİTESİ | DEMIG ARAŞTIRMA GRUBU</h2>
+      <h3 class="text-sm font-semibold text-indigo-400">Yapay Zekâ Özel Çalışma & Ekip İşbirliği Raporu</h3>
+      <div class="text-[11px] text-slate-400 mt-2 flex justify-between">
+        <span><strong>Raporu Üreten:</strong> ${currentUser ? currentUser.name : 'Sistem Yöneticisi'}</span>
+        <span><strong>Filtrelenen Dönem:</strong> ${startDate} - ${endDate}</span>
+      </div>
+    </div>
+    <div class="space-y-3">
+      <h4 class="text-xs font-bold text-white uppercase tracking-wider border-l-4 border-indigo-500 pl-2 flex items-center space-x-2">
+        <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i><span>1. Görev Timeline & Zaman Akışı Dökümü</span>
+      </h4>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300 border border-slate-800 rounded-xl overflow-hidden">
+          <thead class="bg-slate-900 text-slate-400 uppercase text-[10px]">
+            <tr>
+              <th class="p-2 border-b border-slate-800">Görev / Adım</th>
+              <th class="p-2 text-center border-b border-slate-800">Çalışma Periyodu</th>
+              <th class="p-2 text-center border-b border-slate-800">İlerleme / Durum</th>
+            </tr>
+          </thead>
+          <tbody>${timelineRowsHTML || '<tr><td colspan="3" class="p-4 text-center text-slate-500">Seçilen filtrelere uygun görev bulunamadı.</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="space-y-3">
+      <h4 class="text-xs font-bold text-white uppercase tracking-wider border-l-4 border-emerald-500 pl-2 flex items-center space-x-2">
+        <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i><span>2. Ekip İşbirliği, Yapılan İşler ve Haftalık To-Do Takibi (${filteredTasks.length} Görev)</span>
+      </h4>
+      <div class="space-y-3">${collaborationHTML || '<p class="text-slate-500">Seçilen kriterlerde görev işbirliği verisi yok.</p>'}</div>
+    </div>
+    <div class="pt-4 border-t border-slate-800 flex justify-between text-[11px] text-slate-400">
+      <span>Proje Yürütücüsü: M. Tahir Kılavuz</span>
+      <span>demigproject Gelişmiş Filtreli AI Raporu</span>
+    </div>
+  `;
+
+  document.getElementById('aiReportModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closeAIReportModal() {
+  document.getElementById('aiReportModal').classList.add('hidden');
+}
+
+function switchTab(tab) {
+  ['diagrams', 'roadmap', 'tasks', 'people', 'dashboard'].forEach(t => {
+    document.getElementById('view-' + t).classList.add('hidden');
+    document.getElementById('tab-' + t).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition";
+  });
+  document.getElementById('view-' + tab).classList.remove('hidden');
+  document.getElementById('tab-' + tab).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 bg-indigo-600 text-white transition";
+}
+
+function populateModalAssignees() {
+  const container = document.getElementById('assigneesCheckboxes');
+  container.innerHTML = '';
+  registeredPeople.forEach(p => {
+    const label = document.createElement('label');
+    label.className = "flex items-center space-x-1.5 cursor-pointer text-slate-300 hover:text-white";
+    label.innerHTML = `
+      <input type="checkbox" value="${p.id}" class="task-person-checkbox rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+      <span class="truncate">@${p.name}</span>
+    `;
+    container.appendChild(label);
+  });
+}
+
+function openTaskModal() {
+  document.getElementById('taskForm').reset();
+  document.getElementById('taskId').value = '';
+  document.getElementById('modalTaskTitle').innerText = 'Yeni Görev Ekle';
+  document.querySelectorAll('.task-person-checkbox').forEach(cb => cb.checked = false);
+  document.getElementById('taskModal').classList.remove('hidden');
+}
+
+function closeTaskModal() {
+  document.getElementById('taskModal').classList.add('hidden');
+}
+
+function saveTask(e) {
+  e.preventDefault();
+  const id = document.getElementById('taskId').value || ('DEMIG-' + String(tasks.length + 1));
+  const selectedTagged = Array.from(document.querySelectorAll('.task-person-checkbox:checked')).map(cb => cb.value);
+  const idx = tasks.findIndex(t => t.id === id);
+  const newTask = {
+    id: id,
+    module: document.getElementById('taskModule').value,
+    name: document.getElementById('taskName').value,
+    taggedIds: selectedTagged,
+    startDate: document.getElementById('taskStart').value,
+    endDate: document.getElementById('taskEnd').value,
+    status: document.getElementById('taskStatus').value,
+    progress: parseInt(document.getElementById('taskProgress').value) || 0,
+    link: document.getElementById('taskLink').value,
+    notes: document.getElementById('taskNotes').value,
+    weeklyTodos: idx >= 0 ? (tasks[idx].weeklyTodos || []) : []
+  };
+  if (idx >= 0) tasks[idx] = newTask;
+  else tasks.push(newTask);
+  localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
+  closeTaskModal();
+  renderAll();
+}
+
+function editTask(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  document.getElementById('taskId').value = t.id;
+  document.getElementById('taskModule').value = t.module;
+  document.getElementById('taskName').value = t.name;
+  document.getElementById('taskStart').value = t.startDate;
+  document.getElementById('taskEnd').value = t.endDate;
+  document.getElementById('taskStatus').value = t.status;
+  document.getElementById('taskProgress').value = t.progress;
+  document.getElementById('taskLink').value = t.link || '';
+  document.getElementById('taskNotes').value = t.notes;
+  document.querySelectorAll('.task-person-checkbox').forEach(cb => {
+    cb.checked = t.taggedIds.includes(cb.value);
+  });
+  document.getElementById('modalTaskTitle').innerText = 'Görev Düzenle (' + t.id + ')';
+  document.getElementById('taskModal').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
+      <p class="text-xs text-slate-400 mt-1">Sisteme kayıtlı ad-soyad veya e-posta ile giriş yapın</p>
+    </div>
+    <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Ad Soyad</label>
+        <input type="text" id="userName" required placeholder="Örn: M. Tahir Kılavuz" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">E-Posta Adresi</label>
+        <input type="email" id="userEmail" required placeholder="ornek@sabanciuniv.edu" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-300 mb-1">Departman / Rol</label>
+        <select id="userDept" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+          <option value="Principal Investigator (PI)">Principal Investigator (PI)</option>
+          <option value="Research Partner & Coordinator">Research Partner & Coordinator</option>
+          <option value="Senior Researcher">Senior Researcher</option>
+          <option value="Researcher & Methodologist">Researcher & Methodologist</option>
+          <option value="Researcher & Trainer">Researcher & Trainer</option>
+          <option value="Researcher & Adjudicator">Researcher & Adjudicator</option>
+          <option value="Researcher">Researcher</option>
+          <option value="Legal Counsel">Legal Counsel</option>
+          <option value="CS & AI Consultant">CS & AI Consultant</option>
+          <option value="Developer (Qrateria)">Developer (Qrateria)</option>
+          <option value="Project Assistant">Project Assistant</option>
+        </select>
+      </div>
+      <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-lg shadow-lg shadow-indigo-600/30 transition duration-200 mt-2">
+        Sisteme Giriş Yap
+      </button>
+    </form>
+  </div>
+</div>
+
+<div id="app" class="hidden w-full flex min-h-screen">
+  <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between shrink-0">
+    <div class="flex-1 overflow-y-auto">
+      <div class="p-5 border-b border-slate-800 flex items-center space-x-3">
+        <div class="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-500/20">
+          <i data-lucide="box" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-bold tracking-wider text-white">demigproject</h1>
+          <p class="text-[10px] text-slate-400">Sabancı Univ. DEMIG Group</p>
+        </div>
+      </div>
+      <nav class="p-3 space-y-1">
+        <button onclick="switchTab('diagrams')" id="tab-diagrams" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 bg-indigo-600 text-white transition">
+          <i data-lucide="bar-chart-2" class="w-4 h-4"></i><span>Diyagram & Grafikler</span>
+        </button>
+        <button onclick="switchTab('roadmap')" id="tab-roadmap" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <i data-lucide="git-merge" class="w-4 h-4"></i><span>İlerleme Haritası</span>
+        </button>
+        <button onclick="switchTab('tasks')" id="tab-tasks" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <i data-lucide="check-square" class="w-4 h-4"></i><span>Görev Takibi & Veri Girişi</span>
+        </button>
+        <button onclick="switchTab('people')" id="tab-people" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <i data-lucide="users" class="w-4 h-4"></i><span>Proje Ekibi</span>
+        </button>
+        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <i data-lucide="pie-chart" class="w-4 h-4"></i><span>Yönetici Özet Raporu</span>
+        </button>
+      </nav>
+
+      <div class="px-3 pb-3 pt-2 border-t border-slate-800 mt-2">
+        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center space-x-1.5">
+          <i data-lucide="list-checks" class="w-3 h-3"></i><span>Haftalık To-Do'larım</span>
+        </div>
+        <select id="sidebarPersonFilter" onchange="renderSidebarTodos()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-[10px] text-white mb-2"></select>
+        <div id="sidebarTodoList" class="space-y-1.5 max-h-56 overflow-y-auto pr-1"></div>
+      </div>
+    </div>
+
+    <div class="p-4 border-t border-slate-800 flex items-center justify-between">
+      <div class="truncate">
+        <div id="currentUserDisplay" class="text-xs font-semibold text-slate-200 truncate">...</div>
+        <div id="currentEmailDisplay" class="text-[10px] text-slate-400 truncate">...</div>
+      </div>
+      <button onclick="logout()" title="Çıkış Yap" class="p-1.5 text-slate-400 hover:text-white bg-slate-800 rounded-lg hover:bg-slate-700 transition shrink-0 ml-2">
+        <i data-lucide="log-out" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </aside>
+
+  <main class="flex-1 overflow-y-auto p-8 space-y-6">
+
+    <section id="view-diagrams" class="space-y-6">
+      <div class="glass p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 border border-indigo-500/20 shadow-xl">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+            <i data-lucide="activity" class="w-5 h-5 text-indigo-400"></i><span>Proje İlerlemesi</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">DEMIG AI Development Workplan çizelgesi ve güncel ilerleme istatistikleri.</p>
+        </div>
+        <div class="flex items-center space-x-3 bg-slate-900/90 px-4 py-2 rounded-xl border border-slate-800">
+          <span class="text-xs font-semibold text-slate-300">Ortalama İlerleme:</span>
+          <span class="text-xl font-bold text-emerald-400" id="overallDiagramPct">%0</span>
+        </div>
+      </div>
+
+      <div class="glass p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 pb-3 border-b border-slate-800">
+          <div>
+            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+              <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i><span>Project Timeline & Çalışma Takvimi</span>
+            </h3>
+            <p class="text-[11px] text-slate-400 mt-0.5">Görev adının solundaki oka tıklayarak haftalık to-do listesini açabilir, ilerlemeyi buradan takip edebilirsiniz.</p>
+          </div>
+          <div class="flex items-center space-x-3 text-[10px] bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+            <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded bg-emerald-500"></span><span class="text-slate-300">Tamamlandı</span></span>
+            <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded bg-indigo-500"></span><span class="text-slate-300">Aktif/Planlı Dönem</span></span>
+            <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded bg-slate-800"></span><span class="text-slate-500">Pasif</span></span>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300 border-collapse table-fixed">
+            <thead>
+              <tr class="bg-slate-900 text-slate-400 border-b border-slate-800 text-[11px]">
+                <th class="p-2.5 w-48 sticky left-0 bg-slate-900 z-10 border-r border-slate-800">Görev / Adım</th>
+                <th class="p-2.5 text-center w-28">Çalışma Periyodu</th>
+                <th class="p-2.5 text-center w-24">Sorumlu</th>
+                <th class="p-2.5 text-center w-16">Durum</th>
+                <th class="p-2 text-center w-16">Ekim '25</th>
+                <th class="p-2 text-center w-16">Kasım '25</th>
+                <th class="p-2 text-center w-16">Aralık '25</th>
+                <th class="p-2 text-center w-16">Ocak '26</th>
+                <th class="p-2 text-center w-16">Şubat '26</th>
+                <th class="p-2 text-center w-16">Mart '26</th>
+                <th class="p-2 text-center w-16">Nisan '26</th>
+                <th class="p-2 text-center w-16">Mayıs '26</th>
+                <th class="p-2 text-center w-16">Haziran '26</th>
+                <th class="p-2 text-center w-16">Temmuz '26</th>
+                <th class="p-2 text-center w-16">Ağustos '26</th>
+                <th class="p-2 text-center w-16">Eylül '26</th>
+              </tr>
+            </thead>
+            <tbody id="excelGanttMatrixBody" class="divide-y divide-slate-800/60 font-mono text-[11px]"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass p-5 rounded-2xl border border-slate-800">
+          <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4">Haftalık To-Do İlerleme Takibi</h3>
+          <div class="overflow-x-auto max-h-72 overflow-y-auto">
+            <table class="w-full text-left text-[11px] text-slate-300">
+              <thead class="text-slate-400 uppercase text-[10px] sticky top-0 bg-slate-900/95">
+                <tr>
+                  <th class="p-1.5">Kişi</th>
+                  <th class="p-1.5">Görev</th>
+                  <th class="p-1.5">To-Do</th>
+                  <th class="p-1.5">Öncelik</th>
+                  <th class="p-1.5">Durum</th>
+                  <th class="p-1.5">Tarih</th>
+                </tr>
+              </thead>
+              <tbody id="weeklyOverviewBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass p-5 rounded-2xl border border-slate-800">
+          <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4">Aşama Bazlı Tamamlanma Yüzdeleri (%)</h3>
+          <div class="h-64 flex justify-center">
+            <canvas id="progressChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-roadmap" class="hidden space-y-6">
+      <div class="glass p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 border border-indigo-500/20 shadow-xl">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+            <i data-lucide="git-merge" class="w-5 h-5 text-indigo-400"></i><span>demigproject İlerleme Haritası</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">Kartların üzerine tıklayarak başlıkları, notları veya durumları anında güncelleyebilir, haftalık to-do ekleyebilirsiniz.</p>
+        </div>
+        <button onclick="openTaskModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-2 transition shadow-lg shadow-indigo-600/30">
+          <i data-lucide="plus" class="w-4 h-4"></i><span>Yeni Adım / Görev Ekle</span>
+        </button>
+      </div>
+      <div class="glass p-6 rounded-2xl relative overflow-hidden shadow-xl">
+        <div id="roadmapDiagram" class="space-y-8 relative before:absolute before:inset-0 before:left-8 before:w-1 before:bg-gradient-to-b before:from-emerald-500 before:via-indigo-500 before:to-slate-700 before:z-0"></div>
+      </div>
+    </section>
+
+    <section id="view-tasks" class="hidden space-y-6">
+      <div class="glass p-6 rounded-2xl flex items-center justify-between shadow-xl">
+        <div>
+          <h2 class="text-lg font-bold text-white">Görev & Süreç Takibi</h2>
+          <p class="text-xs text-slate-400">Verilerin veya linklerin üzerine tıklayarak doğrudan içini güncelleyebilir, oka tıklayarak haftalık to-do listesini açabilirsiniz.</p>
+        </div>
+        <button onclick="openTaskModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-2 transition shadow-lg shadow-indigo-600/30">
+          <i data-lucide="plus" class="w-4 h-4"></i><span>Yeni Görev Ekle</span>
+        </button>
+      </div>
+      <div class="glass rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/95 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="p-3.5">Kod / Aşama</th>
+                <th class="p-3.5">Görev Adı</th>
+                <th class="p-3.5">Etiketli Sorumlular (@)</th>
+                <th class="p-3.5">Tarihler</th>
+                <th class="p-3.5">Durum & Yüzde</th>
+                <th class="p-3.5">Dosya / Bağlantı Linki</th>
+                <th class="p-3.5 text-right">İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="tasksTableBody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-people" class="hidden space-y-6">
+      <div class="glass p-6 rounded-2xl shadow-xl flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+            <i data-lucide="users" class="w-5 h-5 text-indigo-400"></i><span>Proje Ekibi ve Rol Tanımları</span>
+          </h2>
           <p class="text-xs text-slate-400 mt-1">Tüm kayıtlı araştırmacılar, danışmanlar ve 12 kişilik Sabancı PURE etiketleme ekibi.</p>
         </div>
       </div>
