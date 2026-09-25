@@ -775,6 +775,12 @@ let currentUser = JSON.parse(localStorage.getItem('demigproject_user')) || null;
 let progressChartObj = null;
 let expandedTasks = {};
 let expandedGantt = {};
+let collapsedModules = {};
+
+function toggleModuleCollapse(moduleName) {
+  collapsedModules[moduleName] = !collapsedModules[moduleName];
+  renderAll();
+}
 let currentWeeklyTodoTaskIdx = null;
 
 const monthNames = ["Ekim '25", "Kasım '25", "Aralık '25", "Ocak '26", "Şubat '26", "Mart '26", "Nisan '26", "Mayıs '26", "Haziran '26", "Temmuz '26", "Ağustos '26", "Eylül '26"];
@@ -1223,10 +1229,14 @@ function renderExcelGanttMatrix() {
 
     if (t.module && t.module !== lastModule) {
       lastModule = t.module;
+      const isCollapsed = !!collapsedModules[t.module];
+      const safeModule = t.module.replace(/'/g, "\\'");
       const headerTr = document.createElement('tr');
-      headerTr.innerHTML = `<td colspan="16" class="p-2 pl-3 bg-indigo-600/20 border-y border-indigo-500/30 font-sans font-bold text-indigo-300 text-xs sticky left-0">${t.module}</td>`;
+      headerTr.innerHTML = `<td colspan="16" onclick="toggleModuleCollapse('${safeModule}')" class="p-2 pl-3 bg-indigo-600/20 border-y border-indigo-500/30 font-sans font-bold text-indigo-300 text-xs sticky left-0 cursor-pointer hover:bg-indigo-600/30 transition"><span class="inline-flex items-center gap-1.5"><i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-3.5 h-3.5"></i>${t.module}</span></td>`;
       tbody.appendChild(headerTr);
     }
+
+    if (collapsedModules[t.module]) return;
 
     const tr = document.createElement('tr');
     tr.className = "hover:bg-slate-900/40 transition border-b border-slate-800/40";
@@ -1394,10 +1404,14 @@ function renderTasksTable() {
 
     if (t.module && t.module !== lastModuleTasks) {
       lastModuleTasks = t.module;
+      const isCollapsedT = !!collapsedModules[t.module];
+      const safeModuleT = t.module.replace(/'/g, "\\'");
       const headerTr = document.createElement('tr');
-      headerTr.innerHTML = `<td colspan="7" class="p-2 pl-3.5 bg-indigo-600/20 border-y border-indigo-500/30 font-bold text-indigo-300 text-xs">${t.module}</td>`;
+      headerTr.innerHTML = `<td colspan="7" onclick="toggleModuleCollapse('${safeModuleT}')" class="p-2 pl-3.5 bg-indigo-600/20 border-y border-indigo-500/30 font-bold text-indigo-300 text-xs cursor-pointer hover:bg-indigo-600/30 transition"><span class="inline-flex items-center gap-1.5"><i data-lucide="${isCollapsedT ? 'chevron-right' : 'chevron-down'}" class="w-3.5 h-3.5"></i>${t.module}</span></td>`;
       tbody.appendChild(headerTr);
     }
+
+    if (collapsedModules[t.module]) return;
 
     const tr = document.createElement('tr');
     tr.className = "hover:bg-slate-900/40 transition border-b border-slate-800/60";
