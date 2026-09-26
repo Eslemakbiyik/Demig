@@ -111,6 +111,9 @@
         <button onclick="switchTab('dashboard')" id="tab-dashboard" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
           <i data-lucide="pie-chart" class="w-4 h-4"></i><span data-i18n="nav_dashboard">Yönetici Özet Raporu</span>
         </button>
+        <button onclick="openGuideModal()" id="tab-guide" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-amber-300 hover:text-white hover:bg-slate-800 transition border-t border-slate-800 mt-1 pt-3">
+          <i data-lucide="help-circle" class="w-4 h-4"></i><span data-i18n="nav_guide">Kullanım Kılavuzu</span>
+        </button>
       </nav>
 
       <div class="px-3 pb-3 pt-2 border-t border-slate-800 mt-2">
@@ -512,6 +515,39 @@
   </div>
 </div>
 
+<div id="guideModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+  <div class="glass p-6 rounded-2xl w-full max-w-lg border border-slate-700 shadow-2xl">
+    <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
+      <h3 class="text-base font-bold text-white flex items-center space-x-2">
+        <i data-lucide="help-circle" class="w-5 h-5 text-amber-300"></i>
+        <span data-i18n="guide_title">Kullanım Kılavuzu</span>
+      </h3>
+      <button onclick="closeGuideModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+
+    <div class="flex justify-center mb-4">
+      <div class="p-4 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300">
+        <i id="guideStepIcon" data-lucide="sparkles" class="w-8 h-8"></i>
+      </div>
+    </div>
+
+    <h4 id="guideStepTitle" class="text-center text-lg font-bold text-white mb-2"></h4>
+    <p id="guideStepDesc" class="text-center text-sm text-slate-300 leading-relaxed min-h-[80px]"></p>
+
+    <div id="guideDots" class="flex items-center justify-center gap-1.5 mt-5 mb-2"></div>
+
+    <div class="flex items-center justify-between pt-4 border-t border-slate-800 mt-2">
+      <button onclick="prevGuideStep()" id="guidePrevBtn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg flex items-center space-x-1.5">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i><span data-i18n="guide_prev">Önceki</span>
+      </button>
+      <span id="guideStepCounter" class="text-[11px] text-slate-400 font-mono"></span>
+      <button onclick="nextGuideStep()" id="guideNextBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg flex items-center space-x-1.5">
+        <span data-i18n="guide_next">Sonraki</span><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="weeklyTodoModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
   <div class="glass p-6 rounded-2xl w-full max-w-lg border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
     <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
@@ -735,6 +771,29 @@ const I18N = {
     edit_task_title_prefix: "Görev Düzenle",
     email_subject_reminder: "Hatırlatma",
     email_subject_new: "Yeni Atama",
+    nav_guide: "Kullanım Kılavuzu",
+    guide_title: "Kullanım Kılavuzu",
+    guide_prev: "Önceki",
+    guide_next: "Sonraki",
+    guide_finish: "Bitti",
+    guide_step1_title: "Hoş Geldiniz!",
+    guide_step1_desc: "demigproject Portalı'na hoş geldiniz. Bu kısa kılavuz, sitenin temel özelliklerini adım adım tanıtacak. \"Sonraki\" ile devam edebilirsiniz.",
+    guide_step2_title: "Sol Menü",
+    guide_step2_desc: "Sol taraftaki menüden 5 ana sekme arasında geçiş yapabilirsiniz: Diyagram & Grafikler, İlerleme Haritası, Görev Takibi, Proje Ekibi ve Yönetici Özet Raporu.",
+    guide_step3_title: "Diyagram & Grafikler",
+    guide_step3_desc: "Burada tüm görevlerin zaman çizelgesini (Gantt tablosu) görürsünüz. Bir görevin solundaki oka tıklayarak haftalık to-do listesini açabilir, ay hücrelerine tıklayarak ilerlemeyi %5'er artırabilirsiniz.",
+    guide_step4_title: "İlerleme Haritası",
+    guide_step4_desc: "Görevleri kart şeklinde görüp başlık, not veya durumlarını doğrudan buradan güncelleyebilirsiniz.",
+    guide_step5_title: "Görev Takibi & Veri Girişi",
+    guide_step5_desc: "\"Yeni Görev Ekle\" ile yeni bir ana görev oluşturabilir, ya da \"Alt Görev\" sekmesinden mevcut bir göreve sorumlu kişi, tarih, öncelik ve durum atayarak haftalık to-do ekleyebilirsiniz.",
+    guide_step6_title: "Proje Ekibi",
+    guide_step6_desc: "Ekip üyelerinin gerçekte kullandığı e-posta adreslerini buradan güncelleyebilirsiniz — haftalık görev atamaları ve hatırlatma mailleri bu adrese gider.",
+    guide_step7_title: "Yönetici Özet Raporu",
+    guide_step7_desc: "Tarih aralığı veya görev filtresi seçip \"Filtreli AI Raporu Üret\" butonuna basarak, seçtiğiniz kriterlere uygun detaylı bir özet rapor oluşturabilirsiniz.",
+    guide_step8_title: "Haftalık To-Do'larım",
+    guide_step8_desc: "Sol menünün altındaki bu bölümden size atanmış haftalık görevleri hızlıca görebilir, açılır listeden ekip arkadaşlarınızın to-do'larını da inceleyebilirsiniz.",
+    guide_step9_title: "Dil Seçimi",
+    guide_step9_desc: "Giriş ekranındaki veya sol menüdeki TR/EN butonlarıyla sitenin dilini istediğiniz zaman değiştirebilirsiniz. Kılavuzu istediğiniz zaman sol menüden tekrar açabilirsiniz.",
   },
   en: {
     login_subtitle: "Sign in with your registered name or email",
@@ -896,6 +955,29 @@ const I18N = {
     edit_task_title_prefix: "Edit Task",
     email_subject_reminder: "Reminder",
     email_subject_new: "New Assignment",
+    nav_guide: "User Guide",
+    guide_title: "User Guide",
+    guide_prev: "Previous",
+    guide_next: "Next",
+    guide_finish: "Done",
+    guide_step1_title: "Welcome!",
+    guide_step1_desc: "Welcome to the demigproject Portal. This short guide will walk you through the site's main features step by step. Continue with \"Next\".",
+    guide_step2_title: "Left Menu",
+    guide_step2_desc: "Use the menu on the left to switch between 5 main tabs: Diagram & Charts, Progress Roadmap, Task Tracking, Project Team and Executive Summary Report.",
+    guide_step3_title: "Diagram & Charts",
+    guide_step3_desc: "Here you can see the timeline (Gantt chart) of all tasks. Click the arrow to the left of a task to open its weekly to-do list, or click a month cell to increase progress by 5% at a time.",
+    guide_step4_title: "Progress Roadmap",
+    guide_step4_desc: "View tasks as cards and update their title, notes or status directly from here.",
+    guide_step5_title: "Task Tracking & Data Entry",
+    guide_step5_desc: "Use \"Add New Task\" to create a new main task, or use the \"Subtask\" tab to add a weekly to-do to an existing task with an assignee, dates, priority and status.",
+    guide_step6_title: "Project Team",
+    guide_step6_desc: "Update team members' actual email addresses here — weekly task assignments and reminder emails are sent to this address.",
+    guide_step7_title: "Executive Summary Report",
+    guide_step7_desc: "Choose a date range or task filter and click \"Generate Filtered AI Report\" to produce a detailed summary report matching your chosen criteria.",
+    guide_step8_title: "My Weekly To-Dos",
+    guide_step8_desc: "This section at the bottom of the left menu lets you quickly see the weekly tasks assigned to you, or check your teammates' to-dos from the dropdown.",
+    guide_step9_title: "Language Selection",
+    guide_step9_desc: "Use the TR/EN buttons on the login screen or the left menu to switch the site's language anytime. You can reopen this guide from the left menu whenever you like.",
   }
 };
 
@@ -958,6 +1040,71 @@ function setLanguage(lang) {
   applyStaticI18n();
   if (typeof renderAll === 'function' && typeof tasks !== 'undefined' && tasks.length >= 0) {
     try { renderAll(); } catch (e) { /* henüz veri yüklenmemiş olabilir */ }
+  }
+}
+
+// =====================================================================
+// KULLANIM KILAVUZU (ONBOARDING GUIDE)
+// =====================================================================
+const GUIDE_STEPS = [
+  { icon: 'sparkles', titleKey: 'guide_step1_title', descKey: 'guide_step1_desc' },
+  { icon: 'menu', titleKey: 'guide_step2_title', descKey: 'guide_step2_desc' },
+  { icon: 'bar-chart-2', titleKey: 'guide_step3_title', descKey: 'guide_step3_desc' },
+  { icon: 'git-merge', titleKey: 'guide_step4_title', descKey: 'guide_step4_desc' },
+  { icon: 'check-square', titleKey: 'guide_step5_title', descKey: 'guide_step5_desc' },
+  { icon: 'users', titleKey: 'guide_step6_title', descKey: 'guide_step6_desc' },
+  { icon: 'file-text', titleKey: 'guide_step7_title', descKey: 'guide_step7_desc' },
+  { icon: 'list-checks', titleKey: 'guide_step8_title', descKey: 'guide_step8_desc' },
+  { icon: 'languages', titleKey: 'guide_step9_title', descKey: 'guide_step9_desc' },
+];
+
+let currentGuideStep = 0;
+
+function openGuideModal() {
+  currentGuideStep = 0;
+  renderGuideStep();
+  document.getElementById('guideModal').classList.remove('hidden');
+}
+
+function closeGuideModal() {
+  document.getElementById('guideModal').classList.add('hidden');
+}
+
+function renderGuideStep() {
+  const step = GUIDE_STEPS[currentGuideStep];
+  document.getElementById('guideStepIcon').setAttribute('data-lucide', step.icon);
+  document.getElementById('guideStepTitle').innerText = translate(step.titleKey);
+  document.getElementById('guideStepDesc').innerText = translate(step.descKey);
+  document.getElementById('guideStepCounter').innerText = (currentGuideStep + 1) + ' / ' + GUIDE_STEPS.length;
+
+  const dotsContainer = document.getElementById('guideDots');
+  dotsContainer.innerHTML = GUIDE_STEPS.map((_, i) =>
+    `<span class="w-1.5 h-1.5 rounded-full ${i === currentGuideStep ? 'bg-indigo-500' : 'bg-slate-700'}"></span>`
+  ).join('');
+
+  const prevBtn = document.getElementById('guidePrevBtn');
+  const nextBtn = document.getElementById('guideNextBtn');
+  prevBtn.style.visibility = currentGuideStep === 0 ? 'hidden' : 'visible';
+  nextBtn.innerHTML = currentGuideStep === GUIDE_STEPS.length - 1
+    ? `<span>${translate('guide_finish')}</span>`
+    : `<span>${translate('guide_next')}</span><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>`;
+
+  lucide.createIcons();
+}
+
+function nextGuideStep() {
+  if (currentGuideStep < GUIDE_STEPS.length - 1) {
+    currentGuideStep++;
+    renderGuideStep();
+  } else {
+    closeGuideModal();
+  }
+}
+
+function prevGuideStep() {
+  if (currentGuideStep > 0) {
+    currentGuideStep--;
+    renderGuideStep();
   }
 }
 
