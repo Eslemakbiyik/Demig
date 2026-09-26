@@ -77,6 +77,7 @@
 <div id="loadingScreen" class="hidden fixed inset-0 z-[60] flex flex-col items-center justify-center bg-slate-950">
   <img id="loadingLogoImg" src="" alt="DEMIG Logo" class="h-20 w-auto mb-4 animate-pulse">
   <p class="text-xs text-slate-400 tracking-wider uppercase" data-i18n="loading_text">Veriler yükleniyor...</p>
+  <p id="loadingSlowHint" class="hidden text-[11px] text-amber-300 mt-3 max-w-xs text-center" data-i18n="loading_slow_hint">Bu normalden uzun sürüyor. Sunucu "uyanıyor" olabilir, lütfen birkaç saniye daha bekleyin...</p>
 </div>
 
 <div id="app" class="hidden w-full flex min-h-screen">
@@ -691,6 +692,7 @@ const I18N = {
     login_dept_label: "Departman / Rol",
     login_submit: "Sisteme Giriş Yap",
     loading_text: "Veriler yükleniyor...",
+    loading_slow_hint: "Bu normalden uzun sürüyor. Sunucu \"uyanıyor\" olabilir, lütfen birkaç saniye daha bekleyin...",
     nav_diagrams: "Diyagram & Grafikler",
     nav_roadmap: "İlerleme Haritası",
     nav_tasks: "Görev Takibi & Veri Girişi",
@@ -894,6 +896,7 @@ const I18N = {
     login_dept_label: "Department / Role",
     login_submit: "Sign In",
     loading_text: "Loading data...",
+    loading_slow_hint: "This is taking longer than usual. The server may be \"waking up\" — please wait a few more seconds...",
     nav_diagrams: "Diagram & Charts",
     nav_roadmap: "Progress Roadmap",
     nav_tasks: "Task Tracking & Data Entry",
@@ -1315,7 +1318,12 @@ async function loadDataFromBackend() {
     return;
   }
 
-  const { data: peopleRows, error: peopleErr } = await supabaseClient.from('people').select('*');
+  const [peopleResult, taskResult] = await Promise.all([
+    supabaseClient.from('people').select('*'),
+    supabaseClient.from('tasks').select('*')
+  ]);
+
+  const { data: peopleRows, error: peopleErr } = peopleResult;
   if (peopleErr) {
     console.error('Supabase people okuma hatası:', peopleErr);
     registeredPeople = JSON.parse(JSON.stringify(seedPeople));
@@ -1326,7 +1334,7 @@ async function loadDataFromBackend() {
     registeredPeople = peopleRows.map(personFromRow);
   }
 
-  const { data: taskRows, error: taskErr } = await supabaseClient.from('tasks').select('*');
+  const { data: taskRows, error: taskErr } = taskResult;
   if (taskErr) {
     console.error('Supabase tasks okuma hatası:', taskErr);
     tasks = initialTasks;
@@ -1672,7 +1680,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('authModal').classList.add('hidden');
     document.getElementById('loadingScreen').classList.remove('hidden');
     updateUserBadge();
+    const slowTimer1 = setTimeout(() => document.getElementById('loadingSlowHint').classList.remove('hidden'), 6000);
     await loadDataFromBackend();
+    clearTimeout(slowTimer1);
+    document.getElementById('loadingSlowHint').classList.add('hidden');
     populateTaskFilterOptions();
     renderAll();
     document.getElementById('loadingScreen').classList.add('hidden');
@@ -1689,7 +1700,10 @@ async function handleLogin(e) {
   document.getElementById('authModal').classList.add('hidden');
   document.getElementById('loadingScreen').classList.remove('hidden');
   updateUserBadge();
+  const slowTimer2 = setTimeout(() => document.getElementById('loadingSlowHint').classList.remove('hidden'), 6000);
   await loadDataFromBackend();
+  clearTimeout(slowTimer2);
+  document.getElementById('loadingSlowHint').classList.add('hidden');
   await recordLogin();
   populateTaskFilterOptions();
   renderAll();
