@@ -111,6 +111,12 @@
         <button onclick="switchTab('dashboard')" id="tab-dashboard" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
           <i data-lucide="pie-chart" class="w-4 h-4"></i><span data-i18n="nav_dashboard">Yönetici Özet Raporu</span>
         </button>
+        <button onclick="switchTab('attendance')" id="tab-attendance" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <i data-lucide="user-check" class="w-4 h-4"></i><span data-i18n="nav_attendance">Katılım Takibi</span>
+        </button>
+        <button onclick="switchTab('chat')" id="tab-chat" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <i data-lucide="message-circle" class="w-4 h-4"></i><span data-i18n="nav_chat">Ekip Sohbeti</span>
+        </button>
         <button onclick="openGuideModal()" id="tab-guide" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-amber-300 hover:text-white hover:bg-slate-800 transition border-t border-slate-800 mt-1 pt-3">
           <i data-lucide="help-circle" class="w-4 h-4"></i><span data-i18n="nav_guide">Kullanım Kılavuzu</span>
         </button>
@@ -355,6 +361,63 @@
             </thead>
             <tbody id="dashboardSummaryBody" class="divide-y divide-slate-800/60"></tbody>
           </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-attendance" class="hidden space-y-6">
+      <div class="glass p-6 rounded-2xl shadow-xl">
+        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+          <i data-lucide="user-check" class="w-5 h-5 text-indigo-400"></i><span data-i18n="attendance_title">Katılım / Giriş Takibi</span>
+        </h2>
+        <p class="text-xs text-slate-400 mt-1" data-i18n="attendance_subtitle">Ekip üyelerinin siteye en son ne zaman giriş yaptığını ve hiç giriş yapmayanları buradan görebilirsiniz.</p>
+      </div>
+      <div class="glass rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="p-3.5" data-i18n="th_person">Kişi</th>
+                <th class="p-3.5" data-i18n="attendance_th_role">Departman / Rol</th>
+                <th class="p-3.5" data-i18n="attendance_th_last_login">Son Giriş</th>
+                <th class="p-3.5" data-i18n="attendance_th_count">Toplam Giriş</th>
+                <th class="p-3.5" data-i18n="th_status">Durum</th>
+              </tr>
+            </thead>
+            <tbody id="attendanceTableBody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-chat" class="hidden space-y-6">
+      <div class="glass p-6 rounded-2xl shadow-xl flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+            <i data-lucide="message-circle" class="w-5 h-5 text-indigo-400"></i><span data-i18n="chat_title">Ekip Sohbeti</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-1" data-i18n="chat_subtitle">Ekip arkadaşlarınızla ortak sohbet alanı veya birebir özel mesajlaşma.</p>
+        </div>
+        <button onclick="loadChatMessages()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700" title="Yenile">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="glass rounded-2xl border border-slate-800 shadow-xl flex overflow-hidden" style="height: 65vh;">
+        <div class="w-48 md:w-56 shrink-0 border-r border-slate-800 overflow-y-auto">
+          <button onclick="selectChatTarget(null)" id="chatTargetBtn-group" class="w-full text-left px-3.5 py-3 text-xs font-semibold flex items-center space-x-2 border-b border-slate-800/60 transition">
+            <i data-lucide="users" class="w-3.5 h-3.5"></i><span data-i18n="chat_group_label">Grup Sohbeti</span>
+          </button>
+          <div id="chatPersonList"></div>
+        </div>
+        <div class="flex-1 flex flex-col min-w-0">
+          <div id="chatHeaderLabel" class="px-4 py-2.5 border-b border-slate-800 text-xs font-bold text-white flex items-center space-x-1.5"></div>
+          <div id="chatMessagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+          <form onsubmit="sendChatMessage(event)" class="flex items-center space-x-2 p-3 border-t border-slate-800">
+            <input type="text" id="chatInput" required data-i18n-placeholder="chat_input_placeholder" placeholder="Bir mesaj yazın..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+            <button type="submit" class="p-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shrink-0">
+              <i data-lucide="send" class="w-4 h-4"></i>
+            </button>
+          </form>
         </div>
       </div>
     </section>
@@ -794,6 +857,23 @@ const I18N = {
     guide_step8_desc: "Sol menünün altındaki bu bölümden size atanmış haftalık görevleri hızlıca görebilir, açılır listeden ekip arkadaşlarınızın to-do'larını da inceleyebilirsiniz.",
     guide_step9_title: "Dil Seçimi",
     guide_step9_desc: "Giriş ekranındaki veya sol menüdeki TR/EN butonlarıyla sitenin dilini istediğiniz zaman değiştirebilirsiniz. Kılavuzu istediğiniz zaman sol menüden tekrar açabilirsiniz.",
+    nav_attendance: "Katılım Takibi",
+    nav_chat: "Ekip Sohbeti",
+    attendance_title: "Katılım / Giriş Takibi",
+    attendance_subtitle: "Ekip üyelerinin siteye en son ne zaman giriş yaptığını ve hiç giriş yapmayanları buradan görebilirsiniz.",
+    attendance_th_role: "Departman / Rol",
+    attendance_th_last_login: "Son Giriş",
+    attendance_th_count: "Toplam Giriş",
+    attendance_never: "Hiç Giriş Yapmadı",
+    attendance_active: "Giriş Yaptı",
+    attendance_no_data: "Kayıt yok — Supabase yapılandırılmadıysa giriş kayıtları takip edilemez.",
+    chat_title: "Ekip Sohbeti",
+    chat_subtitle: "Ekip arkadaşlarınızla ortak sohbet alanı. Mesajlar herkese açıktır.",
+    chat_input_placeholder: "Bir mesaj yazın...",
+    chat_no_messages: "Henüz mesaj yok. İlk mesajı siz gönderin!",
+    chat_not_configured: "Sohbet için Supabase yapılandırması gerekiyor.",
+    chat_group_label: "Grup Sohbeti",
+    chat_dm_with: "ile özel sohbet",
   },
   en: {
     login_subtitle: "Sign in with your registered name or email",
@@ -978,6 +1058,23 @@ const I18N = {
     guide_step8_desc: "This section at the bottom of the left menu lets you quickly see the weekly tasks assigned to you, or check your teammates' to-dos from the dropdown.",
     guide_step9_title: "Language Selection",
     guide_step9_desc: "Use the TR/EN buttons on the login screen or the left menu to switch the site's language anytime. You can reopen this guide from the left menu whenever you like.",
+    nav_attendance: "Attendance",
+    nav_chat: "Team Chat",
+    attendance_title: "Attendance / Login Tracking",
+    attendance_subtitle: "See when each team member last logged in, and who hasn't logged in yet.",
+    attendance_th_role: "Department / Role",
+    attendance_th_last_login: "Last Login",
+    attendance_th_count: "Total Logins",
+    attendance_never: "Never Logged In",
+    attendance_active: "Logged In",
+    attendance_no_data: "No records — login tracking requires Supabase to be configured.",
+    chat_title: "Team Chat",
+    chat_subtitle: "A shared chat space for your team. Messages are visible to everyone.",
+    chat_input_placeholder: "Type a message...",
+    chat_no_messages: "No messages yet. Send the first one!",
+    chat_not_configured: "Chat requires Supabase to be configured.",
+    chat_group_label: "Group Chat",
+    chat_dm_with: "private chat with",
   }
 };
 
@@ -1228,6 +1325,202 @@ async function loadDataFromBackend() {
   }
 }
 
+// =====================================================================
+// KATILIM TAKİBİ (LOGIN TRACKING)
+// =====================================================================
+async function recordLogin() {
+  if (!supabaseClient || !currentUser) return;
+  const person = registeredPeople.find(p => p.email && currentUser.email && p.email.trim().toLowerCase() === currentUser.email.trim().toLowerCase());
+  try {
+    await supabaseClient.from('logins').insert({
+      person_id: person ? person.id : null,
+      person_name: currentUser.name,
+      person_email: currentUser.email,
+      dept: currentUser.dept
+    });
+  } catch (e) {
+    console.error('Giriş kaydı oluşturulamadı:', e);
+  }
+}
+
+async function renderAttendanceTable() {
+  const tbody = document.getElementById('attendanceTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">...</td></tr>`;
+
+  if (!supabaseClient) {
+    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">${translate('attendance_no_data')}</td></tr>`;
+    return;
+  }
+
+  const { data: loginRows, error } = await supabaseClient.from('logins').select('*').order('logged_in_at', { ascending: false });
+  if (error) {
+    console.error('Katılım verisi okunamadı:', error);
+    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">${translate('attendance_no_data')}</td></tr>`;
+    return;
+  }
+
+  const byEmail = {};
+  (loginRows || []).forEach(r => {
+    const key = (r.person_email || r.person_name || '').trim().toLowerCase();
+    if (!key) return;
+    if (!byEmail[key]) byEmail[key] = { last: r.logged_in_at, count: 0 };
+    byEmail[key].count++;
+    if (new Date(r.logged_in_at) > new Date(byEmail[key].last)) byEmail[key].last = r.logged_in_at;
+  });
+
+  tbody.innerHTML = '';
+  registeredPeople.forEach(p => {
+    const key = (p.email || '').trim().toLowerCase();
+    const info = byEmail[key];
+    const tr = document.createElement('tr');
+    tr.className = "hover:bg-slate-900/40 transition border-b border-slate-800/60";
+    const lastLoginStr = info ? new Date(info.last).toLocaleString(currentLang === 'tr' ? 'tr-TR' : 'en-US') : '-';
+    const statusBadge = info
+      ? `<span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">${translate('attendance_active')}</span>`
+      : `<span class="px-2 py-0.5 rounded text-[11px] bg-red-500/20 text-red-300 border border-red-500/30">${translate('attendance_never')}</span>`;
+    tr.innerHTML = `
+      <td class="p-3 font-semibold text-white">${p.name}</td>
+      <td class="p-3 text-slate-400">${p.role || p.dept || ''}</td>
+      <td class="p-3 font-mono text-[11px] text-slate-300">${lastLoginStr}</td>
+      <td class="p-3 font-mono text-indigo-300">${info ? info.count : 0}</td>
+      <td class="p-3">${statusBadge}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// =====================================================================
+// EKİP SOHBETİ (TEAM CHAT)
+// =====================================================================
+let currentChatTarget = null; // null = grup sohbeti, aksi halde { id, name, email }
+
+function populateChatPersonList() {
+  const list = document.getElementById('chatPersonList');
+  if (!list) return;
+  const myEmail = currentUser ? (currentUser.email || '').trim().toLowerCase() : '';
+  list.innerHTML = registeredPeople
+    .filter(p => !p.isPure && (p.email || '').trim().toLowerCase() !== myEmail)
+    .map(p => `
+      <button onclick='selectChatTarget(${JSON.stringify(p.id)})' id="chatTargetBtn-${p.id}" class="w-full text-left px-3.5 py-2.5 text-xs font-medium flex items-center space-x-2 border-b border-slate-800/40 transition truncate">
+        <i data-lucide="user" class="w-3.5 h-3.5 shrink-0"></i><span class="truncate">${p.name}</span>
+      </button>
+    `).join('');
+  lucide.createIcons();
+  highlightChatTargetButton();
+}
+
+function highlightChatTargetButton() {
+  const activeCls = "w-full text-left px-3.5 py-2.5 text-xs font-medium flex items-center space-x-2 border-b border-slate-800/40 transition truncate bg-indigo-600 text-white";
+  const inactiveCls = "w-full text-left px-3.5 py-2.5 text-xs font-medium flex items-center space-x-2 border-b border-slate-800/40 transition truncate text-slate-300 hover:bg-slate-800";
+  const groupBtn = document.getElementById('chatTargetBtn-group');
+  if (groupBtn) groupBtn.className = (currentChatTarget === null ? activeCls : inactiveCls).replace('px-3.5 py-2.5', 'px-3.5 py-3');
+  registeredPeople.filter(p => !p.isPure).forEach(p => {
+    const btn = document.getElementById('chatTargetBtn-' + p.id);
+    if (btn) btn.className = (currentChatTarget && currentChatTarget.id === p.id) ? activeCls : inactiveCls;
+  });
+}
+
+function selectChatTarget(personId) {
+  if (!personId) {
+    currentChatTarget = null;
+  } else {
+    currentChatTarget = registeredPeople.find(p => p.id === personId) || null;
+  }
+  highlightChatTargetButton();
+  loadChatMessages();
+}
+
+async function loadChatMessages() {
+  const container = document.getElementById('chatMessagesContainer');
+  const headerLabel = document.getElementById('chatHeaderLabel');
+  if (!container) return;
+
+  if (headerLabel) {
+    headerLabel.innerHTML = currentChatTarget
+      ? `<i data-lucide="user" class="w-3.5 h-3.5 text-indigo-400"></i><span>@${currentChatTarget.name}</span>`
+      : `<i data-lucide="users" class="w-3.5 h-3.5 text-indigo-400"></i><span>${translate('chat_group_label')}</span>`;
+    lucide.createIcons();
+  }
+
+  if (!supabaseClient) {
+    container.innerHTML = `<div class="text-center text-xs text-slate-400 mt-6">${translate('chat_not_configured')}</div>`;
+    return;
+  }
+
+  const { data: msgRows, error } = await supabaseClient.from('messages').select('*').order('created_at', { ascending: true }).limit(500);
+  if (error) {
+    console.error('Mesajlar okunamadı:', error);
+    return;
+  }
+
+  const myEmail = currentUser ? (currentUser.email || '').trim().toLowerCase() : '';
+  let filtered = (msgRows || []).filter(m => {
+    const isGroupMsg = !m.recipient_email;
+    if (currentChatTarget === null) {
+      return isGroupMsg;
+    }
+    const targetEmail = (currentChatTarget.email || '').trim().toLowerCase();
+    const senderEmail = (m.sender_email || '').trim().toLowerCase();
+    const recipientEmail = (m.recipient_email || '').trim().toLowerCase();
+    return (!isGroupMsg) && (
+      (senderEmail === myEmail && recipientEmail === targetEmail) ||
+      (senderEmail === targetEmail && recipientEmail === myEmail)
+    );
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="text-center text-xs text-slate-400 mt-6">${translate('chat_no_messages')}</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(m => {
+    const isMine = (m.sender_email || '').trim().toLowerCase() === myEmail;
+    const timeStr = new Date(m.created_at).toLocaleTimeString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+    return `
+      <div class="flex ${isMine ? 'justify-end' : 'justify-start'}">
+        <div class="max-w-[75%] ${isMine ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-100'} rounded-2xl px-3.5 py-2">
+          ${!isMine ? `<div class="text-[10px] font-bold text-indigo-300 mb-0.5">${m.sender_name}</div>` : ''}
+          <div class="text-xs whitespace-pre-wrap break-words">${m.text}</div>
+          <div class="text-[9px] ${isMine ? 'text-indigo-200' : 'text-slate-400'} mt-1 text-right">${timeStr}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendChatMessage(e) {
+  e.preventDefault();
+  if (!supabaseClient) return;
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text || !currentUser) return;
+  input.value = '';
+  try {
+    await supabaseClient.from('messages').insert({
+      sender_name: currentUser.name,
+      sender_email: currentUser.email,
+      recipient_email: currentChatTarget ? currentChatTarget.email : null,
+      text: text
+    });
+    await loadChatMessages();
+  } catch (err) {
+    console.error('Mesaj gönderilemedi:', err);
+  }
+}
+
+let chatPollInterval = null;
+function startChatPolling() {
+  if (chatPollInterval) clearInterval(chatPollInterval);
+  chatPollInterval = setInterval(() => {
+    const chatView = document.getElementById('view-chat');
+    if (chatView && !chatView.classList.contains('hidden')) {
+      loadChatMessages();
+    }
+  }, 8000);
+}
+
 async function persistTask(t) {
   if (!supabaseClient) {
     localStorage.setItem('demigproject_tasks_v5', JSON.stringify(tasks));
@@ -1347,6 +1640,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderAll();
     document.getElementById('loadingScreen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
+    startChatPolling();
   }
 });
 
@@ -1358,10 +1652,12 @@ async function handleLogin(e) {
   document.getElementById('loadingScreen').classList.remove('hidden');
   updateUserBadge();
   await loadDataFromBackend();
+  await recordLogin();
   populateTaskFilterOptions();
   renderAll();
   document.getElementById('loadingScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
+  startChatPolling();
 }
 
 function logout() {
@@ -2222,13 +2518,15 @@ function closeSidebar() {
 }
 
 function switchTab(tab) {
-  ['diagrams', 'roadmap', 'tasks', 'people', 'dashboard'].forEach(t => {
+  ['diagrams', 'roadmap', 'tasks', 'people', 'dashboard', 'attendance', 'chat'].forEach(t => {
     document.getElementById('view-' + t).classList.add('hidden');
     document.getElementById('tab-' + t).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition";
   });
   document.getElementById('view-' + tab).classList.remove('hidden');
   document.getElementById('tab-' + tab).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 bg-indigo-600 text-white transition";
   closeSidebar();
+  if (tab === 'attendance') renderAttendanceTable();
+  if (tab === 'chat') { populateChatPersonList(); loadChatMessages(); }
 }
 
 function populateModalAssignees() {
