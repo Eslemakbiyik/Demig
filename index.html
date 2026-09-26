@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>demigproject - Proje Yönetim & İlerleme Portalı v5</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.tailwindcss.com" defer></script>
+<script src="https://unpkg.com/lucide@latest" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
   body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #f8fafc; }
@@ -46,6 +46,7 @@
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="login_name_label">Ad Soyad</label>
         <input type="text" id="userName" required placeholder="Örn: M. Tahir Kılavuz" data-i18n-placeholder="login_name_placeholder" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+        <p class="text-[10px] text-slate-500 mt-1" data-i18n="login_name_hint">Proje Ekibi sayfasındaki tam ad ve e-postanızı kullanın — kişisel özellikler doğru çalışsın.</p>
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="login_email_label">E-Posta Adresi</label>
@@ -688,6 +689,7 @@ const I18N = {
     login_subtitle: "Sisteme kayıtlı ad-soyad veya e-posta ile giriş yapın",
     login_name_label: "Ad Soyad",
     login_name_placeholder: "Örn: M. Tahir Kılavuz",
+    login_name_hint: "Proje Ekibi sayfasındaki tam ad ve e-postanızı kullanın — kişisel özellikler doğru çalışsın.",
     login_email_label: "E-Posta Adresi",
     login_dept_label: "Departman / Rol",
     login_submit: "Sisteme Giriş Yap",
@@ -892,6 +894,7 @@ const I18N = {
     login_subtitle: "Sign in with your registered name or email",
     login_name_label: "Full Name",
     login_name_placeholder: "e.g. M. Tahir Kılavuz",
+    login_name_hint: "Use your exact full name and email from the Project Team page — so personal features work correctly.",
     login_email_label: "Email Address",
     login_dept_label: "Department / Role",
     login_submit: "Sign In",
@@ -1275,12 +1278,20 @@ let seedPeople = [
 const SUPABASE_URL = "https://wdenbvysepcbobtebdgc.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_JH3FBrGXq0H3AIqwWBhctg_EvM0Sb6c";
 
-const supabaseClient = (!SUPABASE_URL.includes("YOUR_") && window.supabase)
+let supabaseClient = null;
+const _createSupabaseClient = () => (!SUPABASE_URL.includes("YOUR_") && window.supabase)
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
-if (!supabaseClient) {
-  console.warn("Supabase yapılandırılmadı: veriler paylaşılmayacak, sadece bu tarayıcıda (localStorage) saklanacak.");
+function initExternalLibraries() {
+  supabaseClient = _createSupabaseClient();
+  if (!supabaseClient) {
+    console.warn("Supabase yapılandırılmadı: veriler paylaşılmayacak, sadece bu tarayıcıda (localStorage) saklanacak.");
+  }
+  if (window.emailjs && !EMAILJS_PUBLIC_KEY.includes("YOUR_")) {
+    emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+    emailjsReady = true;
+  }
 }
 
 function taskToRow(t) {
@@ -1385,7 +1396,7 @@ async function renderAttendanceTable() {
   const byName = {};
   (loginRows || []).forEach(r => {
     const emailKey = (r.person_email || '').trim().toLowerCase();
-    const nameKey = (r.person_name || '').trim().toLowerCase();
+    const nameKey = (r.person_name || '').trim().toLocaleLowerCase('tr-TR');
     [[byEmail, emailKey], [byName, nameKey]].forEach(([map, key]) => {
       if (!key) return;
       if (!map[key]) map[key] = { last: r.logged_in_at, count: 0 };
@@ -1397,7 +1408,7 @@ async function renderAttendanceTable() {
   tbody.innerHTML = '';
   registeredPeople.filter(p => !p.isPure).forEach(p => {
     const emailKey = (p.email || '').trim().toLowerCase();
-    const nameKey = (p.name || '').trim().toLowerCase();
+    const nameKey = (p.name || '').trim().toLocaleLowerCase('tr-TR');
     const info = byEmail[emailKey] || byName[nameKey];
     const tr = document.createElement('tr');
     tr.className = "hover:bg-slate-900/40 transition border-b border-slate-800/60";
@@ -1653,10 +1664,6 @@ const EMAILJS_TEMPLATE_ID = "template_v1jq6bn";
 const EMAILJS_PUBLIC_KEY = "Ub7uu7-GaHrGxcBsu";
 
 let emailjsReady = false;
-if (window.emailjs && !EMAILJS_PUBLIC_KEY.includes("YOUR_")) {
-  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
-  emailjsReady = true;
-}
 
 let tasks = [];
 let currentUser = JSON.parse(localStorage.getItem('demigproject_user')) || null;
@@ -1674,6 +1681,7 @@ let currentWeeklyTodoTaskIdx = null;
 const monthNames = ["Ekim '25", "Kasım '25", "Aralık '25", "Ocak '26", "Şubat '26", "Mart '26", "Nisan '26", "Mayıs '26", "Haziran '26", "Temmuz '26", "Ağustos '26", "Eylül '26"];
 
 document.addEventListener("DOMContentLoaded", async () => {
+  initExternalLibraries();
   lucide.createIcons();
   applyStaticI18n();
   if (currentUser) {
@@ -2046,7 +2054,7 @@ function getCurrentPersonId() {
   const email = (currentUser.email || '').trim().toLowerCase();
   let p = registeredPeople.find(x => x.email && x.email.trim().toLowerCase() === email);
   if (!p && currentUser.name) {
-    p = registeredPeople.find(x => x.name.trim().toLowerCase() === currentUser.name.trim().toLowerCase());
+    p = registeredPeople.find(x => x.name.trim().toLocaleLowerCase('tr-TR') === currentUser.name.trim().toLocaleLowerCase('tr-TR'));
   }
   return p ? p.id : null;
 }
