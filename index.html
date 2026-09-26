@@ -116,6 +116,7 @@
         </button>
         <button onclick="switchTab('chat')" id="tab-chat" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
           <i data-lucide="message-circle" class="w-4 h-4"></i><span data-i18n="nav_chat">Ekip Sohbeti</span>
+          <span id="chatUnreadBadge" class="hidden ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center"></span>
         </button>
         <button onclick="openGuideModal()" id="tab-guide" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-amber-300 hover:text-white hover:bg-slate-800 transition border-t border-slate-800 mt-1 pt-3">
           <i data-lucide="help-circle" class="w-4 h-4"></i><span data-i18n="nav_guide">Kullanım Kılavuzu</span>
@@ -125,6 +126,7 @@
       <div class="px-3 pb-3 pt-2 border-t border-slate-800 mt-2">
         <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center space-x-1.5">
           <i data-lucide="list-checks" class="w-3 h-3"></i><span data-i18n="sidebar_my_todos">Haftalık To-Do'larım</span>
+          <span id="myTodoBadge" class="hidden bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">+1</span>
         </div>
         <select id="sidebarPersonFilter" onchange="renderSidebarTodos()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-[10px] text-white mb-2"></select>
         <div id="sidebarTodoList" class="space-y-1.5 max-h-56 overflow-y-auto pr-1"></div>
@@ -1370,7 +1372,7 @@ async function renderAttendanceTable() {
   });
 
   tbody.innerHTML = '';
-  registeredPeople.forEach(p => {
+  registeredPeople.filter(p => !p.isPure).forEach(p => {
     const key = (p.email || '').trim().toLowerCase();
     const info = byEmail[key];
     const tr = document.createElement('tr');
@@ -1517,6 +1519,7 @@ function startChatPolling() {
     const chatView = document.getElementById('view-chat');
     if (chatView && !chatView.classList.contains('hidden')) {
       loadChatMessages();
+      markChatAsRead();
     }
   }, 8000);
 }
@@ -1641,6 +1644,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('loadingScreen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     startChatPolling();
+    startUnreadPolling();
   }
 });
 
@@ -1658,6 +1662,7 @@ async function handleLogin(e) {
   document.getElementById('loadingScreen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   startChatPolling();
+  startUnreadPolling();
 }
 
 function logout() {
@@ -1696,6 +1701,7 @@ function renderAll() {
   populateTaskFilterOptions();
   populateSidebarPersonFilter();
   renderSidebarTodos();
+  updateMyTodoBadge();
   lucide.createIcons();
 }
 
@@ -1995,6 +2001,71 @@ function getCurrentPersonId() {
     p = registeredPeople.find(x => x.name.trim().toLowerCase() === currentUser.name.trim().toLowerCase());
   }
   return p ? p.id : null;
+}
+
+function updateMyTodoBadge() {
+  const badge = document.getElementById('myTodoBadge');
+  if (!badge) return;
+  const myId = getCurrentPersonId();
+  if (!myId) { badge.classList.add('hidden'); return; }
+  let count = 0;
+  tasks.forEach(t => {
+    ensureWeeklyTodos(t);
+    t.weeklyTodos.forEach(w => {
+      if (w.assigneeId === myId && w.status !== 'Tamamlandı') count++;
+    });
+  });
+  if (count > 0) {
+    badge.innerText = '+' + count;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+async function checkUnreadMessages() {
+  const badge = document.getElementById('chatUnreadBadge');
+  if (!badge || !supabaseClient || !currentUser) return;
+  const myEmail = (currentUser.email || '').trim().toLowerCase();
+  if (!myEmail) return;
+
+  try {
+    const { data: readRow } = await supabaseClient.from('chat_reads').select('*').eq('person_email', myEmail).maybeSingle();
+    const lastReadAt = readRow ? readRow.last_read_at : '1970-01-01T00:00:00Z';
+
+    const { data: msgRows, error } = await supabaseClient.from('messages').select('*').eq('recipient_email', myEmail).gt('created_at', lastReadAt);
+    if (error) { console.error('Okunmamış mesaj kontrolü başarısız:', error); return; }
+
+    const count = (msgRows || []).length;
+    if (count > 0) {
+      badge.innerText = count > 9 ? '9+' : String(count);
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
+  } catch (e) {
+    console.error('Okunmamış mesaj kontrolü hatası:', e);
+  }
+}
+
+async function markChatAsRead() {
+  if (!supabaseClient || !currentUser) return;
+  const myEmail = (currentUser.email || '').trim().toLowerCase();
+  if (!myEmail) return;
+  try {
+    await supabaseClient.from('chat_reads').upsert({ person_email: myEmail, last_read_at: new Date().toISOString() });
+    const badge = document.getElementById('chatUnreadBadge');
+    if (badge) badge.classList.add('hidden');
+  } catch (e) {
+    console.error('Okundu işareti kaydedilemedi:', e);
+  }
+}
+
+let unreadPollInterval = null;
+function startUnreadPolling() {
+  if (unreadPollInterval) clearInterval(unreadPollInterval);
+  checkUnreadMessages();
+  unreadPollInterval = setInterval(checkUnreadMessages, 15000);
 }
 
 function populateSidebarPersonFilter() {
@@ -2526,7 +2597,7 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 bg-indigo-600 text-white transition";
   closeSidebar();
   if (tab === 'attendance') renderAttendanceTable();
-  if (tab === 'chat') { populateChatPersonList(); loadChatMessages(); }
+  if (tab === 'chat') { populateChatPersonList(); loadChatMessages(); markChatAsRead(); }
 }
 
 function populateModalAssignees() {
