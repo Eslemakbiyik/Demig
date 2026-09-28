@@ -120,7 +120,7 @@
           <i data-lucide="message-circle" class="w-4 h-4"></i><span data-i18n="nav_chat">Ekip Sohbeti</span>
           <span id="chatUnreadBadge" class="hidden ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center"></span>
         </button>
-        <button onclick="openGuideModal()" id="tab-guide" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-amber-300 hover:text-white hover:bg-slate-800 transition border-t border-slate-800 mt-1 pt-3">
+        <button onclick="startTour()" id="tab-guide" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-amber-300 hover:text-white hover:bg-slate-800 transition border-t border-slate-800 mt-1 pt-3">
           <i data-lucide="help-circle" class="w-4 h-4"></i><span data-i18n="nav_guide">Kullanım Kılavuzu</span>
         </button>
       </nav>
@@ -585,35 +585,43 @@
   </div>
 </div>
 
-<div id="guideModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-  <div class="glass p-6 rounded-2xl w-full max-w-lg border border-slate-700 shadow-2xl">
-    <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
-      <h3 class="text-base font-bold text-white flex items-center space-x-2">
-        <i data-lucide="help-circle" class="w-5 h-5 text-amber-300"></i>
-        <span data-i18n="guide_title">Kullanım Kılavuzu</span>
-      </h3>
-      <button onclick="closeGuideModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+<!-- TUR: HOŞ GELDİNİZ POP-UP'I (sadece ilk girişte gösterilir) -->
+<div id="tourWelcomeModal" class="fixed inset-0 z-[75] hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+  <div class="glass p-7 rounded-2xl w-full max-w-md border border-indigo-500/30 shadow-2xl text-center">
+    <div class="inline-flex p-4 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 mb-4">
+      <i data-lucide="compass" class="w-8 h-8"></i>
     </div>
+    <h3 class="text-xl font-bold text-white mb-2" data-i18n="tour_welcome_title">Siteye Hoş Geldiniz! 👋</h3>
+    <p class="text-sm text-slate-300 leading-relaxed mb-5" data-i18n="tour_welcome_desc">İsterseniz size siteyi kısaca gezdirelim.</p>
+    <div class="flex gap-3">
+      <button onclick="dismissTourWelcome()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg border border-slate-700 transition" data-i18n="tour_welcome_skip">Şimdi Değil</button>
+      <button onclick="startTour()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg shadow-lg shadow-indigo-600/30 transition" data-i18n="tour_welcome_start">Turu Başlat</button>
+    </div>
+    <p class="text-[11px] text-slate-500 mt-4" data-i18n="tour_welcome_hint">Turu daha sonra sol menüden tekrar başlatabilirsiniz.</p>
+  </div>
+</div>
 
-    <div class="flex justify-center mb-4">
-      <div class="p-4 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300">
-        <i id="guideStepIcon" data-lucide="sparkles" class="w-8 h-8"></i>
+<!-- TUR: SPOTLIGHT + BALON (gerçek buton/sekmelerin üzerinde ilerler) -->
+<div id="tourLayer" class="hidden fixed inset-0 z-[80]">
+  <div id="tourBlocker" class="absolute inset-0"></div>
+  <div id="tourSpotlight" class="absolute rounded-xl pointer-events-none" style="left:50%;top:50%;width:0;height:0;box-shadow:0 0 0 9999px rgba(2,6,23,0.78);border:2px solid #818cf8;transition:left .25s ease,top .25s ease,width .25s ease,height .25s ease;"></div>
+  <div id="tourTooltip" class="absolute bg-slate-900 rounded-2xl p-4 border border-indigo-500/40 shadow-2xl" style="width:340px;max-width:calc(100vw - 24px);">
+    <div class="flex items-start justify-between gap-3 mb-1">
+      <h4 id="tourStepTitle" class="text-sm font-bold text-white"></h4>
+      <button onclick="endTour()" data-i18n-title="tour_close" title="Kapat" class="text-slate-400 hover:text-white shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <p id="tourStepDesc" class="text-xs text-slate-300 leading-relaxed mb-3"></p>
+    <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden mb-3">
+      <div id="tourProgressBar" class="h-full bg-indigo-500 rounded-full" style="width:0%;transition:width .25s ease;"></div>
+    </div>
+    <div class="flex items-center justify-between">
+      <span id="tourStepCounter" class="text-[11px] text-slate-400 font-mono"></span>
+      <div class="flex items-center gap-2">
+        <button id="tourPrevBtn" onclick="prevTourStep()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold rounded-lg border border-slate-700" data-i18n="tour_prev">Geri</button>
+        <button id="tourNextBtn" onclick="nextTourStep()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg flex items-center gap-1">
+          <span id="tourNextLabel">İleri</span>
+        </button>
       </div>
-    </div>
-
-    <h4 id="guideStepTitle" class="text-center text-lg font-bold text-white mb-2"></h4>
-    <p id="guideStepDesc" class="text-center text-sm text-slate-300 leading-relaxed min-h-[80px]"></p>
-
-    <div id="guideDots" class="flex items-center justify-center gap-1.5 mt-5 mb-2"></div>
-
-    <div class="flex items-center justify-between pt-4 border-t border-slate-800 mt-2">
-      <button onclick="prevGuideStep()" id="guidePrevBtn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg flex items-center space-x-1.5">
-        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i><span data-i18n="guide_prev">Önceki</span>
-      </button>
-      <span id="guideStepCounter" class="text-[11px] text-slate-400 font-mono"></span>
-      <button onclick="nextGuideStep()" id="guideNextBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg flex items-center space-x-1.5">
-        <span data-i18n="guide_next">Sonraki</span><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-      </button>
     </div>
   </div>
 </div>
@@ -848,28 +856,41 @@ const I18N = {
     email_subject_reminder: "Hatırlatma",
     email_subject_new: "Yeni Atama",
     nav_guide: "Kullanım Kılavuzu",
-    guide_title: "Kullanım Kılavuzu",
-    guide_prev: "Önceki",
-    guide_next: "Sonraki",
-    guide_finish: "Bitti",
-    guide_step1_title: "Hoş Geldiniz!",
-    guide_step1_desc: "demigproject Portalı'na hoş geldiniz. Bu kısa kılavuz, sitenin temel özelliklerini adım adım tanıtacak. \"Sonraki\" ile devam edebilirsiniz.",
-    guide_step2_title: "Sol Menü",
-    guide_step2_desc: "Sol taraftaki menüden 5 ana sekme arasında geçiş yapabilirsiniz: Diyagram & Grafikler, İlerleme Haritası, Görev Takibi, Proje Ekibi ve Yönetici Özet Raporu.",
-    guide_step3_title: "Diyagram & Grafikler",
-    guide_step3_desc: "Burada tüm görevlerin zaman çizelgesini (Gantt tablosu) görürsünüz. Bir görevin solundaki oka tıklayarak haftalık to-do listesini açabilir, ay hücrelerine tıklayarak ilerlemeyi %5'er artırabilirsiniz.",
-    guide_step4_title: "İlerleme Haritası",
-    guide_step4_desc: "Görevleri kart şeklinde görüp başlık, not veya durumlarını doğrudan buradan güncelleyebilirsiniz.",
-    guide_step5_title: "Görev Takibi & Veri Girişi",
-    guide_step5_desc: "\"Yeni Görev Ekle\" ile yeni bir ana görev oluşturabilir, ya da \"Alt Görev\" sekmesinden mevcut bir göreve sorumlu kişi, tarih, öncelik ve durum atayarak haftalık to-do ekleyebilirsiniz.",
-    guide_step6_title: "Proje Ekibi",
-    guide_step6_desc: "Ekip üyelerinin gerçekte kullandığı e-posta adreslerini buradan güncelleyebilirsiniz — haftalık görev atamaları ve hatırlatma mailleri bu adrese gider.",
-    guide_step7_title: "Yönetici Özet Raporu",
-    guide_step7_desc: "Tarih aralığı veya görev filtresi seçip \"Filtreli AI Raporu Üret\" butonuna basarak, seçtiğiniz kriterlere uygun detaylı bir özet rapor oluşturabilirsiniz.",
-    guide_step8_title: "Haftalık To-Do'larım",
-    guide_step8_desc: "Sol menünün altındaki bu bölümden size atanmış haftalık görevleri hızlıca görebilir, açılır listeden ekip arkadaşlarınızın to-do'larını da inceleyebilirsiniz.",
-    guide_step9_title: "Dil Seçimi",
-    guide_step9_desc: "Giriş ekranındaki veya sol menüdeki TR/EN butonlarıyla sitenin dilini istediğiniz zaman değiştirebilirsiniz. Kılavuzu istediğiniz zaman sol menüden tekrar açabilirsiniz.",
+    tour_welcome_title: "Siteye Hoş Geldiniz! 👋",
+    tour_welcome_desc: "İsterseniz size siteyi kısaca gezdirelim: hangi sekmede ne var, görevleri nasıl güncellersiniz, mesajlaşma ve bildirimler nasıl çalışır. Yaklaşık 1-2 dakika sürer.",
+    tour_welcome_start: "Turu Başlat",
+    tour_welcome_skip: "Şimdi Değil",
+    tour_welcome_hint: "Turu daha sonra sol menüdeki \"Kullanım Kılavuzu\" butonundan istediğiniz zaman tekrar başlatabilirsiniz.",
+    tour_prev: "Geri",
+    tour_next: "İleri",
+    tour_finish: "Turu Bitir",
+    tour_close: "Turu Kapat",
+    tour_s1_title: "Sol Menü",
+    tour_s1_desc: "Sitedeki tüm sayfalara bu menüden ulaşırsınız. Şimdi sırayla hepsini gezelim.",
+    tour_s2_title: "Diyagram & Grafikler",
+    tour_s2_desc: "Projenin genel ilerlemesini burada görürsünüz. Sağ üstteki kutu, tüm görevlerin ortalama ilerleme yüzdesini gösterir.",
+    tour_s3_title: "Proje Takvimi (Gantt)",
+    tour_s3_desc: "Her görevin hangi aylarda yürütüldüğünü gösterir. Görev adının solundaki oka tıklayarak haftalık to-do listesini açabilir, ay hücrelerine tıklayarak o ayın ilerlemesini %5'er artırabilirsiniz.",
+    tour_s4_title: "İlerleme Haritası",
+    tour_s4_desc: "Görevleri kartlar halinde görür; başlık, not ve durumu doğrudan kartın üzerinden güncelleyebilirsiniz. Yeni bir adım eklemek için bu butonu kullanın.",
+    tour_s5_title: "Görev Takibi & Veri Girişi",
+    tour_s5_desc: "Tüm görevleri tablo halinde yönetirsiniz. Bu butonla yeni görev ekleyebilir, açılan pencerenin \"Alt Görev\" sekmesinden bir göreve sorumlu kişi, tarih, öncelik ve durumla haftalık to-do atayabilirsiniz.",
+    tour_s6_title: "Proje Ekibi",
+    tour_s6_desc: "Ekip üyelerinin bilgileri burada. E-posta alanına gerçek adreslerini yazıp ✓ ile kaydedin — görev atama ve hatırlatma mailleri bu adrese gider.",
+    tour_s7_title: "Yönetici Özet Raporu",
+    tour_s7_desc: "Tarih aralığı ve görev filtresini seçip \"Filtreli AI Raporu Üret\" butonuna basarak detaylı bir rapor oluşturun; rapor yazdırılabilir ve PDF olarak indirilebilir.",
+    tour_s8_title: "Katılım Takibi",
+    tour_s8_desc: "Ekip üyelerinin siteye en son ne zaman girdiğini, kaç kez girdiğini ve hiç giriş yapmayanları buradan görürsünüz.",
+    tour_s9_title: "Ekip Sohbeti",
+    tour_s9_desc: "\"Grup Sohbeti\" herkese açıktır; listeden bir isme tıklayarak o kişiyle birebir özel mesajlaşabilirsiniz. Size özel mesaj geldiğinde menüde kırmızı bir bildirim rozeti görünür.",
+    tour_s10_title: "Hata Bildir / Öneri",
+    tour_s10_desc: "Bir hatayla karşılaşırsanız ya da öneri/şikayetinizi iletmek isterseniz bu kanala yazın. Herkes görebilir, böylece aynı hata tekrar tekrar bildirilmez.",
+    tour_s11_title: "Haftalık To-Do'larım",
+    tour_s11_desc: "Size atanan görevler burada listelenir; yanındaki kırmızı rozet tamamlanmamış görev sayınızı gösterir. Açılır menüden ekip arkadaşlarınızın listesine de bakabilirsiniz. (Bunun çalışması için kayıtlı ad ve e-postanızla giriş yapmış olmalısınız.)",
+    tour_s12_title: "Dil Seçimi",
+    tour_s12_desc: "TR / EN butonlarıyla sitenin dilini istediğiniz an değiştirebilirsiniz.",
+    tour_s13_title: "Tur Tamam! 🎉",
+    tour_s13_desc: "Bu turu istediğiniz zaman buradaki \"Kullanım Kılavuzu\" butonundan tekrar başlatabilirsiniz. İyi çalışmalar!",
     nav_attendance: "Katılım Takibi",
     nav_chat: "Ekip Sohbeti",
     attendance_title: "Katılım / Giriş Takibi",
@@ -1053,28 +1074,41 @@ const I18N = {
     email_subject_reminder: "Reminder",
     email_subject_new: "New Assignment",
     nav_guide: "User Guide",
-    guide_title: "User Guide",
-    guide_prev: "Previous",
-    guide_next: "Next",
-    guide_finish: "Done",
-    guide_step1_title: "Welcome!",
-    guide_step1_desc: "Welcome to the demigproject Portal. This short guide will walk you through the site's main features step by step. Continue with \"Next\".",
-    guide_step2_title: "Left Menu",
-    guide_step2_desc: "Use the menu on the left to switch between 5 main tabs: Diagram & Charts, Progress Roadmap, Task Tracking, Project Team and Executive Summary Report.",
-    guide_step3_title: "Diagram & Charts",
-    guide_step3_desc: "Here you can see the timeline (Gantt chart) of all tasks. Click the arrow to the left of a task to open its weekly to-do list, or click a month cell to increase progress by 5% at a time.",
-    guide_step4_title: "Progress Roadmap",
-    guide_step4_desc: "View tasks as cards and update their title, notes or status directly from here.",
-    guide_step5_title: "Task Tracking & Data Entry",
-    guide_step5_desc: "Use \"Add New Task\" to create a new main task, or use the \"Subtask\" tab to add a weekly to-do to an existing task with an assignee, dates, priority and status.",
-    guide_step6_title: "Project Team",
-    guide_step6_desc: "Update team members' actual email addresses here — weekly task assignments and reminder emails are sent to this address.",
-    guide_step7_title: "Executive Summary Report",
-    guide_step7_desc: "Choose a date range or task filter and click \"Generate Filtered AI Report\" to produce a detailed summary report matching your chosen criteria.",
-    guide_step8_title: "My Weekly To-Dos",
-    guide_step8_desc: "This section at the bottom of the left menu lets you quickly see the weekly tasks assigned to you, or check your teammates' to-dos from the dropdown.",
-    guide_step9_title: "Language Selection",
-    guide_step9_desc: "Use the TR/EN buttons on the login screen or the left menu to switch the site's language anytime. You can reopen this guide from the left menu whenever you like.",
+    tour_welcome_title: "Welcome to the Site! 👋",
+    tour_welcome_desc: "Would you like a quick tour? We will show you what is in each tab, how to update tasks, and how messaging and notifications work. It takes about 1-2 minutes.",
+    tour_welcome_start: "Start Tour",
+    tour_welcome_skip: "Not Now",
+    tour_welcome_hint: "You can restart the tour anytime from the \"User Guide\" button in the left menu.",
+    tour_prev: "Back",
+    tour_next: "Next",
+    tour_finish: "Finish Tour",
+    tour_close: "Close Tour",
+    tour_s1_title: "Left Menu",
+    tour_s1_desc: "You reach every page of the site from this menu. Let's walk through them one by one.",
+    tour_s2_title: "Diagram & Charts",
+    tour_s2_desc: "Here you see the overall progress of the project. The box on the right shows the average progress of all tasks.",
+    tour_s3_title: "Project Timeline (Gantt)",
+    tour_s3_desc: "Shows in which months each task runs. Click the arrow left of a task name to open its weekly to-do list, or click a month cell to increase that month's progress by 5%.",
+    tour_s4_title: "Progress Roadmap",
+    tour_s4_desc: "See tasks as cards and update their title, notes and status right on the card. Use this button to add a new step.",
+    tour_s5_title: "Task Tracking & Data Entry",
+    tour_s5_desc: "Manage all tasks in a table. Use this button to add a new task, or use the \"Subtask\" tab in the window that opens to assign a weekly to-do to a task with an assignee, dates, priority and status.",
+    tour_s6_title: "Project Team",
+    tour_s6_desc: "Team member details live here. Type their real email address in the email field and save with ✓ — assignment and reminder emails are sent to this address.",
+    tour_s7_title: "Executive Summary Report",
+    tour_s7_desc: "Pick a date range and a task filter, then press \"Generate Filtered AI Report\" to create a detailed report that can be printed or downloaded as PDF.",
+    tour_s8_title: "Attendance",
+    tour_s8_desc: "See when each team member last logged in, how many times, and who has not logged in yet.",
+    tour_s9_title: "Team Chat",
+    tour_s9_desc: "\"Group Chat\" is visible to everyone; click a name in the list to message that person privately. When you get a private message, a red badge appears in the menu.",
+    tour_s10_title: "Report Bug / Suggest",
+    tour_s10_desc: "If you run into a bug, or want to send a suggestion or complaint, write it in this channel. Everyone can see it, so the same bug is not reported again and again.",
+    tour_s11_title: "My Weekly To-Dos",
+    tour_s11_desc: "Tasks assigned to you are listed here; the red badge shows how many are not completed yet. You can also check your teammates' lists from the dropdown. (This works only if you logged in with your registered name and email.)",
+    tour_s12_title: "Language Selection",
+    tour_s12_desc: "Use the TR / EN buttons to switch the site language at any time.",
+    tour_s13_title: "Tour Complete! 🎉",
+    tour_s13_desc: "You can restart this tour anytime from the \"User Guide\" button here. Have a great time working!",
     nav_attendance: "Attendance",
     nav_chat: "Team Chat",
     attendance_title: "Attendance / Login Tracking",
@@ -1160,68 +1194,190 @@ function setLanguage(lang) {
 }
 
 // =====================================================================
-// KULLANIM KILAVUZU (ONBOARDING GUIDE)
+// İNTERAKTİF TUR (GUIDED TOUR) - gerçek buton ve sekmelerin üzerinde ilerler
 // =====================================================================
-const GUIDE_STEPS = [
-  { icon: 'sparkles', titleKey: 'guide_step1_title', descKey: 'guide_step1_desc' },
-  { icon: 'menu', titleKey: 'guide_step2_title', descKey: 'guide_step2_desc' },
-  { icon: 'bar-chart-2', titleKey: 'guide_step3_title', descKey: 'guide_step3_desc' },
-  { icon: 'git-merge', titleKey: 'guide_step4_title', descKey: 'guide_step4_desc' },
-  { icon: 'check-square', titleKey: 'guide_step5_title', descKey: 'guide_step5_desc' },
-  { icon: 'users', titleKey: 'guide_step6_title', descKey: 'guide_step6_desc' },
-  { icon: 'file-text', titleKey: 'guide_step7_title', descKey: 'guide_step7_desc' },
-  { icon: 'list-checks', titleKey: 'guide_step8_title', descKey: 'guide_step8_desc' },
-  { icon: 'languages', titleKey: 'guide_step9_title', descKey: 'guide_step9_desc' },
+let tourActive = false;
+let tourStepIndex = 0;
+let tourReturnTab = 'diagrams';
+
+const $id = (x) => document.getElementById(x);
+
+const TOUR_STEPS = [
+  { inSidebar: true, placement: 'right', titleKey: 'tour_s1_title', descKey: 'tour_s1_desc',
+    target: () => document.querySelector('#sidebarAside nav') },
+  { tab: 'diagrams', placement: 'bottom', titleKey: 'tour_s2_title', descKey: 'tour_s2_desc',
+    target: () => document.querySelector('#view-diagrams > div:first-child') },
+  { tab: 'diagrams', placement: 'bottom', titleKey: 'tour_s3_title', descKey: 'tour_s3_desc',
+    target: () => {
+      const body = $id('excelGanttMatrixBody');
+      if (!body) return null;
+      return Array.from(body.querySelectorAll('tr')).find(tr => !tr.querySelector('td[colspan]')) || null;
+    } },
+  { tab: 'roadmap', placement: 'bottom', titleKey: 'tour_s4_title', descKey: 'tour_s4_desc',
+    target: () => document.querySelector('#view-roadmap button[onclick="openTaskModal()"]') },
+  { tab: 'tasks', placement: 'bottom', titleKey: 'tour_s5_title', descKey: 'tour_s5_desc',
+    target: () => document.querySelector('#view-tasks button[onclick="openTaskModal()"]') },
+  { tab: 'people', placement: 'bottom', titleKey: 'tour_s6_title', descKey: 'tour_s6_desc',
+    target: () => document.querySelector('#seniorTeamContainer > div:first-child') },
+  { tab: 'dashboard', placement: 'bottom', titleKey: 'tour_s7_title', descKey: 'tour_s7_desc',
+    target: () => { const el = $id('reportStartDate'); return el ? el.closest('.grid') : null; } },
+  { tab: 'attendance', placement: 'bottom', titleKey: 'tour_s8_title', descKey: 'tour_s8_desc',
+    target: () => { const el = $id('attendanceTableBody'); return el ? el.closest('.glass') : null; } },
+  { tab: 'chat', placement: 'right', titleKey: 'tour_s9_title', descKey: 'tour_s9_desc',
+    target: () => { const el = $id('chatPersonList'); return el ? el.parentElement : null; } },
+  { tab: 'chat', placement: 'right', titleKey: 'tour_s10_title', descKey: 'tour_s10_desc',
+    target: () => $id('chatTargetBtn-feedback') },
+  { inSidebar: true, placement: 'right', titleKey: 'tour_s11_title', descKey: 'tour_s11_desc',
+    target: () => { const el = $id('sidebarPersonFilter'); return el ? el.parentElement : null; } },
+  { inSidebar: true, placement: 'right', titleKey: 'tour_s12_title', descKey: 'tour_s12_desc',
+    target: () => { const el = $id('langBtnTrSidebar'); return el ? el.parentElement : null; } },
+  { inSidebar: true, placement: 'right', titleKey: 'tour_s13_title', descKey: 'tour_s13_desc',
+    target: () => $id('tab-guide') },
 ];
 
-let currentGuideStep = 0;
+function tourIsMobile() { return window.innerWidth < 768; }
 
-function openGuideModal() {
-  currentGuideStep = 0;
-  renderGuideStep();
-  document.getElementById('guideModal').classList.remove('hidden');
+function tourSeenKey() {
+  return 'demigproject_tour_seen_' + ((currentUser && currentUser.email) || '').trim().toLowerCase();
 }
 
-function closeGuideModal() {
-  document.getElementById('guideModal').classList.add('hidden');
+// Sadece kişi siteye İLK girdiğinde "turu başlatalım mı?" pop-up'ı çıkar
+function maybeShowTourWelcome() {
+  if (!currentUser) return;
+  let seen = false;
+  try { seen = localStorage.getItem(tourSeenKey()) === '1'; } catch (e) {}
+  if (seen) return;
+  try { localStorage.setItem(tourSeenKey(), '1'); } catch (e) {}
+  setTimeout(() => { $id('tourWelcomeModal').classList.remove('hidden'); }, 700);
 }
 
-function renderGuideStep() {
-  const step = GUIDE_STEPS[currentGuideStep];
-  document.getElementById('guideStepIcon').setAttribute('data-lucide', step.icon);
-  document.getElementById('guideStepTitle').innerText = translate(step.titleKey);
-  document.getElementById('guideStepDesc').innerText = translate(step.descKey);
-  document.getElementById('guideStepCounter').innerText = (currentGuideStep + 1) + ' / ' + GUIDE_STEPS.length;
-
-  const dotsContainer = document.getElementById('guideDots');
-  dotsContainer.innerHTML = GUIDE_STEPS.map((_, i) =>
-    `<span class="w-1.5 h-1.5 rounded-full ${i === currentGuideStep ? 'bg-indigo-500' : 'bg-slate-700'}"></span>`
-  ).join('');
-
-  const prevBtn = document.getElementById('guidePrevBtn');
-  const nextBtn = document.getElementById('guideNextBtn');
-  prevBtn.style.visibility = currentGuideStep === 0 ? 'hidden' : 'visible';
-  nextBtn.innerHTML = currentGuideStep === GUIDE_STEPS.length - 1
-    ? `<span>${translate('guide_finish')}</span>`
-    : `<span>${translate('guide_next')}</span><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>`;
-
-  lucide.createIcons();
+function dismissTourWelcome() {
+  $id('tourWelcomeModal').classList.add('hidden');
 }
 
-function nextGuideStep() {
-  if (currentGuideStep < GUIDE_STEPS.length - 1) {
-    currentGuideStep++;
-    renderGuideStep();
-  } else {
-    closeGuideModal();
+function getActiveTab() {
+  const tabs = ['diagrams', 'roadmap', 'tasks', 'people', 'dashboard', 'attendance', 'chat'];
+  return tabs.find(t => { const v = $id('view-' + t); return v && !v.classList.contains('hidden'); }) || 'diagrams';
+}
+
+function tourSafeTarget(step) {
+  try { return step.target(); } catch (e) { return null; }
+}
+
+function tourKeyHandler(e) {
+  if (!tourActive) return;
+  if (e.key === 'Escape') endTour();
+  else if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); nextTourStep(); }
+  else if (e.key === 'ArrowLeft') prevTourStep();
+}
+
+function startTour() {
+  dismissTourWelcome();
+  tourReturnTab = getActiveTab();
+  tourActive = true;
+  $id('tourLayer').classList.remove('hidden');
+  window.addEventListener('resize', positionTour);
+  document.addEventListener('scroll', positionTour, true);
+  document.addEventListener('keydown', tourKeyHandler);
+  showTourStep(0);
+}
+
+function endTour() {
+  tourActive = false;
+  $id('tourLayer').classList.add('hidden');
+  window.removeEventListener('resize', positionTour);
+  document.removeEventListener('scroll', positionTour, true);
+  document.removeEventListener('keydown', tourKeyHandler);
+  if (tourIsMobile()) closeSidebar();
+  switchTab(tourReturnTab);
+}
+
+function nextTourStep() {
+  if (tourStepIndex < TOUR_STEPS.length - 1) showTourStep(tourStepIndex + 1);
+  else endTour();
+}
+
+function prevTourStep() {
+  if (tourStepIndex > 0) showTourStep(tourStepIndex - 1);
+}
+
+function showTourStep(i) {
+  tourStepIndex = i;
+  const step = TOUR_STEPS[i];
+  if (step.tab) switchTab(step.tab);
+  if (tourIsMobile()) { if (step.inSidebar) openSidebar(); else closeSidebar(); }
+
+  const total = TOUR_STEPS.length;
+  $id('tourStepTitle').innerText = translate(step.titleKey);
+  $id('tourStepDesc').innerText = translate(step.descKey);
+  $id('tourStepCounter').innerText = (i + 1) + ' / ' + total;
+  $id('tourProgressBar').style.width = ((i + 1) / total * 100) + '%';
+  $id('tourPrevBtn').style.visibility = i === 0 ? 'hidden' : 'visible';
+  $id('tourNextLabel').innerText = i === total - 1 ? translate('tour_finish') : translate('tour_next');
+
+  const el = tourSafeTarget(step);
+  if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+
+  positionTour();
+  // Kaydırma, menü animasyonu ve asenkron tablo çizimi bittikten sonra tekrar konumlandır
+  setTimeout(positionTour, 400);
+  setTimeout(positionTour, 900);
+}
+
+function positionTour() {
+  if (!tourActive) return;
+  const step = TOUR_STEPS[tourStepIndex];
+  const spot = $id('tourSpotlight');
+  const tt = $id('tourTooltip');
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const mobile = vw < 640;
+
+  tt.style.width = Math.min(340, vw - 24) + 'px';
+  const tw = tt.offsetWidth, th = tt.offsetHeight;
+
+  const el = tourSafeTarget(step);
+  let rect = null;
+  if (el) { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) rect = r; }
+
+  // Hedef bulunamazsa: tüm ekranı karart, balonu ortala
+  if (!rect) {
+    spot.style.left = (vw / 2) + 'px'; spot.style.top = (vh / 2) + 'px';
+    spot.style.width = '0px'; spot.style.height = '0px';
+    tt.style.left = Math.max(12, (vw - tw) / 2) + 'px';
+    tt.style.top = Math.max(12, (vh - th) / 2) + 'px';
+    return;
   }
-}
 
-function prevGuideStep() {
-  if (currentGuideStep > 0) {
-    currentGuideStep--;
-    renderGuideStep();
+  const pad = 6;
+  const left = Math.max(rect.left - pad, 4);
+  const top = Math.max(rect.top - pad, 4);
+  const right = Math.min(rect.right + pad, vw - 4);
+  const bottom = Math.min(rect.bottom + pad, vh - 4);
+  spot.style.left = left + 'px';
+  spot.style.top = top + 'px';
+  spot.style.width = Math.max(right - left, 0) + 'px';
+  spot.style.height = Math.max(bottom - top, 0) + 'px';
+
+  // Mobil: balon ekranın üstüne/altına sabitlenir (hedefin tersi tarafa)
+  if (mobile) {
+    const targetCenterY = (top + bottom) / 2;
+    tt.style.left = '12px';
+    tt.style.top = (targetCenterY > vh / 2 ? 12 : Math.max(12, vh - th - 12)) + 'px';
+    return;
   }
+
+  const gap = 16;
+  const order = [step.placement || 'bottom', 'bottom', 'top', 'right', 'left'];
+  let pos = null;
+  for (const p of order) {
+    if (p === 'right' && vw - right >= tw + gap + 8) { pos = { left: right + gap, top: (top + bottom) / 2 - th / 2 }; break; }
+    if (p === 'left' && left >= tw + gap + 8) { pos = { left: left - gap - tw, top: (top + bottom) / 2 - th / 2 }; break; }
+    if (p === 'bottom' && vh - bottom >= th + gap + 8) { pos = { left: (left + right) / 2 - tw / 2, top: bottom + gap }; break; }
+    if (p === 'top' && top >= th + gap + 8) { pos = { left: (left + right) / 2 - tw / 2, top: top - gap - th }; break; }
+  }
+  if (!pos) pos = { left: (vw - tw) / 2, top: vh - th - 16 };
+  tt.style.left = Math.min(Math.max(12, pos.left), vw - tw - 12) + 'px';
+  tt.style.top = Math.min(Math.max(12, pos.top), vh - th - 12) + 'px';
 }
 
 function taskSortKey(id) {
@@ -1698,6 +1854,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById('app').classList.remove('hidden');
     startChatPolling();
     startUnreadPolling();
+    maybeShowTourWelcome();
   }
 });
 
@@ -1719,6 +1876,7 @@ async function handleLogin(e) {
   document.getElementById('app').classList.remove('hidden');
   startChatPolling();
   startUnreadPolling();
+  maybeShowTourWelcome();
 }
 
 function logout() {
@@ -2653,7 +2811,7 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 bg-indigo-600 text-white transition";
   closeSidebar();
   if (tab === 'attendance') renderAttendanceTable();
-  if (tab === 'chat') { populateChatPersonList(); loadChatMessages(); markChatAsRead(); }
+  if (tab === 'chat') { populateChatPersonList(); loadChatMessages(); if (!tourActive) markChatAsRead(); }
 }
 
 function populateModalAssignees() {
