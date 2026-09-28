@@ -120,6 +120,9 @@
           <i data-lucide="message-circle" class="w-4 h-4"></i><span data-i18n="nav_chat">Ekip Sohbeti</span>
           <span id="chatUnreadBadge" class="hidden ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center"></span>
         </button>
+        <a href="finans.html" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <i data-lucide="wallet" class="w-4 h-4"></i><span data-i18n="nav_finance">Finans & Talepler</span>
+        </a>
         <button onclick="startTour()" id="tab-guide" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-amber-300 hover:text-white hover:bg-slate-800 transition border-t border-slate-800 mt-1 pt-3">
           <i data-lucide="help-circle" class="w-4 h-4"></i><span data-i18n="nav_guide">Kullanım Kılavuzu</span>
         </button>
@@ -904,6 +907,7 @@ const I18N = {
     tour_s13_desc: "Bu turu istediğiniz zaman buradaki \"Kullanım Kılavuzu\" butonundan tekrar başlatabilirsiniz. İyi çalışmalar!",
     nav_attendance: "Katılım Takibi",
     nav_chat: "Ekip Sohbeti",
+    nav_finance: "Finans & Talepler",
     attendance_title: "Katılım / Giriş Takibi",
     attendance_subtitle: "Ekip üyelerinin siteye en son ne zaman giriş yaptığını ve hiç giriş yapmayanları buradan görebilirsiniz.",
     attendance_th_role: "Departman / Rol",
@@ -1122,6 +1126,7 @@ const I18N = {
     tour_s13_desc: "You can restart this tour anytime from the \"User Guide\" button here. Have a great time working!",
     nav_attendance: "Attendance",
     nav_chat: "Team Chat",
+    nav_finance: "Finance & Requests",
     attendance_title: "Attendance / Login Tracking",
     attendance_subtitle: "See when each team member last logged in, and who hasn't logged in yet.",
     attendance_th_role: "Department / Role",
