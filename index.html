@@ -604,7 +604,18 @@
 <!-- TUR: SPOTLIGHT + BALON (gerçek buton/sekmelerin üzerinde ilerler) -->
 <div id="tourLayer" class="hidden fixed inset-0 z-[80]">
   <div id="tourBlocker" class="absolute inset-0"></div>
-  <div id="tourSpotlight" class="absolute rounded-xl pointer-events-none" style="left:50%;top:50%;width:0;height:0;box-shadow:0 0 0 9999px rgba(2,6,23,0.78);border:2px solid #818cf8;transition:left .25s ease,top .25s ease,width .25s ease,height .25s ease;"></div>
+  <svg id="tourDim" class="absolute inset-0 pointer-events-none" style="width:100%;height:100%;">
+    <defs>
+      <mask id="tourMask" maskUnits="userSpaceOnUse" x="0" y="0" width="100%" height="100%">
+        <rect x="0" y="0" width="100%" height="100%" fill="white"></rect>
+        <rect id="tourHole1" x="0" y="0" width="0" height="0" rx="12" fill="black"></rect>
+        <rect id="tourHole2" x="0" y="0" width="0" height="0" rx="12" fill="black"></rect>
+      </mask>
+    </defs>
+    <rect x="0" y="0" width="100%" height="100%" fill="#020617" fill-opacity="0.78" mask="url(#tourMask)"></rect>
+  </svg>
+  <div id="tourSpotlight" class="hidden absolute rounded-xl pointer-events-none" style="left:0;top:0;width:0;height:0;border:2px solid #818cf8;"></div>
+  <div id="tourSpotlight2" class="hidden absolute rounded-xl pointer-events-none" style="left:0;top:0;width:0;height:0;border:2px solid #818cf8;"></div>
   <div id="tourTooltip" class="absolute bg-slate-900 rounded-2xl p-4 border border-indigo-500/40 shadow-2xl" style="width:340px;max-width:calc(100vw - 24px);">
     <div class="flex items-start justify-between gap-3 mb-1">
       <h4 id="tourStepTitle" class="text-sm font-bold text-white"></h4>
@@ -1324,10 +1335,37 @@ function showTourStep(i) {
   setTimeout(positionTour, 900);
 }
 
+// Bir "delik" (karartmada aydınlık alan) + çerçeve konumlandırır. Kutuyu (padli) döndürür.
+function setTourBox(holeId, spotId, rect, pad, vw, vh) {
+  const hole = $id(holeId), spot = $id(spotId);
+  if (!rect) {
+    hole.setAttribute('width', 0); hole.setAttribute('height', 0);
+    spot.classList.add('hidden');
+    return null;
+  }
+  const left = Math.max(rect.left - pad, 4);
+  const top = Math.max(rect.top - pad, 4);
+  const right = Math.min(rect.right + pad, vw - 4);
+  const bottom = Math.min(rect.bottom + pad, vh - 4);
+  const w = Math.max(right - left, 0), h = Math.max(bottom - top, 0);
+  hole.setAttribute('x', left); hole.setAttribute('y', top);
+  hole.setAttribute('width', w); hole.setAttribute('height', h);
+  spot.classList.remove('hidden');
+  spot.style.left = left + 'px'; spot.style.top = top + 'px';
+  spot.style.width = w + 'px'; spot.style.height = h + 'px';
+  return { left, top, right, bottom };
+}
+
+function tourVisibleRect(el, vw) {
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  if (r.width > 0 && r.height > 0 && r.right > 8 && r.left < vw) return r;
+  return null;
+}
+
 function positionTour() {
   if (!tourActive) return;
   const step = TOUR_STEPS[tourStepIndex];
-  const spot = $id('tourSpotlight');
   const tt = $id('tourTooltip');
   const vw = window.innerWidth, vh = window.innerHeight;
   const mobile = vw < 640;
@@ -1335,28 +1373,21 @@ function positionTour() {
   tt.style.width = Math.min(340, vw - 24) + 'px';
   const tw = tt.offsetWidth, th = tt.offsetHeight;
 
-  const el = tourSafeTarget(step);
-  let rect = null;
-  if (el) { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0) rect = r; }
+  // İkinci vurgu: adım bir sekmeye aitse, soldaki menüde o sekmeyi de aydınlat
+  // (kişi hangi bölümde olduğunu görsün). Menü ekranda değilse (mobil) atlanır.
+  const tabRect = step.tab ? tourVisibleRect($id('tab-' + step.tab), vw) : null;
+  setTourBox('tourHole2', 'tourSpotlight2', tabRect, 4, vw, vh);
 
-  // Hedef bulunamazsa: tüm ekranı karart, balonu ortala
-  if (!rect) {
-    spot.style.left = (vw / 2) + 'px'; spot.style.top = (vh / 2) + 'px';
-    spot.style.width = '0px'; spot.style.height = '0px';
+  const rect = tourVisibleRect(tourSafeTarget(step), vw);
+  const box = setTourBox('tourHole1', 'tourSpotlight', rect, 6, vw, vh);
+
+  // Hedef bulunamazsa: balonu ortala
+  if (!box) {
     tt.style.left = Math.max(12, (vw - tw) / 2) + 'px';
     tt.style.top = Math.max(12, (vh - th) / 2) + 'px';
     return;
   }
-
-  const pad = 6;
-  const left = Math.max(rect.left - pad, 4);
-  const top = Math.max(rect.top - pad, 4);
-  const right = Math.min(rect.right + pad, vw - 4);
-  const bottom = Math.min(rect.bottom + pad, vh - 4);
-  spot.style.left = left + 'px';
-  spot.style.top = top + 'px';
-  spot.style.width = Math.max(right - left, 0) + 'px';
-  spot.style.height = Math.max(bottom - top, 0) + 'px';
+  const { left, top, right, bottom } = box;
 
   // Mobil: balon ekranın üstüne/altına sabitlenir (hedefin tersi tarafa)
   if (mobile) {
