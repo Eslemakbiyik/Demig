@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="tr" id="htmlRoot">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<title>DEMIG · Finans & Talepler</title>
+<script src="https://cdn.tailwindcss.com" defer></script>
+<script src="https://unpkg.com/lucide@latest" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+  body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #f8fafc; }
+  .glass { background: rgba(26, 34, 52, 0.85); border: 1px solid rgba(255,255,255,0.08); }
+  .hidden { display: none !important; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #0b0f19; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  input, select, textarea { color-scheme: dark; }
+  .fld { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #fff; }
+  .fld:focus { outline: none; border-color: #6366f1; }
+  .fld[readonly] { color: #94a3b8; background: #0b1220; }
+  .lbl { display: block; font-size: 0.7rem; font-weight: 500; color: #cbd5e1; margin-bottom: 0.25rem; }
+  .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; transition: background .15s; }
+  .btn-primary { background: #4f46e5; color: #fff; } .btn-primary:hover { background: #6366f1; }
+  .btn-ghost { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; } .btn-ghost:hover { background: #334155; }
+  .btn-ok { background: #059669; color: #fff; } .btn-ok:hover { background: #10b981; }
+  .btn-danger { background: #dc2626; color: #fff; } .btn-danger:hover { background: #ef4444; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .tabbtn { padding: 0.5rem 0.9rem; border-radius: 0.6rem; font-size: 0.75rem; font-weight: 600; color: #94a3b8; }
+  .tabbtn:hover { color: #fff; background: #1e293b; }
+  .tabbtn.active { background: #4f46e5; color: #fff; }
+  th { font-weight: 600; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<div id="toast" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 rounded-xl text-xs font-semibold shadow-2xl max-w-[90vw]"></div>
+
+<header class="border-b border-slate-800 bg-slate-900/90 sticky top-0 z-30">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="p-2 rounded-xl bg-emerald-600/20 text-emerald-300 border border-emerald-500/30"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+      <div>
+        <h1 class="text-sm font-bold" data-i18n="title">Finans & Talepler</h1>
+        <p class="text-[10px] text-slate-400">DEMIG · Sabancı Univ.</p>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg overflow-hidden text-[11px] font-semibold">
+        <button data-act="lang" data-lang="tr" id="langTr" class="px-2.5 py-1">TR</button>
+        <button data-act="lang" data-lang="en" id="langEn" class="px-2.5 py-1">EN</button>
+      </div>
+      <span id="userBadge" class="hidden text-[11px] text-slate-300 bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1 max-w-[220px] truncate"></span>
+      <span id="roleBadge" class="hidden text-[10px] font-bold rounded-lg px-2 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"></span>
+      <button id="btnPwd" data-act="openPwd" data-i18n="btn_pwd" class="hidden btn btn-ghost !py-1 !px-2.5 !text-[11px]">Şifre</button>
+      <button id="btnLogout" data-act="logout" data-i18n="logout" class="hidden btn btn-ghost !py-1 !px-2.5 !text-[11px]">Çıkış</button>
+      <a href="index.html" data-i18n="back_site" class="btn btn-ghost !py-1 !px-2.5 !text-[11px]">← Ana Site</a>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-6">
+  <div id="fatal" class="hidden glass rounded-2xl p-5 border-red-500/40 text-sm text-red-300"></div>
+
+  <!-- ========== GİRİŞ / HESAP OLUŞTUR ========== -->
+  <section id="view-auth" class="hidden max-w-md mx-auto">
+    <div class="glass rounded-2xl p-6 shadow-2xl">
+      <h2 class="text-lg font-bold mb-1 flex items-center gap-2"><i data-lucide="lock" class="w-5 h-5 text-emerald-400"></i><span data-i18n="auth_title">Güvenli Giriş</span></h2>
+      <p class="text-[11px] text-slate-400 mb-4 leading-relaxed" data-i18n="auth_note">Bu bölüm ana sitedeki girişten bağımsızdır ve gerçek bir hesap (e-posta + şifre) ister.</p>
+      <div class="flex gap-2 mb-4">
+        <button data-act="authTab" data-tab="login" id="authTabLogin" class="tabbtn active flex-1" data-i18n="tab_login">Giriş Yap</button>
+        <button data-act="authTab" data-tab="signup" id="authTabSignup" class="tabbtn flex-1" data-i18n="tab_signup">Hesap Oluştur</button>
+      </div>
+      <form id="authForm" class="space-y-3" autocomplete="on">
+        <div id="authNameWrap" class="hidden">
+          <label class="lbl" for="authName" data-i18n="lbl_name">Ad Soyad</label>
+          <input id="authName" type="text" maxlength="100" autocomplete="name" class="fld">
+        </div>
+        <div>
+          <label class="lbl" for="authEmail" data-i18n="lbl_email">E-posta</label>
+          <input id="authEmail" type="email" required autocomplete="email" class="fld">
+        </div>
+        <div>
+          <label class="lbl" for="authPassword" data-i18n="lbl_password">Şifre</label>
+          <input id="authPassword" type="password" required minlength="8" autocomplete="current-password" class="fld">
+          <p id="authPwdHint" class="hidden text-[10px] text-slate-500 mt-1" data-i18n="pwd_hint">En az 8 karakter.</p>
+        </div>
+        <div id="authMsg" class="hidden text-[11px] rounded-lg px-3 py-2"></div>
+        <button id="authSubmit" type="submit" class="btn btn-primary w-full" data-i18n="btn_login">Giriş Yap</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ========== DAVET KODU ========== -->
+  <section id="view-join" class="hidden max-w-md mx-auto">
+    <div class="glass rounded-2xl p-6 shadow-2xl">
+      <h2 class="text-lg font-bold mb-1 flex items-center gap-2"><i data-lucide="key-round" class="w-5 h-5 text-indigo-400"></i><span data-i18n="join_title">Davet Kodu</span></h2>
+      <p class="text-[11px] text-slate-400 mb-4 leading-relaxed" data-i18n="join_desc">Harcama talebi oluşturabilmek için ekip davet kodunu girin.</p>
+      <form id="joinForm" class="space-y-3">
+        <div>
+          <label class="lbl" for="joinCode" data-i18n="lbl_code">Davet Kodu</label>
+          <input id="joinCode" type="password" required autocomplete="off" class="fld">
+        </div>
+        <div id="joinMsg" class="hidden text-[11px] rounded-lg px-3 py-2"></div>
+        <button id="joinSubmit" type="submit" class="btn btn-primary w-full" data-i18n="btn_join">Katıl</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ========== TALEP EDEN (ÜYE) GÖRÜNÜMÜ ========== -->
+  <section id="view-member" class="hidden space-y-5">
+    <div class="flex gap-2">
+      <button data-act="memberTab" data-tab="new" id="mtNew" class="tabbtn active" data-i18n="mt_new">Yeni Talep</button>
+      <button data-act="memberTab" data-tab="list" id="mtList" class="tabbtn" data-i18n="mt_list">Taleplerim</button>
+    </div>
+
+    <div id="memberNew" class="glass rounded-2xl p-6 max-w-2xl">
+      <h2 class="text-base font-bold mb-1" data-i18n="req_form_title">Harcama Talebi Oluştur</h2>
+      <p class="text-[11px] text-slate-400 mb-4 leading-relaxed" data-i18n="req_form_desc">Talebiniz sadece size ve iki onaylayıcıya görünür.</p>
+      <form id="reqForm" class="space-y-3">
+        <div>
+          <label class="lbl" for="rTitle" data-i18n="lbl_req_title">Talep Başlığı</label>
+          <input id="rTitle" type="text" required minlength="3" maxlength="200" class="fld">
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="lbl" for="rCategory" data-i18n="lbl_category">Kategori</label>
+            <select id="rCategory" class="fld"></select>
+          </div>
+          <div>
+            <label class="lbl" for="rAmount" data-i18n="lbl_req_amount">Talep Edilen Tutar (₺)</label>
+            <input id="rAmount" type="number" required min="0.01" step="0.01" class="fld">
+          </div>
+          <div>
+            <label class="lbl" for="rNeeded" data-i18n="lbl_needed_by">İhtiyaç Tarihi</label>
+            <input id="rNeeded" type="date" class="fld">
+          </div>
+        </div>
+        <div>
+          <label class="lbl" for="rDesc" data-i18n="lbl_reason">Açıklama / Gerekçe</label>
+          <textarea id="rDesc" rows="4" maxlength="4000" class="fld"></textarea>
+        </div>
+        <div>
+          <label class="lbl" data-i18n="lbl_req_files">Ek Dosyalar (teklif, proforma, fatura vb.)</label>
+          <input id="rFiles" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.heic" class="fld">
+          <p class="text-[10px] text-slate-500 mt-1" data-i18n="files_hint">PDF, JPG, PNG, WEBP, HEIC — dosya başına en fazla 10 MB.</p>
+          <div id="rPending" class="mt-2 space-y-1"></div>
+        </div>
+        <div id="reqMsg" class="hidden text-[11px] rounded-lg px-3 py-2"></div>
+        <button id="reqSubmit" type="submit" class="btn btn-primary" data-i18n="btn_submit_req">Talebi Gönder</button>
+      </form>
+    </div>
+
+    <div id="memberList" class="hidden space-y-3 max-w-3xl"></div>
+  </section>
+
+  <!-- ========== YÖNETİCİ (TAHİR / ESLEM) GÖRÜNÜMÜ ========== -->
+  <section id="view-admin" class="hidden space-y-5">
+    <div class="flex flex-wrap gap-2">
+      <button data-act="adminTab" data-tab="summary" id="atSummary" class="tabbtn active" data-i18n="at_summary">Özet</button>
+      <button data-act="adminTab" data-tab="ledger" id="atLedger" class="tabbtn" data-i18n="at_ledger">Hareketler</button>
+      <button data-act="adminTab" data-tab="requests" id="atRequests" class="tabbtn"><span data-i18n="at_requests">Talepler (Onay)</span> <span id="reqBadge" class="hidden ml-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5"></span></button>
+      <button data-act="adminTab" data-tab="audit" id="atAudit" class="tabbtn" data-i18n="at_audit">Geçmiş</button>
+    </div>
+
+    <!-- Özet -->
+    <div id="adm-summary" class="space-y-5">
+      <div id="sumCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3"></div>
+      <div id="sumProgress" class="glass rounded-2xl p-4"></div>
+      <div class="glass rounded-2xl p-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300" data-i18n="h_monthly">Aylık Özet</h3>
+          <div class="flex items-center gap-2"><label class="text-[11px] text-slate-400" for="yearSel" data-i18n="lbl_year">Yıl</label><select id="yearSel" class="fld !w-auto"></select></div>
+        </div>
+        <div class="overflow-x-auto"><table class="w-full text-xs text-left" id="monthlyTable"></table></div>
+      </div>
+      <div class="glass rounded-2xl p-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 mb-3" data-i18n="h_categories">Harcama Kategorileri</h3>
+        <div id="catBox" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- Hareketler -->
+    <div id="adm-ledger" class="hidden space-y-4">
+      <div class="glass rounded-2xl p-4 flex flex-wrap items-end gap-3">
+        <div><label class="lbl" for="fMonth" data-i18n="lbl_month">Ay</label><select id="fMonth" class="fld !w-auto"></select></div>
+        <div><label class="lbl" for="fType" data-i18n="lbl_type">Tür</label><select id="fType" class="fld !w-auto"></select></div>
+        <div class="flex-1 min-w-[160px]"><label class="lbl" for="fSearch" data-i18n="lbl_search">Ara</label><input id="fSearch" type="search" class="fld" data-i18n-ph="ph_search" placeholder="Açıklama, satıcı, fatura no..."></div>
+        <button data-act="newEntry" class="btn btn-primary" data-i18n="btn_new_entry">+ Yeni Kayıt</button>
+        <button data-act="csv" class="btn btn-ghost" data-i18n="btn_csv">CSV İndir</button>
+      </div>
+      <div class="glass rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider text-[10px]">
+              <tr>
+                <th class="p-3" data-i18n="th_date">Tarih</th><th class="p-3" data-i18n="th_type">Tür</th><th class="p-3" data-i18n="th_category">Kategori</th>
+                <th class="p-3" data-i18n="th_desc">Açıklama</th><th class="p-3" data-i18n="th_vendor">Satıcı / Kaynak</th><th class="p-3" data-i18n="th_invoice">Fatura No</th>
+                <th class="p-3 text-right" data-i18n="th_net">Net</th><th class="p-3 text-right" data-i18n="th_vat">KDV</th><th class="p-3 text-right" data-i18n="th_other">Diğer Vergi</th>
+                <th class="p-3 text-right" data-i18n="th_total">Toplam</th><th class="p-3" data-i18n="th_files">Dosya</th><th class="p-3 text-right" data-i18n="th_actions">İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="ledgerBody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+        <div id="ledgerFoot" class="px-4 py-3 border-t border-slate-800 text-[11px] text-slate-300 flex flex-wrap gap-x-6 gap-y-1"></div>
+      </div>
+    </div>
+
+    <!-- Talepler -->
+    <div id="adm-requests" class="hidden space-y-4">
+      <div class="glass rounded-2xl p-4 flex items-end gap-3">
+        <div><label class="lbl" for="reqFilter" data-i18n="lbl_show">Göster</label><select id="reqFilter" class="fld !w-auto"></select></div>
+      </div>
+      <div id="admReqList" class="space-y-3"></div>
+    </div>
+
+    <!-- Geçmiş -->
+    <div id="adm-audit" class="hidden">
+      <div class="glass rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider text-[10px]">
+              <tr><th class="p-3" data-i18n="th_when">Zaman</th><th class="p-3" data-i18n="th_who">Kim</th><th class="p-3" data-i18n="th_action">İşlem</th><th class="p-3" data-i18n="th_table">Tablo</th><th class="p-3" data-i18n="th_summary">Özet</th></tr>
+            </thead>
+            <tbody id="auditBody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ========== MODAL: KAYIT EKLE / DÜZENLE ========== -->
+<div id="entryModal" class="hidden fixed inset-0 z-50 flex items-start justify-center bg-black/80 p-4 overflow-y-auto">
+  <div class="glass rounded-2xl w-full max-w-2xl p-6 my-6 shadow-2xl">
+    <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+      <h3 id="entryModalTitle" class="text-base font-bold"></h3>
+      <button data-act="closeModal" data-modal="entryModal" class="text-slate-400 hover:text-white text-lg leading-none" aria-label="close">✕</button>
+    </div>
+    <form id="entryForm" class="space-y-3">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div><label class="lbl" for="eType" data-i18n="lbl_type">Tür</label><select id="eType" class="fld"></select></div>
+        <div><label class="lbl" for="eDate" data-i18n="lbl_date">Tarih</label><input id="eDate" type="date" required class="fld"></div>
+        <div><label class="lbl" for="eCategory" data-i18n="lbl_category">Kategori</label><input id="eCategory" type="text" list="catList" maxlength="100" class="fld"><datalist id="catList"></datalist></div>
+      </div>
+      <div><label class="lbl" for="eDesc" data-i18n="lbl_desc">Açıklama</label><input id="eDesc" type="text" required minlength="3" maxlength="2000" class="fld"></div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label class="lbl" for="eVendor" id="eVendorLbl">Satıcı / Firma</label><input id="eVendor" type="text" maxlength="200" class="fld"></div>
+        <div><label class="lbl" for="eInvoice" data-i18n="lbl_invoice">Fatura / Dekont No</label><input id="eInvoice" type="text" maxlength="100" class="fld"></div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="taxonly"><label class="lbl" for="eMode" data-i18n="lbl_amount_mode">Tutar Girişi</label>
+          <select id="eMode" class="fld"><option value="haric" data-i18n="opt_excl">KDV hariç</option><option value="dahil" data-i18n="opt_incl">KDV dahil</option></select></div>
+        <div><label class="lbl" for="eAmount" data-i18n="lbl_amount">Tutar (₺)</label><input id="eAmount" type="number" required min="0.01" step="0.01" class="fld"></div>
+        <div class="taxonly"><label class="lbl" for="eRate" data-i18n="lbl_vat_rate">KDV Oranı (%)</label>
+          <select id="eRate" class="fld"><option value="0">0</option><option value="1">1</option><option value="10">10</option><option value="20" selected>20</option></select></div>
+        <div class="taxonly"><label class="lbl" for="eVat" data-i18n="lbl_vat_amount">KDV Tutarı (₺)</label><input id="eVat" type="number" min="0" step="0.01" class="fld"></div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div class="taxonly"><label class="lbl" for="eOther" data-i18n="lbl_other_tax">Diğer Vergi / Stopaj (₺)</label><input id="eOther" type="number" min="0" step="0.01" value="0" class="fld"></div>
+        <div><label class="lbl" for="eTotal" data-i18n="lbl_total">Toplam (₺)</label><input id="eTotal" type="text" readonly class="fld font-bold"></div>
+        <div><label class="lbl" for="ePay" data-i18n="lbl_pay">Ödeme Yöntemi</label><select id="ePay" class="fld"></select></div>
+      </div>
+
+      <div>
+        <label class="lbl" data-i18n="lbl_attach">Fatura / Dekont / Ekler</label>
+        <div id="eExisting" class="space-y-1 mb-2"></div>
+        <input id="eFiles" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,.heic" class="fld">
+        <p class="text-[10px] text-slate-500 mt-1" data-i18n="files_hint">PDF, JPG, PNG, WEBP, HEIC — dosya başına en fazla 10 MB.</p>
+        <div id="ePending" class="mt-2 space-y-1"></div>
+      </div>
+      <div id="entryMsg" class="hidden text-[11px] rounded-lg px-3 py-2"></div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button type="button" data-act="closeModal" data-modal="entryModal" class="btn btn-ghost" data-i18n="btn_cancel">İptal</button>
+        <button id="entrySave" type="submit" class="btn btn-primary" data-i18n="btn_save">Kaydet</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========== MODAL: KARAR NOTU ========== -->
+<div id="noteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+  <div class="glass rounded-2xl w-full max-w-md p-6 shadow-2xl">
+    <h3 id="noteTitle" class="text-base font-bold mb-2"></h3>
+    <p id="noteHint" class="text-[11px] text-slate-400 mb-3"></p>
+    <textarea id="noteText" rows="4" maxlength="1000" class="fld"></textarea>
+    <div id="noteMsg" class="hidden text-[11px] rounded-lg px-3 py-2 mt-2"></div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button data-act="closeModal" data-modal="noteModal" class="btn btn-ghost" data-i18n="btn_cancel">İptal</button>
+      <button id="noteConfirm" data-act="noteConfirm" class="btn btn-primary" data-i18n="btn_confirm">Onayla</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODAL: DOSYALAR ========== -->
+<div id="filesModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+  <div class="glass rounded-2xl w-full max-w-md p-6 shadow-2xl">
+    <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+      <h3 class="text-base font-bold" data-i18n="fm_title">Dosyalar</h3>
+      <button data-act="closeModal" data-modal="filesModal" class="text-slate-400 hover:text-white text-lg leading-none" aria-label="close">✕</button>
+    </div>
+    <div id="filesList" class="space-y-2"></div>
+  </div>
+</div>
+
+<!-- ========== MODAL: ŞİFRE DEĞİŞTİR ========== -->
+<div id="pwdModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+  <div class="glass rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+    <h3 class="text-base font-bold mb-3" data-i18n="pm_title">Şifre Değiştir</h3>
+    <form id="pwdForm" class="space-y-3">
+      <div><label class="lbl" for="pwd1" data-i18n="lbl_new_pwd">Yeni Şifre</label><input id="pwd1" type="password" required minlength="8" autocomplete="new-password" class="fld"></div>
+      <div><label class="lbl" for="pwd2" data-i18n="lbl_new_pwd2">Yeni Şifre (tekrar)</label><input id="pwd2" type="password" required minlength="8" autocomplete="new-password" class="fld"></div>
+      <div id="pwdMsg" class="hidden text-[11px] rounded-lg px-3 py-2"></div>
+      <div class="flex justify-end gap-2">
+        <button type="button" data-act="closeModal" data-modal="pwdModal" class="btn btn-ghost" data-i18n="btn_cancel">İptal</button>
+        <button type="submit" class="btn btn-primary" data-i18n="btn_change">Değiştir</button>
+      </div>
+    </form>
+  </div>
+</div>
+-e 
+<script>
+'use strict';
+// =====================================================================
+// YAPILANDIRMA
+// =====================================================================
+const SUPABASE_URL = "https://wdenbvysepcbobtebdgc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_JH3FBrGXq0H3AIqwWBhctg_EvM0Sb6c";
+const BUCKET = 'finance-files';
+const MAX_FILE = 10 * 1024 * 1024;
+const MAX_FILES_REQ = 5;
+const MAX_FILES_ENTRY = 10;
+const IDLE_MS = 30 * 60 * 1000;
+const EXT_MIME = { pdf: 'application/pdf', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic' };
+
+// Kategori ve ödeme yöntemi: veritabanına Türkçe (kanonik) metin yazılır, ekranda dile göre gösterilir.
+const CATS = [
+  ['Personel / Burs', 'cat_staff'], ['Ekipman', 'cat_equip'], ['Yazılım / Abonelik', 'cat_soft'],
+  ['Seyahat', 'cat_travel'], ['Katılımcı / Anket Ödemesi', 'cat_survey'], ['Sarf Malzeme', 'cat_supply'],
+  ['Hizmet Alımı', 'cat_service'], ['Yayın / Konferans', 'cat_pub'], ['Vergi / Harç', 'cat_tax'],
+  ['Ödenek', 'cat_grant'], ['Diğer', 'cat_other'],
+];
+const PAYS = [['Havale/EFT', 'pay_eft'], ['Kredi Kartı', 'pay_card'], ['Nakit', 'pay_cash'], ['Ödenek Hesabı', 'pay_grant'], ['Diğer', 'pay_other']];
+const TYPES = ['gelir', 'gider', 'kart'];
+const STATUSES = ['beklemede', 'onaylandi', 'reddedildi', 'odendi', 'iptal'];
+
+// =====================================================================
+// ÇEVİRİ (TR / EN)
+// =====================================================================
+const I18N = {
+  tr: {
+    title: "Finans & Talepler", btn_pwd: "Şifre", logout: "Çıkış", back_site: "← Ana Site",
+    auth_title: "Güvenli Giriş",
+    auth_note: "Bu bölüm ana sitedeki girişten bağımsızdır ve gerçek bir hesap (e-posta + şifre) ister. Finans verileri yalnızca yetkili kişilere açıktır; talepleriniz sadece size ve iki onaylayıcıya görünür.",
+    tab_login: "Giriş Yap", tab_signup: "Hesap Oluştur", lbl_name: "Ad Soyad", lbl_email: "E-posta", lbl_password: "Şifre",
+    pwd_hint: "En az 8 karakter.", btn_login: "Giriş Yap", btn_signup: "Hesap Oluştur",
+    join_title: "Davet Kodu", join_desc: "Harcama talebi oluşturabilmek için ekip davet kodunu girin. Kodu proje yöneticilerinden alabilirsiniz.",
+    lbl_code: "Davet Kodu", btn_join: "Katıl",
+    mt_new: "Yeni Talep", mt_list: "Taleplerim", req_form_title: "Harcama Talebi Oluştur",
+    req_form_desc: "Talebiniz sadece size ve iki onaylayıcıya (M. Tahir Kılavuz, Fatma Eslem Akbıyık) görünür. Kesinleşmesi için ikisinin de onayı gerekir.",
+    lbl_req_title: "Talep Başlığı", lbl_category: "Kategori", lbl_req_amount: "Talep Edilen Tutar (₺)", lbl_needed_by: "İhtiyaç Tarihi",
+    lbl_reason: "Açıklama / Gerekçe", lbl_req_files: "Ek Dosyalar (teklif, proforma, fatura vb.)",
+    files_hint: "PDF, JPG, PNG, WEBP, HEIC — dosya başına en fazla 10 MB.", btn_submit_req: "Talebi Gönder",
+    at_summary: "Özet", at_ledger: "Hareketler", at_requests: "Talepler (Onay)", at_audit: "Geçmiş",
+    h_monthly: "Aylık Özet", lbl_year: "Yıl", h_categories: "Harcama Kategorileri",
+    lbl_month: "Ay", lbl_type: "Tür", lbl_search: "Ara", ph_search: "Açıklama, satıcı, fatura no...",
+    btn_new_entry: "+ Yeni Kayıt", btn_csv: "CSV İndir",
+    th_date: "Tarih", th_type: "Tür", th_category: "Kategori", th_desc: "Açıklama", th_vendor: "Satıcı / Kaynak", th_invoice: "Fatura No",
+    th_net: "Net", th_vat: "KDV", th_other: "Diğer Vergi", th_total: "Toplam", th_files: "Dosya", th_actions: "İşlem",
+    lbl_show: "Göster", th_when: "Zaman", th_who: "Kim", th_action: "İşlem", th_table: "Tablo", th_summary: "Özet",
+    lbl_date: "Tarih", lbl_desc: "Açıklama", lbl_amount_mode: "Tutar Girişi", opt_excl: "KDV hariç", opt_incl: "KDV dahil",
+    lbl_amount: "Tutar (₺)", lbl_vat_rate: "KDV Oranı (%)", lbl_vat_amount: "KDV Tutarı (₺)", lbl_other_tax: "Diğer Vergi / Stopaj (₺)",
+    lbl_total: "Toplam (₺)", lbl_pay: "Ödeme Yöntemi", lbl_attach: "Fatura / Dekont / Ekler", lbl_invoice: "Fatura / Dekont No",
+    btn_cancel: "İptal", btn_save: "Kaydet", btn_confirm: "Onayla", fm_title: "Dosyalar",
+    pm_title: "Şifre Değiştir", lbl_new_pwd: "Yeni Şifre", lbl_new_pwd2: "Yeni Şifre (tekrar)", btn_change: "Değiştir",
+    // --- dinamik ---
+    lbl_vendor: "Satıcı / Firma", lbl_source: "Ödenek Kaynağı",
+    err_generic: "Bir hata oluştu:", err_login: "E-posta veya şifre hatalı.", err_name: "Lütfen ad soyad girin.",
+    err_pwd_short: "Şifre en az 8 karakter olmalı.", err_pwd_match: "Şifreler eşleşmiyor.",
+    msg_signup_confirm: "Hesap oluşturuldu ancak e-posta doğrulaması gerekiyor. Yöneticinin Supabase ayarlarında \"Confirm email\" seçeneğini kapatması gerekir.",
+    err_already: "Bu e-posta ile zaten bir hesap var. Lütfen giriş yapın.",
+    err_schema: "Finans veritabanı kurulumu tamamlanmamış görünüyor (finance_schema.sql çalıştırılmalı).",
+    err_no_lib: "Bağlantı kütüphanesi yüklenemedi. Sayfayı yenileyin.",
+    err_join_wrong: "Davet kodu hatalı.", idle_logout: "Hareketsizlik nedeniyle güvenli çıkış yapıldı.",
+    st_beklemede: "Beklemede", st_onaylandi: "Onaylandı", st_reddedildi: "Reddedildi", st_odendi: "Ödendi", st_iptal: "İptal",
+    dec_beklemede: "Bekliyor", dec_onaylandi: "Onayladı", dec_reddedildi: "Reddetti",
+    ty_all: "Tümü", ty_gelir: "Gelen Ödenek", ty_gider: "Proje Gideri", ty_kart: "Kart Harcaması",
+    kd_fatura: "Fatura", kd_dekont: "Dekont", kd_diger: "Diğer", kd_ek: "Ek",
+    cat_staff: "Personel / Burs", cat_equip: "Ekipman", cat_soft: "Yazılım / Abonelik", cat_travel: "Seyahat", cat_survey: "Katılımcı / Anket Ödemesi",
+    cat_supply: "Sarf Malzeme", cat_service: "Hizmet Alımı", cat_pub: "Yayın / Konferans", cat_tax: "Vergi / Harç", cat_grant: "Ödenek", cat_other: "Diğer",
+    pay_eft: "Havale/EFT", pay_card: "Kredi Kartı", pay_cash: "Nakit", pay_grant: "Ödenek Hesabı", pay_other: "Diğer",
+    sc_income: "Toplam Gelen Ödenek", sc_spent: "Toplam Harcama", sc_spent_sub: "Gider {g} · Kart {k}", sc_remaining: "Kalan Bakiye",
+    sc_pct: "Harcanan Oran", sc_tax: "Vergiler (harcamalardaki)", sc_tax_sub: "KDV {v} · Diğer {o}",
+    sc_committed: "Onaylı, Ödenmemiş Talepler", sc_available: "Taahhütler Sonrası Kullanılabilir", sc_pending: "Bekleyen Talepler", sc_pending_sub: "{n} adet",
+    mo_opening: "Önceki yıllardan devir", mo_month: "Ay", mo_income: "Gelen", mo_gider: "Gider", mo_kart: "Kart", mo_spent: "Toplam Harcama",
+    mo_net: "Aylık Fark", mo_cum: "Kümülatif Kalan", mo_total: "Yıl Toplamı",
+    empty_entries: "Kayıt bulunamadı.", empty_requests: "Talep bulunamadı.", empty_my: "Henüz talebiniz yok.", empty_audit: "Kayıt yok.", empty_cat: "Henüz harcama yok.",
+    lg_filtered: "Filtrelenen kayıtlar:", lg_income: "Gelen", lg_spent: "Harcama", lg_count: "{n} kayıt",
+    btn_edit: "Düzenle", btn_delete: "Sil", all_months: "Tüm aylar",
+    confirm_delete_entry: "Bu kaydı silmek istediğinize emin misiniz? (Silme işlemi Geçmiş sekmesinde iz bırakır.)",
+    rq_requester: "Talep Eden", rq_needed: "İhtiyaç Tarihi", rq_created: "Oluşturulma", rq_files: "Ekler", rq_decisions: "Onaylar",
+    name_tahir: "M. Tahir Kılavuz", name_eslem: "Fatma Eslem Akbıyık",
+    btn_approve: "Onayla", btn_reject: "Reddet", btn_mark_paid: "Ödendi Olarak İşaretle", btn_cancel_req: "Talebi İptal Et",
+    confirm_paid: "Bu talep ödendi olarak işaretlenecek ve Hareketler'e bir gider kaydı eklenecek. Devam edilsin mi?",
+    confirm_cancel: "Talebiniz iptal edilecek. Emin misiniz?", paid_info: "Ödendi — Hareketler'e gider kaydı eklendi.",
+    rf_awaiting: "Kararımı bekleyenler", rf_all: "Tümü",
+    toast_saved: "Kaydedildi.", toast_deleted: "Silindi.", toast_decided: "Kararınız kaydedildi.", toast_paid: "Ödendi olarak işaretlendi; gider kaydı oluşturuldu.",
+    toast_req_sent: "Talebiniz gönderildi.", toast_cancelled: "Talep iptal edildi.", toast_pwd: "Şifreniz değiştirildi.", toast_joined: "Davet kodu kabul edildi.",
+    nm_reject_title: "Red Gerekçesi", nm_reject_hint: "Talep eden kişi bu gerekçeyi görecek. Zorunludur.",
+    nm_approve_title: "Onay Notu", nm_approve_hint: "İsteğe bağlı. Talep eden kişi bu notu görecek.", err_note_required: "Red gerekçesi en az 3 karakter olmalı.",
+    em_new: "Yeni Kayıt", em_edit: "Kaydı Düzenle",
+    err_date: "Tarih seçin.", err_amount: "Geçerli bir tutar girin.", err_desc: "Açıklama en az 3 karakter olmalı.", err_title: "Başlık en az 3 karakter olmalı.",
+    err_file_type: "Desteklenmeyen dosya türü: {name}", err_file_size: "Dosya çok büyük (en fazla 10 MB): {name}", err_file_count: "En fazla {n} dosya eklenebilir.",
+    file_remove: "Kaldır", file_open: "Aç", uploading: "Dosyalar yükleniyor...", no_files: "Dosya yok.",
+    au_INSERT: "Ekleme", au_UPDATE: "Güncelleme", au_DELETE: "Silme", au_tbl_finance_entries: "Hareket", au_tbl_expense_requests: "Talep",
+    role_tahir: "Yönetici · Tahir", role_eslem: "Yönetici · Eslem", req_by: "Talep eden:", note_lbl: "Not:",
+    csv_h: ["Tarih", "Tür", "Kategori", "Açıklama", "Satıcı/Kaynak", "Fatura No", "Net", "KDV Oranı %", "KDV", "Diğer Vergi", "Toplam", "Ödeme", "Dosya Sayısı"],
+  },
+  en: {
+    title: "Finance & Requests", btn_pwd: "Password", logout: "Log out", back_site: "← Main Site",
+    auth_title: "Secure Sign-in",
+    auth_note: "This area is separate from the main site login and requires a real account (email + password). Finance data is visible only to authorized people; your requests are visible only to you and the two approvers.",
+    tab_login: "Sign In", tab_signup: "Create Account", lbl_name: "Full Name", lbl_email: "Email", lbl_password: "Password",
+    pwd_hint: "At least 8 characters.", btn_login: "Sign In", btn_signup: "Create Account",
+    join_title: "Invite Code", join_desc: "Enter the team invite code to create spending requests. You can get the code from the project managers.",
+    lbl_code: "Invite Code", btn_join: "Join",
+    mt_new: "New Request", mt_list: "My Requests", req_form_title: "Create Spending Request",
+    req_form_desc: "Your request is visible only to you and the two approvers (M. Tahir Kılavuz, Fatma Eslem Akbıyık). Both must approve for it to be final.",
+    lbl_req_title: "Request Title", lbl_category: "Category", lbl_req_amount: "Requested Amount (₺)", lbl_needed_by: "Needed By",
+    lbl_reason: "Description / Justification", lbl_req_files: "Attachments (quote, proforma, invoice etc.)",
+    files_hint: "PDF, JPG, PNG, WEBP, HEIC — max 10 MB per file.", btn_submit_req: "Submit Request",
+    at_summary: "Summary", at_ledger: "Ledger", at_requests: "Requests (Approval)", at_audit: "History",
+    h_monthly: "Monthly Summary", lbl_year: "Year", h_categories: "Spending by Category",
+    lbl_month: "Month", lbl_type: "Type", lbl_search: "Search", ph_search: "Description, vendor, invoice no...",
+    btn_new_entry: "+ New Entry", btn_csv: "Download CSV",
+    th_date: "Date", th_type: "Type", th_category: "Category", th_desc: "Description", th_vendor: "Vendor / Source", th_invoice: "Invoice No",
+    th_net: "Net", th_vat: "VAT", th_other: "Other Tax", th_total: "Total", th_files: "Files", th_actions: "Actions",
+    lbl_show: "Show", th_when: "When", th_who: "Who", th_action: "Action", th_table: "Table", th_summary: "Summary",
+    lbl_date: "Date", lbl_desc: "Description", lbl_amount_mode: "Amount Entry", opt_excl: "Excl. VAT", opt_incl: "Incl. VAT",
+    lbl_amount: "Amount (₺)", lbl_vat_rate: "VAT Rate (%)", lbl_vat_amount: "VAT Amount (₺)", lbl_other_tax: "Other Tax / Withholding (₺)",
+    lbl_total: "Total (₺)", lbl_pay: "Payment Method", lbl_attach: "Invoice / Receipt / Attachments", lbl_invoice: "Invoice / Receipt No",
+    btn_cancel: "Cancel", btn_save: "Save", btn_confirm: "Approve", fm_title: "Files",
+    pm_title: "Change Password", lbl_new_pwd: "New Password", lbl_new_pwd2: "New Password (repeat)", btn_change: "Change",
+    lbl_vendor: "Vendor / Company", lbl_source: "Funding Source",
+    err_generic: "An error occurred:", err_login: "Incorrect email or password.", err_name: "Please enter your full name.",
+    err_pwd_short: "Password must be at least 8 characters.", err_pwd_match: "Passwords do not match.",
+    msg_signup_confirm: "Account created but email confirmation is required. The admin must turn off \"Confirm email\" in Supabase settings.",
+    err_already: "An account with this email already exists. Please sign in.",
+    err_schema: "The finance database setup seems incomplete (finance_schema.sql must be run).",
+    err_no_lib: "Could not load the connection library. Please refresh the page.",
+    err_join_wrong: "Incorrect invite code.", idle_logout: "You were signed out for inactivity.",
+    st_beklemede: "Pending", st_onaylandi: "Approved", st_reddedildi: "Rejected", st_odendi: "Paid", st_iptal: "Cancelled",
+    dec_beklemede: "Waiting", dec_onaylandi: "Approved", dec_reddedildi: "Rejected",
+    ty_all: "All", ty_gelir: "Incoming Funds", ty_gider: "Project Expense", ty_kart: "Card Expense",
+    kd_fatura: "Invoice", kd_dekont: "Receipt", kd_diger: "Other", kd_ek: "Attachment",
+    cat_staff: "Staff / Stipend", cat_equip: "Equipment", cat_soft: "Software / Subscription", cat_travel: "Travel", cat_survey: "Participant / Survey Payment",
+    cat_supply: "Supplies", cat_service: "Services", cat_pub: "Publication / Conference", cat_tax: "Tax / Fees", cat_grant: "Grant", cat_other: "Other",
+    pay_eft: "Bank Transfer", pay_card: "Credit Card", pay_cash: "Cash", pay_grant: "Grant Account", pay_other: "Other",
+    sc_income: "Total Incoming Funds", sc_spent: "Total Spent", sc_spent_sub: "Expense {g} · Card {k}", sc_remaining: "Remaining Balance",
+    sc_pct: "Share Spent", sc_tax: "Taxes (in expenses)", sc_tax_sub: "VAT {v} · Other {o}",
+    sc_committed: "Approved, Unpaid Requests", sc_available: "Available After Commitments", sc_pending: "Pending Requests", sc_pending_sub: "{n} item(s)",
+    mo_opening: "Carried over from previous years", mo_month: "Month", mo_income: "Incoming", mo_gider: "Expense", mo_kart: "Card", mo_spent: "Total Spent",
+    mo_net: "Monthly Difference", mo_cum: "Cumulative Balance", mo_total: "Year Total",
+    empty_entries: "No entries found.", empty_requests: "No requests found.", empty_my: "You have no requests yet.", empty_audit: "No records.", empty_cat: "No spending yet.",
+    lg_filtered: "Filtered entries:", lg_income: "Incoming", lg_spent: "Spent", lg_count: "{n} entries",
+    btn_edit: "Edit", btn_delete: "Delete", all_months: "All months",
+    confirm_delete_entry: "Are you sure you want to delete this entry? (Deletion is recorded in the History tab.)",
+    rq_requester: "Requester", rq_needed: "Needed By", rq_created: "Created", rq_files: "Attachments", rq_decisions: "Approvals",
+    name_tahir: "M. Tahir Kılavuz", name_eslem: "Fatma Eslem Akbıyık",
+    btn_approve: "Approve", btn_reject: "Reject", btn_mark_paid: "Mark as Paid", btn_cancel_req: "Cancel Request",
+    confirm_paid: "This request will be marked as paid and an expense entry will be added to the Ledger. Continue?",
+    confirm_cancel: "Your request will be cancelled. Are you sure?", paid_info: "Paid — expense entry added to the Ledger.",
+    rf_awaiting: "Awaiting my decision", rf_all: "All",
+    toast_saved: "Saved.", toast_deleted: "Deleted.", toast_decided: "Your decision was recorded.", toast_paid: "Marked as paid; expense entry created.",
+    toast_req_sent: "Your request was submitted.", toast_cancelled: "Request cancelled.", toast_pwd: "Your password was changed.", toast_joined: "Invite code accepted.",
+    nm_reject_title: "Reason for Rejection", nm_reject_hint: "The requester will see this reason. Required.",
+    nm_approve_title: "Approval Note", nm_approve_hint: "Optional. The requester will see this note.", err_note_required: "Rejection reason must be at least 3 characters.",
+    em_new: "New Entry", em_edit: "Edit Entry",
+    err_date: "Select a date.", err_amount: "Enter a valid amount.", err_desc: "Description must be at least 3 characters.", err_title: "Title must be at least 3 characters.",
+    err_file_type: "Unsupported file type: {name}", err_file_size: "File too large (max 10 MB): {name}", err_file_count: "At most {n} files can be attached.",
+    file_remove: "Remove", file_open: "Open", uploading: "Uploading files...", no_files: "No files.",
+    au_INSERT: "Insert", au_UPDATE: "Update", au_DELETE: "Delete", au_tbl_finance_entries: "Entry", au_tbl_expense_requests: "Request",
+    role_tahir: "Admin · Tahir", role_eslem: "Admin · Eslem", req_by: "Requested by:", note_lbl: "Note:",
+    csv_h: ["Date", "Type", "Category", "Description", "Vendor/Source", "Invoice No", "Net", "VAT Rate %", "VAT", "Other Tax", "Total", "Payment", "File Count"],
+  },
+};
+
+// =====================================================================
+// YARDIMCI FONKSİYONLAR
+// =====================================================================
+const $ = (id) => document.getElementById(id);
+let LANG = 'tr';
+function L(key, vars) {
+  const d = I18N[LANG] || I18N.tr;
+  let s = (d[key] !== undefined ? d[key] : I18N.tr[key]);
+  if (s === undefined) return key;
+  if (vars && typeof s === 'string') for (const k in vars) s = s.split('{' + k + '}').join(vars[k]);
+  return s;
+}
+const loc = () => (LANG === 'tr' ? 'tr-TR' : 'en-US');
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+const num = (x) => { const n = parseFloat(x); return Number.isFinite(n) ? n : 0; };
+const r2 = (x) => Math.round((x + Number.EPSILON) * 100) / 100;
+const cents = (x) => Math.round(Number(x || 0) * 100);
+function money(n) { return Number(n || 0).toLocaleString(loc(), { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺'; }
+function fmtDate(d) { if (!d) return '—'; const p = String(d).slice(0, 10).split('-'); return p.length === 3 ? `${p[2]}.${p[1]}.${p[0]}` : String(d); }
+function fmtDateTime(ts) { try { return new Date(ts).toLocaleString(loc()); } catch (e) { return String(ts); } }
+function today() { const d = new Date(); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+function uuid() {
+  if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16)); b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b).map((x) => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+function safeName(n) { return String(n).normalize('NFKD').replace(/[^\w.\-]+/g, '_').replace(/_+/g, '_').slice(-80) || 'file'; }
+function fileExt(name) { const m = /\.([A-Za-z0-9]+)$/.exec(name || ''); return m ? m[1].toLowerCase() : ''; }
+function catLabel(c) { if (!c) return '—'; const f = CATS.find((x) => x[0] === c); return f ? L(f[1]) : c; }
+function payLabel(p) { const f = PAYS.find((x) => x[0] === p); return f ? L(f[1]) : (p || '—'); }
+
+// Dosya doğrulama: { ok, mime, error }
+function validateFile(file) {
+  const ext = fileExt(file.name);
+  if (!EXT_MIME[ext]) return { ok: false, error: L('err_file_type', { name: file.name }) };
+  if (file.size > MAX_FILE) return { ok: false, error: L('err_file_size', { name: file.name }) };
+  return { ok: true, mime: EXT_MIME[ext] };
+}
+
+// =====================================================================
+// HESAPLAMALAR (saf fonksiyonlar)
+// =====================================================================
+// type: gelir | gider | kart ; mode: haric | dahil ; vatOverride: null/'' ise otomatik
+function calcEntry({ type, amount, mode, rate, vatOverride, other }) {
+  const amt = num(amount), rt = num(rate), oth = num(other);
+  if (type === 'gelir') return { net: r2(amt), vat: 0, other: 0, total: r2(amt), rate: 0 };
+  let net, vat;
+  if (vatOverride !== null && vatOverride !== undefined && String(vatOverride) !== '') {
+    vat = r2(num(vatOverride));
+    net = mode === 'dahil' ? r2(amt - vat) : r2(amt);
+  } else if (mode === 'dahil') {
+    net = r2(amt / (1 + rt / 100)); vat = r2(amt - net);
+  } else {
+    net = r2(amt); vat = r2(amt * rt / 100);
+  }
+  return { net, vat, other: r2(oth), total: r2(net + vat + oth), rate: rt };
+}
+const isSpend = (e) => e.entry_type === 'gider' || e.entry_type === 'kart';
+
+function summarize(entries) {
+  let inc = 0, gd = 0, kt = 0, vat = 0, oth = 0;
+  for (const e of entries) {
+    const t = cents(e.total_amount);
+    if (e.entry_type === 'gelir') inc += t;
+    else { if (e.entry_type === 'gider') gd += t; else kt += t; vat += cents(e.vat_amount); oth += cents(e.other_tax_amount); }
+  }
+  const spent = gd + kt;
+  return { income: inc / 100, gider: gd / 100, kart: kt / 100, spent: spent / 100, remaining: (inc - spent) / 100, vat: vat / 100, other: oth / 100, pct: inc > 0 ? (spent / inc) * 100 : 0 };
+}
+function monthly(entries, year) {
+  const y = String(year); let opening = 0;
+  const m = Array.from({ length: 12 }, () => ({ inc: 0, gd: 0, kt: 0 }));
+  for (const e of entries) {
+    const ey = String(e.entry_date).slice(0, 4); const t = cents(e.total_amount);
+    if (ey < y) opening += e.entry_type === 'gelir' ? t : -t;
+    else if (ey === y) {
+      const i = parseInt(String(e.entry_date).slice(5, 7), 10) - 1;
+      if (i >= 0 && i < 12) { if (e.entry_type === 'gelir') m[i].inc += t; else if (e.entry_type === 'gider') m[i].gd += t; else m[i].kt += t; }
+    }
+  }
+  let cum = opening; const tot = { income: 0, gider: 0, kart: 0, spent: 0, net: 0 };
+  const rows = m.map((x, i) => {
+    const spent = x.gd + x.kt, net = x.inc - spent; cum += net;
+    tot.income += x.inc; tot.gider += x.gd; tot.kart += x.kt; tot.spent += spent; tot.net += net;
+    return { month: i + 1, income: x.inc / 100, gider: x.gd / 100, kart: x.kt / 100, spent: spent / 100, net: net / 100, cum: cum / 100 };
+  });
+  return { opening: opening / 100, rows, total: { income: tot.income / 100, gider: tot.gider / 100, kart: tot.kart / 100, spent: tot.spent / 100, net: tot.net / 100 } };
+}
+function byCategory(entries) {
+  const map = {};
+  for (const e of entries) if (isSpend(e)) { const k = e.category || ''; map[k] = (map[k] || 0) + cents(e.total_amount); }
+  return Object.keys(map).map((k) => ({ category: k, total: map[k] / 100 })).sort((a, b) => b.total - a.total);
+}
+function commitments(requests) {
+  let unpaid = 0, pend = 0, n = 0;
+  for (const r of requests) { if (r.status === 'onaylandi') unpaid += cents(r.amount); if (r.status === 'beklemede') { pend += cents(r.amount); n++; } }
+  return { approvedUnpaid: unpaid / 100, pendingSum: pend / 100, pendingCount: n };
+}
+
+// =====================================================================
+// CSV (Excel-TR uyumlu: ; ayırıcı, virgüllü ondalık, UTF-8 BOM, formül enjeksiyonu korumalı)
+// =====================================================================
+function csvCell(v) {
+  let s = v === null || v === undefined ? '' : String(v);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  if (/[";\n\r]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+const csvNum = (n) => Number(n || 0).toFixed(2).replace('.', ',');
+function buildCsv(entries) {
+  const lines = [L('csv_h').map(csvCell).join(';')];
+  for (const e of entries) {
+    lines.push([
+      e.entry_date, L('ty_' + e.entry_type), catLabel(e.category === null ? '' : e.category) === '—' ? '' : catLabel(e.category),
+      e.description, e.vendor, e.invoice_no,
+      csvNum(e.net_amount), csvNum(e.vat_rate), csvNum(e.vat_amount), csvNum(e.other_tax_amount), csvNum(e.total_amount),
+      payLabel(e.payment_method) === '—' ? '' : payLabel(e.payment_method), (e.attachments || []).length,
+    ].map(csvCell).join(';'));
+  }
+  return '\ufeff' + lines.join('\r\n');
+}
+
+
+// =====================================================================
+// GENEL DURUM
+// =====================================================================
+let sb = null;               // supabase istemcisi
+let session = null;          // Supabase Auth oturumu
+let myRole = null;           // 'tahir' | 'eslem' | null
+let isMember = false;        // talep modülüne katılmış mı
+let idleTimer = null;
+let entryFiles = [];         // { file, mime } — modal'da henüz yüklenmemiş yeni dosyalar
+let entryExisting = [];      // modal'da düzenlenen kaydın mevcut ekleri (silinebilir)
+let reqFiles = [];           // yeni talep formunda henüz yüklenmemiş dosyalar
+let editingEntryId = null;
+let noteContext = null;      // { reqId, decision }
+let allEntries = [];         // admin: tüm hareketler (client tarafında filtrelenir)
+let allRequests = [];        // admin: tüm talepler
+let myRequests = [];         // üye: kendi talepleri
+let adminTab = 'summary';
+let memberTab = 'new';
+let selectedYear = new Date().getFullYear();
+
+function toast(msg, kind) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'fixed bottom-5 left-1/2 -translate-x-1/2 z-[100] px-4 py-2.5 rounded-xl text-xs font-semibold shadow-2xl max-w-[90vw] ' +
+    (kind === 'error' ? 'bg-red-600 text-white' : kind === 'warn' ? 'bg-amber-500 text-slate-900' : 'bg-emerald-600 text-white');
+  t.classList.remove('hidden');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.add('hidden'), 4000);
+}
+function showMsg(elId, text, kind) {
+  const el = $(elId); if (!el) return;
+  if (!text) { el.classList.add('hidden'); return; }
+  el.textContent = text;
+  el.className = 'text-[11px] rounded-lg px-3 py-2 ' + (kind === 'error' ? 'bg-red-500/15 text-red-300 border border-red-500/30' : kind === 'warn' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30');
+}
+function friendlyError(err) {
+  const m = (err && err.message) || String(err);
+  if (/permission denied|row-level security/i.test(m)) return L('err_generic') + ' ' + (LANG === 'tr' ? 'Bu işlem için yetkiniz yok.' : 'You do not have permission for this action.');
+  if (/relation .* does not exist|function .* does not exist/i.test(m)) return L('err_schema');
+  if (/Invalid login credentials/i.test(m)) return L('err_login');
+  if (/User already registered/i.test(m)) return L('err_already');
+  if (/check constraint/i.test(m)) return L('err_generic') + ' ' + m;
+  return L('err_generic') + ' ' + m;
+}
+
+// =====================================================================
+// DİL
+// =====================================================================
+function applyI18n() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = L(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-ph]').forEach((el) => { el.setAttribute('placeholder', L(el.getAttribute('data-i18n-ph'))); });
+  $('langTr').className = 'px-2.5 py-1 ' + (LANG === 'tr' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white');
+  $('langEn').className = 'px-2.5 py-1 ' + (LANG === 'en' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white');
+  fillStaticSelects();
+  if (window.lucide) lucide.createIcons();
+  if (session) renderCurrentView();
+}
+function setLang(l) { LANG = l; try { localStorage.setItem('demig_finance_lang', l); } catch (e) {} applyI18n(); }
+
+function fillStaticSelects() {
+  const catOpts = CATS.map(([v, k]) => `<option value="${esc(v)}">${esc(L(k))}</option>`).join('');
+  const payOpts = PAYS.map(([v, k]) => `<option value="${esc(v)}">${esc(L(k))}</option>`).join('');
+  const typeOpts = TYPES.map((t) => `<option value="${t}">${esc(L('ty_' + t))}</option>`).join('');
+  if ($('rCategory')) $('rCategory').innerHTML = `<option value="">—</option>` + catOpts;
+  if ($('eCategory')) { const dl = $('catList'); if (dl) dl.innerHTML = CATS.map(([v]) => `<option value="${esc(v)}">`).join(''); }
+  if ($('ePay')) { const cur = $('ePay').value; $('ePay').innerHTML = `<option value="">—</option>` + payOpts; if (cur) $('ePay').value = cur; }
+  if ($('fType')) { const cur = $('fType').value; $('fType').innerHTML = `<option value="">${esc(L('ty_all'))}</option>` + typeOpts; $('fType').value = cur || ''; }
+  if ($('eType')) { const cur = $('eType').value; $('eType').innerHTML = typeOpts; if (cur) $('eType').value = cur; onEntryTypeChange(); }
+  if ($('reqFilter')) {
+    const cur = $('reqFilter').value;
+    $('reqFilter').innerHTML = `<option value="awaiting">${esc(L('rf_awaiting'))}</option><option value="all">${esc(L('rf_all'))}</option>`;
+    $('reqFilter').value = cur || 'awaiting';
+  }
+  if ($('fMonth')) fillMonthFilter();
+}
+function fillMonthFilter() {
+  const cur = $('fMonth').value;
+  const names = LANG === 'tr'
+    ? ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık']
+    : ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  $('fMonth').innerHTML = `<option value="">${esc(L('all_months'))}</option>` + names.map((n, i) => `<option value="${i + 1}">${esc(n)}</option>`).join('');
+  $('fMonth').value = cur || '';
+}
+
+// =====================================================================
+// BAŞLANGIÇ
+// =====================================================================
+document.addEventListener('DOMContentLoaded', init);
+async function init() {
+  try { LANG = localStorage.getItem('demig_finance_lang') || 'tr'; } catch (e) {}
+  bindStaticEvents();
+  applyI18n();
+
+  await waitFor(() => window.supabase && window.supabase.createClient, 6000).catch(() => {});
+  if (!window.supabase) { fatal(L('err_no_lib')); return; }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+
+  sb.auth.onAuthStateChange((event, s) => {
+    session = s;
+    if (event === 'SIGNED_OUT') { resetIdle(false); showAuthView(); }
+  });
+
+  const { data } = await sb.auth.getSession();
+  session = data && data.session;
+  if (session) await afterLogin(); else showAuthView();
+}
+function waitFor(cond, timeout) {
+  return new Promise((resolve, reject) => {
+    const t0 = Date.now();
+    (function tick() { if (cond()) return resolve(); if (Date.now() - t0 > timeout) return reject(); setTimeout(tick, 50); })();
+  });
+}
+function fatal(msg) { $('fatal').textContent = msg; $('fatal').classList.remove('hidden'); }
+
+// =====================================================================
+// OLAY BAĞLAMA (event delegation — tüm data-act tıklamaları buradan)
+// =====================================================================
+function bindStaticEvents() {
+  document.body.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-act]'); if (!btn) return;
+    const act = btn.getAttribute('data-act');
+    if (act === 'lang') setLang(btn.getAttribute('data-lang'));
+    else if (act === 'logout') doLogout();
+    else if (act === 'authTab') switchAuthTab(btn.getAttribute('data-tab'));
+    else if (act === 'memberTab') switchMemberTab(btn.getAttribute('data-tab'));
+    else if (act === 'adminTab') switchAdminTab(btn.getAttribute('data-tab'));
+    else if (act === 'closeModal') closeModal(btn.getAttribute('data-modal'));
+    else if (act === 'newEntry') openEntryModal(null);
+    else if (act === 'csv') downloadCsv();
+    else if (act === 'openPwd') openModal('pwdModal');
+    else if (act === 'noteConfirm') confirmDecision();
+    else if (act === 'editEntry') openEntryModal(btn.getAttribute('data-id'));
+    else if (act === 'deleteEntry') deleteEntry(btn.getAttribute('data-id'));
+    else if (act === 'showFiles') showFilesModal(JSON.parse(btn.getAttribute('data-files') || '[]'));
+    else if (act === 'decide') openNoteModal(btn.getAttribute('data-id'), btn.getAttribute('data-dec'));
+    else if (act === 'markPaid') markPaid(btn.getAttribute('data-id'));
+    else if (act === 'cancelReq') cancelRequest(btn.getAttribute('data-id'));
+    else if (act === 'removePendingFile') removePendingFile(btn);
+    else if (act === 'removeExistingFile') removeExistingFile(btn.getAttribute('data-path'));
+  });
+  ['click', 'keydown', 'scroll'].forEach((ev) => document.addEventListener(ev, resetIdle, { passive: true }));
+
+  $('authForm').addEventListener('submit', onAuthSubmit);
+  $('joinForm').addEventListener('submit', onJoinSubmit);
+  $('reqForm').addEventListener('submit', onReqSubmit);
+  $('entryForm').addEventListener('submit', onEntrySubmit);
+  $('pwdForm').addEventListener('submit', onPwdSubmit);
+  $('rFiles').addEventListener('change', () => onFilesChosen($('rFiles'), reqFiles, 'rPending', MAX_FILES_REQ, 'reqMsg'));
+  $('eFiles').addEventListener('change', () => onFilesChosen($('eFiles'), entryFiles, 'ePending', MAX_FILES_ENTRY, 'entryMsg'));
+
+  $('eType').addEventListener('change', onEntryTypeChange);
+  ['eAmount', 'eOther'].forEach((id) => $(id).addEventListener('input', recalcEntryTotal));
+  $('eMode').addEventListener('change', recalcEntryTotal);
+  $('eVat').addEventListener('input', () => { $('eVat').dataset.manual = $('eVat').value === '' ? '' : '1'; recalcEntryTotal(); });
+  $('eRate').addEventListener('change', () => { $('eVat').dataset.manual = ''; recalcEntryTotal(); });
+
+  $('fMonth').addEventListener('change', renderLedger);
+  $('fType').addEventListener('change', renderLedger);
+  $('fSearch').addEventListener('input', debounce(renderLedger, 200));
+  $('yearSel').addEventListener('change', () => { selectedYear = parseInt($('yearSel').value, 10); renderSummary(); });
+  $('reqFilter').addEventListener('change', renderAdminRequests);
+}
+function debounce(fn, ms) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }
+
+// =====================================================================
+// OTURUM AÇMA / KAPATMA
+// =====================================================================
+function showAuthView() {
+  hideAll();
+  $('view-auth').classList.remove('hidden');
+  $('userBadge').classList.add('hidden'); $('roleBadge').classList.add('hidden');
+  $('btnPwd').classList.add('hidden'); $('btnLogout').classList.add('hidden');
+}
+function hideAll() { ['view-auth', 'view-join', 'view-member', 'view-admin'].forEach((v) => $(v).classList.add('hidden')); }
+
+function switchAuthTab(tab) {
+  const isLogin = tab === 'login';
+  $('authTabLogin').classList.toggle('active', isLogin);
+  $('authTabSignup').classList.toggle('active', !isLogin);
+  $('authNameWrap').classList.toggle('hidden', isLogin);
+  $('authPwdHint').classList.toggle('hidden', isLogin);
+  $('authPassword').setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
+  $('authSubmit').textContent = L(isLogin ? 'btn_login' : 'btn_signup');
+  $('authForm').dataset.mode = tab;
+  showMsg('authMsg', '');
+}
+
+async function onAuthSubmit(e) {
+  e.preventDefault();
+  const mode = $('authForm').dataset.mode || 'login';
+  const email = $('authEmail').value.trim().toLowerCase();
+  const password = $('authPassword').value;
+  const btn = $('authSubmit'); btn.disabled = true;
+  try {
+    if (mode === 'signup') {
+      const name = $('authName').value.trim();
+      if (!name) { showMsg('authMsg', L('err_name'), 'error'); return; }
+      if (password.length < 8) { showMsg('authMsg', L('err_pwd_short'), 'error'); return; }
+      const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
+      if (error) throw error;
+      if (data && data.user && !data.session) { showMsg('authMsg', L('msg_signup_confirm'), 'warn'); return; }
+      session = data.session; await afterLogin();
+    } else {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      session = data.session; await afterLogin();
+    }
+  } catch (err) { showMsg('authMsg', friendlyError(err), 'error'); }
+  finally { btn.disabled = false; }
+}
+
+async function doLogout() {
+  try { await sb.auth.signOut(); } catch (e) {}
+  session = null; myRole = null; isMember = false;
+  showAuthView();
+}
+
+async function afterLogin() {
+  showMsg('authMsg', '');
+  const email = (session.user && session.user.email) || '';
+  const name = (session.user && session.user.user_metadata && session.user.user_metadata.name) || email;
+  $('userBadge').textContent = name; $('userBadge').classList.remove('hidden');
+  $('btnPwd').classList.remove('hidden'); $('btnLogout').classList.remove('hidden');
+
+  let status;
+  try {
+    const { data, error } = await sb.rpc('finance_status');
+    if (error) throw error;
+    status = data;
+  } catch (err) { fatal(friendlyError(err)); return; }
+
+  myRole = status.role; isMember = status.is_member;
+  if (myRole) {
+    $('roleBadge').textContent = L(myRole === 'tahir' ? 'role_tahir' : 'role_eslem');
+    $('roleBadge').classList.remove('hidden');
+  } else $('roleBadge').classList.add('hidden');
+
+  resetIdle(true);
+  await renderCurrentView();
+}
+
+function resetIdle(active) {
+  clearTimeout(idleTimer);
+  if (!active) return;
+  idleTimer = setTimeout(async () => { await doLogout(); toast(L('idle_logout'), 'warn'); }, IDLE_MS);
+}
+
+// =====================================================================
+// GÖRÜNÜM YÖNLENDİRME
+// =====================================================================
+async function renderCurrentView() {
+  if (!session) return;
+  hideAll();
+  if (myRole) { $('view-admin').classList.remove('hidden'); switchAdminTab(adminTab); await loadAdminData(); }
+  else if (isMember) { $('view-member').classList.remove('hidden'); switchMemberTab(memberTab); await loadMemberData(); }
+  else { $('view-join').classList.remove('hidden'); }
+}
+
+async function onJoinSubmit(e) {
+  e.preventDefault();
+  const code = $('joinCode').value;
+  const btn = $('joinSubmit'); btn.disabled = true;
+  try {
+    const { data, error } = await sb.rpc('finance_join', { p_code: code });
+    if (error) throw error;
+    if (!data) { showMsg('joinMsg', L('err_join_wrong'), 'error'); return; }
+    isMember = true; toast(L('toast_joined')); $('joinCode').value = '';
+    await renderCurrentView();
+  } catch (err) { showMsg('joinMsg', friendlyError(err), 'error'); }
+  finally { btn.disabled = false; }
+}
+
+// =====================================================================
+// ŞİFRE DEĞİŞTİR
+// =====================================================================
+async function onPwdSubmit(e) {
+  e.preventDefault();
+  const p1 = $('pwd1').value, p2 = $('pwd2').value;
+  if (p1.length < 8) return showMsg('pwdMsg', L('err_pwd_short'), 'error');
+  if (p1 !== p2) return showMsg('pwdMsg', L('err_pwd_match'), 'error');
+  try {
+    const { error } = await sb.auth.updateUser({ password: p1 });
+    if (error) throw error;
+    toast(L('toast_pwd')); closeModal('pwdModal'); $('pwdForm').reset();
+  } catch (err) { showMsg('pwdMsg', friendlyError(err), 'error'); }
+}
+
+// =====================================================================
+// MODAL YARDIMCILARI
+// =====================================================================
+function openModal(id) { $(id).classList.remove('hidden'); if (window.lucide) lucide.createIcons(); }
+function closeModal(id) { $(id).classList.add('hidden'); showMsg(id.replace('Modal', 'Msg'), ''); }
+
+
+// =====================================================================
+// DOSYA SEÇİMİ (henüz yüklenmedi — sadece bekleme listesine eklenir)
+// =====================================================================
+function onFilesChosen(input, pendingArr, listId, maxCount, msgId) {
+  showMsg(msgId, '');
+  const files = Array.from(input.files || []);
+  input.value = '';
+  for (const f of files) {
+    if (pendingArr.length >= maxCount) { showMsg(msgId, L('err_file_count', { n: maxCount }), 'error'); break; }
+    const v = validateFile(f);
+    if (!v.ok) { showMsg(msgId, v.error, 'error'); continue; }
+    pendingArr.push({ file: f, mime: v.mime });
+  }
+  renderPendingFiles(pendingArr, listId);
+}
+function renderPendingFiles(arr, listId) {
+  const box = $(listId);
+  box.dataset.for = listId;
+  box.innerHTML = arr.map((p, i) => `
+    <div class="flex items-center justify-between bg-slate-800/70 rounded-lg px-2.5 py-1.5 text-[11px]">
+      <span class="truncate mr-2">📎 ${esc(p.file.name)} <span class="text-slate-500">(${(p.file.size / 1024).toFixed(0)} KB)</span></span>
+      <button type="button" data-act="removePendingFile" data-list="${listId}" data-idx="${i}" class="text-red-400 hover:text-red-300 shrink-0">${esc(L('file_remove'))}</button>
+    </div>`).join('');
+}
+function removePendingFile(btn) {
+  const listId = btn.getAttribute('data-list'), idx = parseInt(btn.getAttribute('data-idx'), 10);
+  const arr = listId === 'rPending' ? reqFiles : entryFiles;
+  arr.splice(idx, 1);
+  renderPendingFiles(arr, listId);
+}
+function renderExistingFiles() {
+  const box = $('eExisting');
+  if (!entryExisting.length) { box.innerHTML = `<p class="text-[11px] text-slate-500">${esc(L('no_files'))}</p>`; return; }
+  box.innerHTML = entryExisting.map((f) => `
+    <div class="flex items-center justify-between bg-slate-800/70 rounded-lg px-2.5 py-1.5 text-[11px]">
+      <a href="#" data-act="showFiles" data-files='${esc(JSON.stringify([f]))}' class="truncate mr-2 text-indigo-300 hover:underline">📎 ${esc(f.name || f.path)}</a>
+      <button type="button" data-act="removeExistingFile" data-path="${esc(f.path)}" class="text-red-400 hover:text-red-300 shrink-0">${esc(L('file_remove'))}</button>
+    </div>`).join('');
+}
+function removeExistingFile(path) { entryExisting = entryExisting.filter((f) => f.path !== path); renderExistingFiles(); }
+
+// Bekleyen dosyaları storage'a yükler, { path, name, mime, size } listesi döndürür.
+async function uploadPending(pendingArr, folderPrefix) {
+  const uploaded = [];
+  for (const p of pendingArr) {
+    const path = `${folderPrefix}/${Date.now()}_${safeName(p.file.name)}`;
+    const { error } = await sb.storage.from(BUCKET).upload(path, p.file, { contentType: p.mime, upsert: false });
+    if (error) throw error;
+    uploaded.push({ path, name: p.file.name, mime: p.mime, size: p.file.size });
+  }
+  return uploaded;
+}
+async function openSignedUrl(path) {
+  try {
+    const { data, error } = await sb.storage.from(BUCKET).createSignedUrl(path, 60);
+    if (error) throw error;
+    window.open(data.signedUrl, '_blank', 'noopener');
+  } catch (err) { toast(friendlyError(err), 'error'); }
+}
+function showFilesModal(files) {
+  $('filesList').innerHTML = !files.length ? `<p class="text-xs text-slate-400">${esc(L('no_files'))}</p>` :
+    files.map((f) => `<button data-act="openFile" data-path="${esc(f.path)}" class="w-full text-left bg-slate-800/70 hover:bg-slate-800 rounded-lg px-3 py-2 text-xs flex items-center gap-2"><span>📎</span><span class="truncate">${esc(f.name || f.path)}</span></button>`).join('');
+  openModal('filesModal');
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-act="openFile"]'); if (b) openSignedUrl(b.getAttribute('data-path'));
+});
+
+// =====================================================================
+// ÜYE: TALEP OLUŞTUR / LİSTELE
+// =====================================================================
+function switchMemberTab(tab) {
+  memberTab = tab;
+  $('mtNew').classList.toggle('active', tab === 'new');
+  $('mtList').classList.toggle('active', tab === 'list');
+  $('memberNew').classList.toggle('hidden', tab !== 'new');
+  $('memberList').classList.toggle('hidden', tab !== 'list');
+  if (tab === 'list') renderMyRequests();
+}
+async function loadMemberData() {
+  const { data, error } = await sb.from('expense_requests').select('*').order('created_at', { ascending: false });
+  if (error) { toast(friendlyError(error), 'error'); return; }
+  myRequests = data || [];
+  if (memberTab === 'list') renderMyRequests();
+}
+async function onReqSubmit(e) {
+  e.preventDefault();
+  showMsg('reqMsg', '');
+  const title = $('rTitle').value.trim();
+  const amount = num($('rAmount').value);
+  if (title.length < 3) return showMsg('reqMsg', L('err_title'), 'error');
+  if (!(amount > 0)) return showMsg('reqMsg', L('err_amount'), 'error');
+  const btn = $('reqSubmit'); btn.disabled = true;
+  try {
+    const tempId = uuid();
+    const attachments = reqFiles.length ? await uploadPending(reqFiles, `requests/${session.user.id}/${tempId}`) : [];
+    const payload = {
+      title, category: $('rCategory').value || null, description: $('rDesc').value.trim() || null,
+      amount, needed_by: $('rNeeded').value || null, attachments,
+    };
+    const { error } = await sb.from('expense_requests').insert(payload);
+    if (error) throw error;
+    toast(L('toast_req_sent'));
+    $('reqForm').reset(); reqFiles = []; renderPendingFiles(reqFiles, 'rPending');
+    await loadMemberData();
+    switchMemberTab('list');
+  } catch (err) { showMsg('reqMsg', friendlyError(err), 'error'); }
+  finally { btn.disabled = false; }
+}
+function statusBadgeClass(st) {
+  return { beklemede: 'bg-amber-500/15 text-amber-300 border-amber-500/30', onaylandi: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+    reddedildi: 'bg-red-500/15 text-red-300 border-red-500/30', odendi: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+    iptal: 'bg-slate-500/15 text-slate-400 border-slate-500/30' }[st] || 'bg-slate-700 text-slate-300 border-slate-600';
+}
+function decisionLine(name, dec, note) {
+  const icon = dec === 'onaylandi' ? '✅' : dec === 'reddedildi' ? '❌' : '⏳';
+  return `<div class="text-[11px] text-slate-300">${icon} <strong>${esc(name)}:</strong> ${esc(L('dec_' + dec))}${note ? ' — <span class="italic text-slate-400">' + esc(note) + '</span>' : ''}</div>`;
+}
+function renderMyRequests() {
+  const box = $('memberList');
+  if (!myRequests.length) { box.innerHTML = `<p class="text-sm text-slate-400 text-center py-10">${esc(L('empty_my'))}</p>`; return; }
+  box.innerHTML = myRequests.map((r) => `
+    <div class="glass rounded-2xl p-4">
+      <div class="flex flex-wrap items-start justify-between gap-2 mb-2">
+        <div>
+          <h4 class="text-sm font-bold text-white">${esc(r.title)}</h4>
+          <p class="text-[11px] text-slate-400">${esc(catLabel(r.category))} · ${fmtDate(r.created_at)}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-bold text-white">${money(r.amount)}</span>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${statusBadgeClass(r.status)}">${esc(L('st_' + r.status))}</span>
+        </div>
+      </div>
+      ${r.description ? `<p class="text-xs text-slate-300 mb-2">${esc(r.description)}</p>` : ''}
+      <div class="space-y-1 mb-2">
+        ${decisionLine(L('name_tahir'), r.tahir_decision, r.tahir_note)}
+        ${decisionLine(L('name_eslem'), r.eslem_decision, r.eslem_note)}
+      </div>
+      ${r.status === 'odendi' ? `<p class="text-[11px] text-indigo-300">${esc(L('paid_info'))}</p>` : ''}
+      <div class="flex items-center justify-between mt-2">
+        ${(r.attachments || []).length ? `<button data-act="showFiles" data-files='${esc(JSON.stringify(r.attachments))}' class="text-[11px] text-indigo-300 hover:underline">📎 ${r.attachments.length} ${esc(L('rq_files'))}</button>` : '<span></span>'}
+        ${r.status === 'beklemede' ? `<button data-act="cancelReq" data-id="${r.id}" class="btn btn-ghost !py-1 !px-2.5 !text-[11px]">${esc(L('btn_cancel_req'))}</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+async function cancelRequest(id) {
+  if (!confirm(L('confirm_cancel'))) return;
+  try {
+    const { error } = await sb.rpc('cancel_request', { p_id: id });
+    if (error) throw error;
+    toast(L('toast_cancelled')); await loadMemberData();
+  } catch (err) { toast(friendlyError(err), 'error'); }
+}
+
+// =====================================================================
+// KAYIT (ENTRY) MODALI — vergi hesaplama
+// =====================================================================
+function onEntryTypeChange() {
+  const t = $('eType').value; const isIncome = t === 'gelir';
+  document.querySelectorAll('#entryForm .taxonly').forEach((el) => el.classList.toggle('hidden', isIncome));
+  $('eVendorLbl').textContent = isIncome ? L('lbl_source') : L('lbl_vendor');
+  $('eVat').dataset.manual = '';
+  recalcEntryTotal();
+}
+function recalcEntryTotal() {
+  const type = $('eType').value;
+  const r = calcEntry({
+    type, amount: $('eAmount').value, mode: $('eMode').value, rate: $('eRate').value,
+    vatOverride: $('eVat').dataset.manual ? $('eVat').value : null, other: $('eOther').value,
+  });
+  if (type !== 'gelir' && !$('eVat').dataset.manual) $('eVat').value = r.vat ? r.vat.toFixed(2) : '';
+  $('eTotal').value = money(r.total);
+  return r;
+}
+function openEntryModal(id) {
+  editingEntryId = id; entryFiles = []; entryExisting = [];
+  $('entryForm').reset();
+  $('eType').value = 'gider'; $('eDate').value = today(); $('eMode').value = 'haric'; $('eRate').value = '20'; $('eOther').value = '0'; $('eVat').dataset.manual = '';
+  const entry = id ? allEntries.find((x) => x.id === id) : null;
+  $('entryModalTitle').textContent = L(entry ? 'em_edit' : 'em_new');
+  if (entry) {
+    $('eType').value = entry.entry_type; $('eDate').value = entry.entry_date; $('eCategory').value = entry.category || '';
+    $('eDesc').value = entry.description || ''; $('eVendor').value = entry.vendor || ''; $('eInvoice').value = entry.invoice_no || '';
+    $('eAmount').value = entry.net_amount; $('eRate').value = entry.vat_rate; $('eVat').value = entry.vat_amount; $('eVat').dataset.manual = '1';
+    $('eOther').value = entry.other_tax_amount; $('ePay').value = entry.payment_method || '';
+    entryExisting = (entry.attachments || []).slice();
+  }
+  onEntryTypeChange();
+  renderExistingFiles(); renderPendingFiles(entryFiles, 'ePending');
+  showMsg('entryMsg', '');
+  openModal('entryModal');
+}
+async function onEntrySubmit(e) {
+  e.preventDefault();
+  showMsg('entryMsg', '');
+  if (!$('eDate').value) return showMsg('entryMsg', L('err_date'), 'error');
+  if ($('eDesc').value.trim().length < 3) return showMsg('entryMsg', L('err_desc'), 'error');
+  const r = recalcEntryTotal();
+  if (!(num($('eAmount').value) > 0)) return showMsg('entryMsg', L('err_amount'), 'error');
+  const btn = $('entrySave'); btn.disabled = true;
+  try {
+    const newFiles = entryFiles.length ? await uploadPending(entryFiles, `entries/${editingEntryId || uuid()}`) : [];
+    const attachments = entryExisting.concat(newFiles);
+    const payload = {
+      entry_type: $('eType').value, entry_date: $('eDate').value, category: $('eCategory').value.trim() || null,
+      description: $('eDesc').value.trim(), vendor: $('eVendor').value.trim() || null, invoice_no: $('eInvoice').value.trim() || null,
+      net_amount: r.net, vat_rate: r.rate, vat_amount: r.vat, other_tax_amount: r.other, total_amount: r.total,
+      payment_method: $('ePay').value || null, attachments,
+    };
+    const q = editingEntryId ? sb.from('finance_entries').update(payload).eq('id', editingEntryId) : sb.from('finance_entries').insert(payload);
+    const { error } = await q;
+    if (error) throw error;
+    toast(L('toast_saved')); closeModal('entryModal'); await loadAdminData();
+  } catch (err) { showMsg('entryMsg', friendlyError(err), 'error'); }
+  finally { btn.disabled = false; }
+}
+async function deleteEntry(id) {
+  if (!confirm(L('confirm_delete_entry'))) return;
+  try {
+    const { error } = await sb.from('finance_entries').delete().eq('id', id);
+    if (error) throw error;
+    toast(L('toast_deleted')); await loadAdminData();
+  } catch (err) { toast(friendlyError(err), 'error'); }
+}
+function downloadCsv() {
+  const rows = filteredEntries();
+  const blob = new Blob([buildCsv(rows)], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `demig_finans_${today()}.csv`; document.body.appendChild(a); a.click(); a.remove();
+}
+
+
+// =====================================================================
+// YÖNETİCİ: SEKME YÖNETİMİ + VERİ YÜKLEME
+// =====================================================================
+function switchAdminTab(tab) {
+  adminTab = tab;
+  ['summary', 'ledger', 'requests', 'audit'].forEach((t) => {
+    $('at' + t[0].toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+    $('adm-' + t).classList.toggle('hidden', t !== tab);
+  });
+  if (tab === 'summary') renderSummary();
+  else if (tab === 'ledger') renderLedger();
+  else if (tab === 'requests') renderAdminRequests();
+  else if (tab === 'audit') renderAudit();
+}
+async function loadAdminData() {
+  const [entriesRes, reqRes] = await Promise.all([
+    sb.from('finance_entries').select('*').order('entry_date', { ascending: false }),
+    sb.from('expense_requests').select('*').order('created_at', { ascending: false }),
+  ]);
+  if (entriesRes.error) { fatal(friendlyError(entriesRes.error)); return; }
+  if (reqRes.error) { fatal(friendlyError(reqRes.error)); return; }
+  allEntries = entriesRes.data || [];
+  allRequests = reqRes.data || [];
+  updateReqBadge();
+  fillYearSelect();
+  fillStaticSelects();
+  if (adminTab === 'summary') renderSummary();
+  else if (adminTab === 'ledger') renderLedger();
+  else if (adminTab === 'requests') renderAdminRequests();
+  else if (adminTab === 'audit') renderAudit();
+}
+function updateReqBadge() {
+  const n = allRequests.filter((r) => r.status === 'beklemede' && r[myRole + '_decision'] === 'beklemede').length;
+  const b = $('reqBadge'); if (n > 0) { b.textContent = n; b.classList.remove('hidden'); } else b.classList.add('hidden');
+}
+function fillYearSelect() {
+  const years = new Set(allEntries.map((e) => parseInt(String(e.entry_date).slice(0, 4), 10)));
+  years.add(new Date().getFullYear());
+  const sorted = Array.from(years).sort((a, b) => b - a);
+  if (!years.has(selectedYear)) selectedYear = sorted[0];
+  $('yearSel').innerHTML = sorted.map((y) => `<option value="${y}"${y === selectedYear ? ' selected' : ''}>${y}</option>`).join('');
+}
+
+// =====================================================================
+// ÖZET SEKMESİ
+// =====================================================================
+function statCard(title, value, sub, colorClass) {
+  return `<div class="glass rounded-2xl p-4">
+    <p class="text-[10px] uppercase tracking-wider text-slate-400 mb-1">${esc(title)}</p>
+    <p class="text-xl font-bold ${colorClass || 'text-white'}">${value}</p>
+    ${sub ? `<p class="text-[10px] text-slate-500 mt-1">${sub}</p>` : ''}
+  </div>`;
+}
+function renderSummary() {
+  const s = summarize(allEntries);
+  const c = commitments(allRequests);
+  const available = s.remaining - c.approvedUnpaid;
+  $('sumCards').innerHTML = [
+    statCard(L('sc_income'), money(s.income), null, 'text-emerald-400'),
+    statCard(L('sc_spent'), money(s.spent), L('sc_spent_sub', { g: money(s.gider), k: money(s.kart) }), 'text-red-400'),
+    statCard(L('sc_remaining'), money(s.remaining), L('sc_pct') + `: %${s.pct.toFixed(1)}`, s.remaining >= 0 ? 'text-white' : 'text-red-400'),
+    statCard(L('sc_tax'), money(s.vat + s.other), L('sc_tax_sub', { v: money(s.vat), o: money(s.other) }), 'text-amber-300'),
+  ].join('');
+
+  const pct = Math.max(0, Math.min(100, s.pct));
+  $('sumProgress').innerHTML = `
+    <div class="flex justify-between text-[11px] text-slate-400 mb-1.5"><span>${esc(L('sc_pct'))}</span><span>%${pct.toFixed(1)}</span></div>
+    <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden"><div class="h-full ${pct > 90 ? 'bg-red-500' : pct > 70 ? 'bg-amber-500' : 'bg-emerald-500'}" style="width:${pct}%"></div></div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+      <div class="bg-slate-800/60 rounded-xl p-3">
+        <p class="text-[10px] uppercase tracking-wider text-slate-400">${esc(L('sc_committed'))}</p>
+        <p class="text-base font-bold text-amber-300">${money(c.approvedUnpaid)}</p>
+      </div>
+      <div class="bg-slate-800/60 rounded-xl p-3">
+        <p class="text-[10px] uppercase tracking-wider text-slate-400">${esc(L('sc_available'))}</p>
+        <p class="text-base font-bold ${available >= 0 ? 'text-emerald-400' : 'text-red-400'}">${money(available)}</p>
+      </div>
+    </div>
+    ${c.pendingCount ? `<p class="text-[11px] text-slate-400 mt-3">${esc(L('sc_pending'))}: <strong class="text-white">${money(c.pendingSum)}</strong> (${esc(L('sc_pending_sub', { n: c.pendingCount }))})</p>` : ''}
+  `;
+
+  const mo = monthly(allEntries, selectedYear);
+  const names = LANG === 'tr'
+    ? ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
+    : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let html = `<thead class="text-slate-400 uppercase text-[10px] border-b border-slate-800"><tr>
+    <th class="p-2 text-left">${esc(L('mo_month'))}</th><th class="p-2 text-right">${esc(L('mo_income'))}</th>
+    <th class="p-2 text-right">${esc(L('mo_gider'))}</th><th class="p-2 text-right">${esc(L('mo_kart'))}</th>
+    <th class="p-2 text-right">${esc(L('mo_spent'))}</th><th class="p-2 text-right">${esc(L('mo_net'))}</th>
+    <th class="p-2 text-right">${esc(L('mo_cum'))}</th></tr></thead><tbody class="divide-y divide-slate-800/60">`;
+  if (mo.opening) html += `<tr class="text-slate-500 italic"><td class="p-2" colspan="6">${esc(L('mo_opening'))}</td><td class="p-2 text-right">${money(mo.opening)}</td></tr>`;
+  for (const row of mo.rows) {
+    html += `<tr class="hover:bg-slate-900/40"><td class="p-2">${names[row.month - 1]}</td>
+      <td class="p-2 text-right text-emerald-400">${row.income ? money(row.income) : '—'}</td>
+      <td class="p-2 text-right text-red-400">${row.gider ? money(row.gider) : '—'}</td>
+      <td class="p-2 text-right text-red-300">${row.kart ? money(row.kart) : '—'}</td>
+      <td class="p-2 text-right">${row.spent ? money(row.spent) : '—'}</td>
+      <td class="p-2 text-right ${row.net >= 0 ? 'text-slate-300' : 'text-red-400'}">${money(row.net)}</td>
+      <td class="p-2 text-right font-semibold ${row.cum >= 0 ? 'text-white' : 'text-red-400'}">${money(row.cum)}</td></tr>`;
+  }
+  html += `<tr class="font-bold border-t border-slate-700"><td class="p-2">${esc(L('mo_total'))}</td>
+    <td class="p-2 text-right text-emerald-400">${money(mo.total.income)}</td>
+    <td class="p-2 text-right text-red-400">${money(mo.total.gider)}</td>
+    <td class="p-2 text-right text-red-300">${money(mo.total.kart)}</td>
+    <td class="p-2 text-right">${money(mo.total.spent)}</td>
+    <td class="p-2 text-right">${money(mo.total.net)}</td><td class="p-2"></td></tr></tbody>`;
+  $('monthlyTable').innerHTML = html;
+
+  const cats = byCategory(allEntries.filter((e) => String(e.entry_date).slice(0, 4) == String(selectedYear)));
+  const maxV = Math.max(1, ...cats.map((c) => c.total));
+  $('catBox').innerHTML = !cats.length ? `<p class="text-xs text-slate-500">${esc(L('empty_cat'))}</p>` : cats.map((c) => `
+    <div>
+      <div class="flex justify-between text-[11px] mb-1"><span class="text-slate-300">${esc(catLabel(c.category))}</span><span class="text-slate-400">${money(c.total)}</span></div>
+      <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-indigo-500" style="width:${(c.total / maxV) * 100}%"></div></div>
+    </div>`).join('');
+}
+
+// =====================================================================
+// HAREKETLER SEKMESİ
+// =====================================================================
+function filteredEntries() {
+  const month = $('fMonth').value, type = $('fType').value, q = $('fSearch').value.trim().toLowerCase();
+  return allEntries.filter((e) => {
+    if (String(e.entry_date).slice(0, 4) != String(selectedYear)) return false;
+    if (month && parseInt(String(e.entry_date).slice(5, 7), 10) !== parseInt(month, 10)) return false;
+    if (type && e.entry_type !== type) return false;
+    if (q) {
+      const hay = [e.description, e.vendor, e.invoice_no, catLabel(e.category)].filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+function renderLedger() {
+  const rows = filteredEntries();
+  $('ledgerBody').innerHTML = !rows.length ? `<tr><td colspan="12" class="p-6 text-center text-slate-500">${esc(L('empty_entries'))}</td></tr>` :
+    rows.map((e) => `
+    <tr class="hover:bg-slate-900/40">
+      <td class="p-2.5 font-mono text-[11px]">${fmtDate(e.entry_date)}</td>
+      <td class="p-2.5"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${e.entry_type === 'gelir' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-red-500/15 text-red-300'}">${esc(L('ty_' + e.entry_type))}</span></td>
+      <td class="p-2.5">${esc(catLabel(e.category))}</td>
+      <td class="p-2.5 max-w-[220px] truncate" title="${esc(e.description)}">${esc(e.description)}</td>
+      <td class="p-2.5">${esc(e.vendor || '—')}</td>
+      <td class="p-2.5 font-mono text-[11px]">${esc(e.invoice_no || '—')}</td>
+      <td class="p-2.5 text-right font-mono">${money(e.net_amount)}</td>
+      <td class="p-2.5 text-right font-mono text-slate-400">${e.vat_amount ? money(e.vat_amount) : '—'}</td>
+      <td class="p-2.5 text-right font-mono text-slate-400">${e.other_tax_amount ? money(e.other_tax_amount) : '—'}</td>
+      <td class="p-2.5 text-right font-mono font-bold">${money(e.total_amount)}</td>
+      <td class="p-2.5">${(e.attachments || []).length ? `<button data-act="showFiles" data-files='${esc(JSON.stringify(e.attachments))}' class="text-indigo-300 hover:underline">📎 ${e.attachments.length}</button>` : '—'}</td>
+      <td class="p-2.5 text-right whitespace-nowrap">
+        <button data-act="editEntry" data-id="${e.id}" class="text-slate-400 hover:text-white px-1" title="${esc(L('btn_edit'))}">✏️</button>
+        <button data-act="deleteEntry" data-id="${e.id}" class="text-slate-400 hover:text-red-400 px-1" title="${esc(L('btn_delete'))}">🗑️</button>
+      </td>
+    </tr>`).join('');
+  const s = summarize(rows);
+  $('ledgerFoot').innerHTML = `<span>${esc(L('lg_filtered'))} ${esc(L('lg_count', { n: rows.length }))}</span>
+    <span>${esc(L('lg_income'))}: <strong class="text-emerald-400">${money(s.income)}</strong></span>
+    <span>${esc(L('lg_spent'))}: <strong class="text-red-400">${money(s.spent)}</strong></span>`;
+}
+
+// =====================================================================
+// TALEPLER (ONAY) SEKMESİ
+// =====================================================================
+function renderAdminRequests() {
+  const mode = $('reqFilter').value;
+  const rows = allRequests.filter((r) => mode === 'all' || (r.status === 'beklemede' && r[myRole + '_decision'] === 'beklemede') || r.status === 'onaylandi');
+  $('admReqList').innerHTML = !rows.length ? `<p class="text-sm text-slate-400 text-center py-10">${esc(L('empty_requests'))}</p>` :
+    rows.map((r) => {
+      const myDec = r[myRole + '_decision'];
+      const canDecide = r.status === 'beklemede' && myDec === 'beklemede';
+      const canPay = r.status === 'onaylandi';
+      return `<div class="glass rounded-2xl p-4">
+        <div class="flex flex-wrap items-start justify-between gap-2 mb-2">
+          <div>
+            <h4 class="text-sm font-bold text-white">${esc(r.title)}</h4>
+            <p class="text-[11px] text-slate-400">${esc(L('req_by'))} ${esc(r.requester_name || r.requester_email)} · ${esc(catLabel(r.category))} · ${fmtDate(r.created_at)}${r.needed_by ? ' · ' + esc(L('rq_needed')) + ': ' + fmtDate(r.needed_by) : ''}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-bold text-white">${money(r.amount)}</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${statusBadgeClass(r.status)}">${esc(L('st_' + r.status))}</span>
+          </div>
+        </div>
+        ${r.description ? `<p class="text-xs text-slate-300 mb-2">${esc(r.description)}</p>` : ''}
+        <div class="space-y-1 mb-3">
+          ${decisionLine(L('name_tahir'), r.tahir_decision, r.tahir_note)}
+          ${decisionLine(L('name_eslem'), r.eslem_decision, r.eslem_note)}
+        </div>
+        ${r.status === 'odendi' ? `<p class="text-[11px] text-indigo-300 mb-2">${esc(L('paid_info'))}</p>` : ''}
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          ${(r.attachments || []).length ? `<button data-act="showFiles" data-files='${esc(JSON.stringify(r.attachments))}' class="text-[11px] text-indigo-300 hover:underline">📎 ${r.attachments.length} ${esc(L('rq_files'))}</button>` : '<span></span>'}
+          <div class="flex gap-2">
+            ${canDecide ? `<button data-act="decide" data-id="${r.id}" data-dec="reddedildi" class="btn btn-danger !text-[11px] !py-1.5">${esc(L('btn_reject'))}</button>
+                           <button data-act="decide" data-id="${r.id}" data-dec="onaylandi" class="btn btn-ok !text-[11px] !py-1.5">${esc(L('btn_approve'))}</button>` : ''}
+            ${canPay ? `<button data-act="markPaid" data-id="${r.id}" class="btn btn-primary !text-[11px] !py-1.5">${esc(L('btn_mark_paid'))}</button>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+}
+function openNoteModal(id, decision) {
+  noteContext = { id, decision };
+  $('noteTitle').textContent = L(decision === 'onaylandi' ? 'nm_approve_title' : 'nm_reject_title');
+  $('noteHint').textContent = L(decision === 'onaylandi' ? 'nm_approve_hint' : 'nm_reject_hint');
+  $('noteConfirm').className = 'btn ' + (decision === 'onaylandi' ? 'btn-ok' : 'btn-danger');
+  $('noteConfirm').textContent = L(decision === 'onaylandi' ? 'btn_approve' : 'btn_reject');
+  $('noteText').value = ''; showMsg('noteMsg', '');
+  openModal('noteModal');
+}
+async function confirmDecision() {
+  if (!noteContext) return;
+  const note = $('noteText').value.trim();
+  if (noteContext.decision === 'reddedildi' && note.length < 3) return showMsg('noteMsg', L('err_note_required'), 'error');
+  const btn = $('noteConfirm'); btn.disabled = true;
+  try {
+    const { error } = await sb.rpc('decide_request', { p_id: noteContext.id, p_decision: noteContext.decision, p_note: note || null });
+    if (error) throw error;
+    toast(L('toast_decided')); closeModal('noteModal'); await loadAdminData();
+  } catch (err) { showMsg('noteMsg', friendlyError(err), 'error'); }
+  finally { btn.disabled = false; }
+}
+async function markPaid(id) {
+  if (!confirm(L('confirm_paid'))) return;
+  try {
+    const { error } = await sb.rpc('mark_request_paid', { p_id: id });
+    if (error) throw error;
+    toast(L('toast_paid')); await loadAdminData();
+  } catch (err) { toast(friendlyError(err), 'error'); }
+}
+
+// =====================================================================
+// DENETİM (AUDIT) SEKMESİ
+// =====================================================================
+async function renderAudit() {
+  $('auditBody').innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500">…</td></tr>`;
+  const { data, error } = await sb.from('finance_audit').select('*').order('id', { ascending: false }).limit(300);
+  if (error) { $('auditBody').innerHTML = `<tr><td colspan="5" class="p-6 text-center text-red-400">${esc(friendlyError(error))}</td></tr>`; return; }
+  const rows = data || [];
+  $('auditBody').innerHTML = !rows.length ? `<tr><td colspan="5" class="p-6 text-center text-slate-500">${esc(L('empty_audit'))}</td></tr>` :
+    rows.map((a) => `<tr class="hover:bg-slate-900/40">
+      <td class="p-2.5 font-mono text-[11px]">${fmtDateTime(a.at)}</td>
+      <td class="p-2.5">${esc(a.actor_email || '—')}</td>
+      <td class="p-2.5">${esc(L('au_' + a.action))}</td>
+      <td class="p-2.5">${esc(L('au_tbl_' + a.table_name))}</td>
+      <td class="p-2.5 max-w-[360px] truncate" title="${esc(a.summary)}">${esc(a.summary || '—')}</td>
+    </tr>`).join('');
+}
+
+</script>
+</body>
+</html>
