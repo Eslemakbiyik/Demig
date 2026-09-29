@@ -163,6 +163,7 @@
       <button data-act="adminTab" data-tab="summary" id="atSummary" class="tabbtn active" data-i18n="at_summary">Özet</button>
       <button data-act="adminTab" data-tab="ledger" id="atLedger" class="tabbtn" data-i18n="at_ledger">Hareketler</button>
       <button data-act="adminTab" data-tab="requests" id="atRequests" class="tabbtn"><span data-i18n="at_requests">Talepler (Onay)</span> <span id="reqBadge" class="hidden ml-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5"></span></button>
+      <button data-act="adminTab" data-tab="staffplan" id="atStaffplan" class="tabbtn" data-i18n="at_staffplan">Personel Ödeme Planı</button>
       <button data-act="adminTab" data-tab="audit" id="atAudit" class="tabbtn" data-i18n="at_audit">Geçmiş</button>
     </div>
 
@@ -219,6 +220,24 @@
     </div>
 
     <!-- Geçmiş -->
+    <!-- Personel Ödeme Planı -->
+    <div id="adm-staffplan" class="hidden space-y-4">
+      <div class="glass rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-[11px] text-slate-400" data-i18n="sp_desc">Ekip üyelerinin aylık ödeme planı ve kaynağı. Bu bölüm sadece yöneticilere görünür.</p>
+        <button data-act="newStaffPlan" class="btn btn-primary" data-i18n="btn_new_person">+ Personel Ekle</button>
+      </div>
+      <div class="glass rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider text-[10px]">
+              <tr id="staffPlanHeaderRow"></tr>
+            </thead>
+            <tbody id="staffPlanBody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <div id="adm-audit" class="hidden">
       <div class="glass rounded-2xl overflow-hidden">
         <div class="overflow-x-auto">
@@ -309,6 +328,42 @@
 </div>
 
 <!-- ========== MODAL: ŞİFRE DEĞİŞTİR ========== -->
+<!-- ========== MODAL: PERSONEL ÖDEME PLANI ========== -->
+<div id="staffPlanModal" class="hidden fixed inset-0 z-50 flex items-start justify-center bg-black/80 p-4 overflow-y-auto">
+  <div class="glass rounded-2xl w-full max-w-xl p-6 my-6 shadow-2xl">
+    <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+      <h3 id="staffPlanModalTitle" class="text-base font-bold"></h3>
+      <button data-act="closeModal" data-modal="staffPlanModal" class="text-slate-400 hover:text-white text-lg leading-none" aria-label="close">✕</button>
+    </div>
+    <form id="staffPlanForm" class="space-y-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label class="lbl" for="spName" data-i18n="lbl_name">Ad Soyad</label><input id="spName" type="text" required minlength="1" maxlength="200" class="fld"></div>
+        <div><label class="lbl" for="spSource" data-i18n="sp_source">Ödeme Kaynağı</label><input id="spSource" type="text" maxlength="200" class="fld"></div>
+      </div>
+      <div><label class="lbl" for="spNote" data-i18n="sp_note">Not</label><input id="spNote" type="text" maxlength="500" class="fld"></div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div><label class="lbl" for="spDate" data-i18n="sp_specific_date">Belirli Tarih</label><input id="spDate" type="date" class="fld"></div>
+        <div><label class="lbl" for="spLumpAmount" data-i18n="sp_lump_amount">Toplu Ödeme Tutarı (₺)</label><input id="spLumpAmount" type="number" step="0.01" class="fld"></div>
+        <div><label class="lbl" for="spLumpMonths" data-i18n="sp_lump_months">Toplu Ödeme Ay Sayısı</label><input id="spLumpMonths" type="number" step="0.5" class="fld"></div>
+      </div>
+
+      <div class="pt-2 border-t border-slate-800">
+        <div class="flex items-center justify-between mb-2">
+          <label class="lbl mb-0" data-i18n="sp_monthly">Aylık Ödemeler</label>
+          <button type="button" data-act="addStaffMonth" class="btn btn-ghost !text-[11px] !py-1">+ <span data-i18n="sp_add_month">Ay Ekle</span></button>
+        </div>
+        <div id="spMonthRows" class="space-y-2"></div>
+      </div>
+
+      <div id="staffPlanMsg" class="hidden text-[11px] rounded-lg px-3 py-2"></div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button type="button" data-act="closeModal" data-modal="staffPlanModal" class="btn btn-ghost" data-i18n="btn_cancel">İptal</button>
+        <button type="submit" class="btn btn-primary" data-i18n="btn_save">Kaydet</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div id="pwdModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
   <div class="glass rounded-2xl w-full max-w-sm p-6 shadow-2xl">
     <h3 class="text-base font-bold mb-3" data-i18n="pm_title">Şifre Değiştir</h3>
@@ -417,7 +472,17 @@ const I18N = {
     err_date: "Tarih seçin.", err_amount: "Geçerli bir tutar girin.", err_desc: "Açıklama en az 3 karakter olmalı.", err_title: "Başlık en az 3 karakter olmalı.",
     err_file_type: "Desteklenmeyen dosya türü: {name}", err_file_size: "Dosya çok büyük (en fazla 10 MB): {name}", err_file_count: "En fazla {n} dosya eklenebilir.",
     file_remove: "Kaldır", file_open: "Aç", uploading: "Dosyalar yükleniyor...", no_files: "Dosya yok.",
-    au_INSERT: "Ekleme", au_UPDATE: "Güncelleme", au_DELETE: "Silme", au_tbl_finance_entries: "Hareket", au_tbl_expense_requests: "Talep",
+    au_INSERT: "Ekleme", au_UPDATE: "Güncelleme", au_DELETE: "Silme", au_tbl_finance_entries: "Hareket", au_tbl_expense_requests: "Talep", au_tbl_finance_staff_plan: "Personel Planı",
+    at_staffplan: "Personel Ödeme Planı",
+    sp_desc: "Ekip üyelerinin aylık ödeme planı ve kaynağı. Bu bölüm sadece yöneticilere görünür.",
+    btn_new_person: "+ Personel Ekle",
+    sp_source: "Ödeme Kaynağı", sp_note: "Not", sp_total: "Toplam",
+    sp_specific_date: "Belirli Tarih", sp_lump_amount: "Toplu Ödeme Tutarı (₺)", sp_lump_months: "Toplu Ödeme Ay Sayısı",
+    sp_monthly: "Aylık Ödemeler", sp_add_month: "Ay Ekle",
+    sp_empty: "Henüz personel planı eklenmedi.",
+    sp_new_title: "Yeni Personel Ekle", sp_edit_title: "Personel Planını Düzenle",
+    sp_delete_confirm: "Bu personel kaydını silmek istediğinize emin misiniz?",
+    err_name_required: "Ad Soyad girin.",
     role_tahir: "Yönetici · Tahir", role_eslem: "Yönetici · Eslem", req_by: "Talep eden:", note_lbl: "Not:",
     csv_h: ["Tarih", "Tür", "Kategori", "Açıklama", "Satıcı/Kaynak", "Fatura No", "Net", "KDV Oranı %", "KDV", "Diğer Vergi", "Toplam", "Ödeme", "Dosya Sayısı"],
   },
@@ -484,7 +549,17 @@ const I18N = {
     err_date: "Select a date.", err_amount: "Enter a valid amount.", err_desc: "Description must be at least 3 characters.", err_title: "Title must be at least 3 characters.",
     err_file_type: "Unsupported file type: {name}", err_file_size: "File too large (max 10 MB): {name}", err_file_count: "At most {n} files can be attached.",
     file_remove: "Remove", file_open: "Open", uploading: "Uploading files...", no_files: "No files.",
-    au_INSERT: "Insert", au_UPDATE: "Update", au_DELETE: "Delete", au_tbl_finance_entries: "Entry", au_tbl_expense_requests: "Request",
+    au_INSERT: "Insert", au_UPDATE: "Update", au_DELETE: "Delete", au_tbl_finance_entries: "Entry", au_tbl_expense_requests: "Request", au_tbl_finance_staff_plan: "Staff Plan",
+    at_staffplan: "Staff Payment Plan",
+    sp_desc: "Monthly payment plan and source for team members. Visible only to admins.",
+    btn_new_person: "+ Add Person",
+    sp_source: "Payment Source", sp_note: "Note", sp_total: "Total",
+    sp_specific_date: "Specific Date", sp_lump_amount: "Lump Sum Amount (₺)", sp_lump_months: "Lump Sum Months",
+    sp_monthly: "Monthly Payments", sp_add_month: "Add Month",
+    sp_empty: "No staff plan added yet.",
+    sp_new_title: "Add New Person", sp_edit_title: "Edit Staff Plan",
+    sp_delete_confirm: "Are you sure you want to delete this staff record?",
+    err_name_required: "Enter a full name.",
     role_tahir: "Admin · Tahir", role_eslem: "Admin · Eslem", req_by: "Requested by:", note_lbl: "Note:",
     csv_h: ["Date", "Type", "Category", "Description", "Vendor/Source", "Invoice No", "Net", "VAT Rate %", "VAT", "Other Tax", "Total", "Payment", "File Count"],
   },
@@ -633,6 +708,8 @@ let allEntries = [];         // admin: tüm hareketler (client tarafında filtre
 let allRequests = [];        // admin: tüm talepler
 let myRequests = [];         // üye: kendi talepleri
 let adminTab = 'summary';
+let allStaffPlan = [];
+let editingStaffPlanId = null;
 let memberTab = 'new';
 let selectedYear = new Date().getFullYear();
 
@@ -756,6 +833,11 @@ function bindStaticEvents() {
     else if (act === 'cancelReq') cancelRequest(btn.getAttribute('data-id'));
     else if (act === 'removePendingFile') removePendingFile(btn);
     else if (act === 'removeExistingFile') removeExistingFile(btn.getAttribute('data-path'));
+    else if (act === 'newStaffPlan') openStaffPlanModal(null);
+    else if (act === 'editStaffPlan') openStaffPlanModal(btn.getAttribute('data-id'));
+    else if (act === 'deleteStaffPlan') deleteStaffPlan(btn.getAttribute('data-id'));
+    else if (act === 'addStaffMonth') addStaffMonthRow('', '');
+    else if (act === 'removeStaffMonth') btn.closest('.sp-month-row').remove();
   });
   ['click', 'keydown', 'scroll'].forEach((ev) => document.addEventListener(ev, resetIdle, { passive: true }));
 
@@ -763,6 +845,7 @@ function bindStaticEvents() {
   $('joinForm').addEventListener('submit', onJoinSubmit);
   $('reqForm').addEventListener('submit', onReqSubmit);
   $('entryForm').addEventListener('submit', onEntrySubmit);
+  $('staffPlanForm').addEventListener('submit', onStaffPlanSubmit);
   $('pwdForm').addEventListener('submit', onPwdSubmit);
   $('rFiles').addEventListener('change', () => onFilesChosen($('rFiles'), reqFiles, 'rPending', MAX_FILES_REQ, 'reqMsg'));
   $('eFiles').addEventListener('change', () => onFilesChosen($('eFiles'), entryFiles, 'ePending', MAX_FILES_ENTRY, 'entryMsg'));
@@ -1148,30 +1231,34 @@ function downloadCsv() {
 // =====================================================================
 function switchAdminTab(tab) {
   adminTab = tab;
-  ['summary', 'ledger', 'requests', 'audit'].forEach((t) => {
+  ['summary', 'ledger', 'requests', 'staffplan', 'audit'].forEach((t) => {
     $('at' + t[0].toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
     $('adm-' + t).classList.toggle('hidden', t !== tab);
   });
   if (tab === 'summary') renderSummary();
   else if (tab === 'ledger') renderLedger();
   else if (tab === 'requests') renderAdminRequests();
+  else if (tab === 'staffplan') renderStaffPlan();
   else if (tab === 'audit') renderAudit();
 }
 async function loadAdminData() {
-  const [entriesRes, reqRes] = await Promise.all([
+  const [entriesRes, reqRes, staffRes] = await Promise.all([
     sb.from('finance_entries').select('*').order('entry_date', { ascending: false }),
     sb.from('expense_requests').select('*').order('created_at', { ascending: false }),
+    sb.from('finance_staff_plan').select('*').order('sort_order', { ascending: true }),
   ]);
   if (entriesRes.error) { fatal(friendlyError(entriesRes.error)); return; }
   if (reqRes.error) { fatal(friendlyError(reqRes.error)); return; }
   allEntries = entriesRes.data || [];
   allRequests = reqRes.data || [];
+  allStaffPlan = staffRes.error ? [] : (staffRes.data || []);
   updateReqBadge();
   fillYearSelect();
   fillStaticSelects();
   if (adminTab === 'summary') renderSummary();
   else if (adminTab === 'ledger') renderLedger();
   else if (adminTab === 'requests') renderAdminRequests();
+  else if (adminTab === 'staffplan') renderStaffPlan();
   else if (adminTab === 'audit') renderAudit();
 }
 function updateReqBadge() {
@@ -1375,6 +1462,136 @@ async function markPaid(id) {
 // =====================================================================
 // DENETİM (AUDIT) SEKMESİ
 // =====================================================================
+// =====================================================================
+// PERSONEL ÖDEME PLANI SEKMESİ
+// =====================================================================
+const MONTH_NAMES_SHORT = {
+  tr: ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'],
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+};
+function monthKeyLabel(key) {
+  const [y, m] = key.split('-').map((x) => parseInt(x, 10));
+  const names = MONTH_NAMES_SHORT[LANG] || MONTH_NAMES_SHORT.tr;
+  return `${names[m - 1]} '${String(y).slice(2)}`;
+}
+function allStaffMonthKeys() {
+  const set = new Set();
+  allStaffPlan.forEach((p) => Object.keys(p.monthly_amounts || {}).forEach((k) => set.add(k)));
+  return Array.from(set).sort();
+}
+function renderStaffPlan() {
+  const months = allStaffMonthKeys();
+  const headerRow = $('staffPlanHeaderRow');
+  headerRow.innerHTML = `
+    <th class="p-3 sticky left-0 bg-slate-900/90 z-10">${esc(L('th_person'))}</th>
+    <th class="p-3">${esc(L('sp_source'))}</th>
+    <th class="p-3">${esc(L('sp_note'))}</th>
+    ${months.map((m) => `<th class="p-3 text-right whitespace-nowrap">${esc(monthKeyLabel(m))}</th>`).join('')}
+    <th class="p-3 text-right">${esc(L('sp_total'))}</th>
+    <th class="p-3 text-right">${esc(L('th_actions'))}</th>
+  `;
+
+  const body = $('staffPlanBody');
+  if (!allStaffPlan.length) {
+    body.innerHTML = `<tr><td colspan="${4 + months.length}" class="p-6 text-center text-slate-500">${esc(L('sp_empty'))}</td></tr>`;
+    return;
+  }
+  body.innerHTML = allStaffPlan.map((p) => {
+    const amounts = p.monthly_amounts || {};
+    const total = months.reduce((s, m) => s + num(amounts[m]), 0) + num(p.lump_sum_amount);
+    return `
+      <tr class="hover:bg-slate-900/40">
+        <td class="p-3 font-semibold text-white sticky left-0 bg-slate-950/90">${esc(p.person_name)}</td>
+        <td class="p-3 text-slate-300">${esc(p.payment_source || '—')}</td>
+        <td class="p-3 text-slate-400 max-w-[200px] truncate" title="${esc(p.note || '')}">${esc(p.note || '—')}</td>
+        ${months.map((m) => `<td class="p-3 text-right font-mono text-[11px] ${amounts[m] ? 'text-slate-200' : 'text-slate-600'}">${amounts[m] ? money(amounts[m]) : '—'}</td>`).join('')}
+        <td class="p-3 text-right font-mono font-bold">${money(total)}</td>
+        <td class="p-3 text-right whitespace-nowrap">
+          <button data-act="editStaffPlan" data-id="${p.id}" class="text-slate-400 hover:text-white px-1" title="${esc(L('btn_edit'))}">✏️</button>
+          <button data-act="deleteStaffPlan" data-id="${p.id}" class="text-slate-400 hover:text-red-400 px-1" title="${esc(L('btn_delete'))}">🗑️</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+function addStaffMonthRow(key, value) {
+  const box = $('spMonthRows');
+  const row = document.createElement('div');
+  row.className = 'sp-month-row flex items-center gap-2';
+  row.innerHTML = `
+    <input type="month" class="fld sp-month-key" value="${esc(key || '')}">
+    <input type="number" step="0.01" class="fld sp-month-val" placeholder="0.00" value="${value !== undefined && value !== '' ? esc(value) : ''}">
+    <button type="button" data-act="removeStaffMonth" class="text-red-400 hover:text-red-300 px-1 shrink-0">✕</button>
+  `;
+  box.appendChild(row);
+}
+function openStaffPlanModal(id) {
+  editingStaffPlanId = id;
+  $('staffPlanForm').reset();
+  $('spMonthRows').innerHTML = '';
+  showMsg('staffPlanMsg', '');
+  const p = id ? allStaffPlan.find((x) => x.id === id) : null;
+  $('staffPlanModalTitle').textContent = L(p ? 'sp_edit_title' : 'sp_new_title');
+  if (p) {
+    $('spName').value = p.person_name || '';
+    $('spSource').value = p.payment_source || '';
+    $('spNote').value = p.note || '';
+    $('spDate').value = p.specific_date || '';
+    $('spLumpAmount').value = p.lump_sum_amount !== null && p.lump_sum_amount !== undefined ? p.lump_sum_amount : '';
+    $('spLumpMonths').value = p.lump_sum_months !== null && p.lump_sum_months !== undefined ? p.lump_sum_months : '';
+    const amounts = p.monthly_amounts || {};
+    Object.keys(amounts).sort().forEach((k) => addStaffMonthRow(k, amounts[k]));
+  }
+  if (!$('spMonthRows').children.length) addStaffMonthRow('', '');
+  openModal('staffPlanModal');
+}
+async function onStaffPlanSubmit(e) {
+  e.preventDefault();
+  showMsg('staffPlanMsg', '');
+  const name = $('spName').value.trim();
+  if (!name) return showMsg('staffPlanMsg', L('err_name_required'), 'error');
+
+  const monthly = {};
+  document.querySelectorAll('#spMonthRows .sp-month-row').forEach((row) => {
+    const k = row.querySelector('.sp-month-key').value;
+    const v = row.querySelector('.sp-month-val').value;
+    if (k && v !== '') monthly[k] = num(v);
+  });
+
+  const payload = {
+    person_name: name,
+    payment_source: $('spSource').value.trim() || null,
+    note: $('spNote').value.trim() || null,
+    specific_date: $('spDate').value || null,
+    lump_sum_amount: $('spLumpAmount').value !== '' ? num($('spLumpAmount').value) : null,
+    lump_sum_months: $('spLumpMonths').value !== '' ? num($('spLumpMonths').value) : null,
+    monthly_amounts: monthly,
+  };
+  if (!editingStaffPlanId) payload.sort_order = allStaffPlan.length;
+
+  const btn = $('staffPlanForm').querySelector('button[type="submit"]');
+  btn.disabled = true;
+  try {
+    const q = editingStaffPlanId
+      ? sb.from('finance_staff_plan').update(payload).eq('id', editingStaffPlanId)
+      : sb.from('finance_staff_plan').insert(payload);
+    const { error } = await q;
+    if (error) throw error;
+    toast(L('toast_saved'));
+    closeModal('staffPlanModal');
+    await loadAdminData();
+  } catch (err) { showMsg('staffPlanMsg', friendlyError(err), 'error'); }
+  finally { btn.disabled = false; }
+}
+async function deleteStaffPlan(id) {
+  if (!confirm(L('sp_delete_confirm'))) return;
+  try {
+    const { error } = await sb.from('finance_staff_plan').delete().eq('id', id);
+    if (error) throw error;
+    toast(L('toast_deleted'));
+    await loadAdminData();
+  } catch (err) { toast(friendlyError(err), 'error'); }
+}
+
 async function renderAudit() {
   $('auditBody').innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-500">…</td></tr>`;
   const { data, error } = await sb.from('finance_audit').select('*').order('id', { ascending: false }).limit(300);
