@@ -164,6 +164,8 @@
       <button data-act="adminTab" data-tab="ledger" id="atLedger" class="tabbtn" data-i18n="at_ledger">Hareketler</button>
       <button data-act="adminTab" data-tab="requests" id="atRequests" class="tabbtn"><span data-i18n="at_requests">Talepler (Onay)</span> <span id="reqBadge" class="hidden ml-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5"></span></button>
       <button data-act="adminTab" data-tab="staffplan" id="atStaffplan" class="tabbtn" data-i18n="at_staffplan">Personel Ödeme Planı</button>
+      <button data-act="adminTab" data-tab="participation" id="atParticipation" class="tabbtn" data-i18n="at_participation">Katılım Hesabı</button>
+      <button data-act="adminTab" data-tab="recon" id="atRecon" class="tabbtn"><span data-i18n="at_recon">Banka Mutabakatı</span> <span id="reconBadge" class="hidden ml-1 bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5"></span></button>
       <button data-act="adminTab" data-tab="audit" id="atAudit" class="tabbtn" data-i18n="at_audit">Geçmiş</button>
     </div>
 
@@ -233,6 +235,58 @@
               <tr id="staffPlanHeaderRow"></tr>
             </thead>
             <tbody id="staffPlanBody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Katılım Hesabı -->
+    <div id="adm-participation" class="hidden space-y-4">
+      <div id="partCards" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+      <div class="glass rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-[11px] text-slate-400" data-i18n="part_desc">Katılım / kâr payı hesabına yatırılan tutarlar ve banka tarafından bildirilen güncel bakiyeler. Bu bölüm sadece yöneticilere görünür.</p>
+        <button data-act="newPartEntry" class="btn btn-primary" data-i18n="btn_new_part">+ Hareket Ekle</button>
+      </div>
+      <div class="glass rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider text-[10px]">
+              <tr>
+                <th class="p-3" data-i18n="th_date">Tarih</th>
+                <th class="p-3" data-i18n="part_type">Hareket Türü</th>
+                <th class="p-3" data-i18n="part_account">Hesap</th>
+                <th class="p-3 text-right" data-i18n="part_amount">Tutar</th>
+                <th class="p-3" data-i18n="th_desc">Not</th>
+                <th class="p-3 text-right" data-i18n="th_actions">İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="partBody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Banka Mutabakatı -->
+    <div id="adm-recon" class="hidden space-y-4">
+      <div class="glass rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-[11px] text-slate-400" data-i18n="recon_desc">Banka ekstresindeki gerçek bakiyeyi girin; sistem o tarihe kadarki kayıtlardan olması gereken bakiyeyi hesaplayıp farkı gösterir.</p>
+        <button data-act="newRecon" class="btn btn-primary" data-i18n="btn_new_recon">+ Mutabakat Ekle</button>
+      </div>
+      <div class="glass rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider text-[10px]">
+              <tr>
+                <th class="p-3" data-i18n="recon_date">Ekstre Tarihi</th>
+                <th class="p-3" data-i18n="recon_bank">Banka</th>
+                <th class="p-3 text-right" data-i18n="recon_reported">Bankanın Bildirdiği</th>
+                <th class="p-3 text-right" data-i18n="recon_expected">Sistemin Hesapladığı</th>
+                <th class="p-3 text-right" data-i18n="recon_diff">Fark</th>
+                <th class="p-3" data-i18n="th_desc">Not</th>
+                <th class="p-3 text-right" data-i18n="th_actions">İşlem</th>
+              </tr>
+            </thead>
+            <tbody id="reconBody" class="divide-y divide-slate-800/60"></tbody>
           </table>
         </div>
       </div>
@@ -364,6 +418,61 @@
   </div>
 </div>
 
+<!-- ========== MODAL: KATILIM HESABI HAREKETİ ========== -->
+<div id="partModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+  <div class="glass rounded-2xl w-full max-w-md p-6 shadow-2xl">
+    <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+      <h3 id="partModalTitle" class="text-base font-bold"></h3>
+      <button data-act="closeModal" data-modal="partModal" class="text-slate-400 hover:text-white text-lg leading-none" aria-label="close">✕</button>
+    </div>
+    <form id="partForm" class="space-y-3">
+      <div><label class="lbl" for="partType" data-i18n="part_type">Hareket Türü</label>
+        <select id="partType" class="fld">
+          <option value="yatirim" data-i18n="part_type_deposit">Yatırım (Para Yatırma)</option>
+          <option value="cekim" data-i18n="part_type_withdraw">Çekim (Para Çekme)</option>
+          <option value="bakiye_bildirimi" data-i18n="part_type_balance">Bakiye Bildirimi (Bankanın Bildirdiği Güncel Toplam)</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label class="lbl" for="partDate" data-i18n="lbl_date">Tarih</label><input id="partDate" type="date" required class="fld"></div>
+        <div><label class="lbl" for="partAmount" data-i18n="part_amount">Tutar (₺)</label><input id="partAmount" type="number" required min="0" step="0.01" class="fld"></div>
+      </div>
+      <div><label class="lbl" for="partAccountName" data-i18n="part_account">Hesap</label><input id="partAccountName" type="text" maxlength="200" placeholder="Örn: Vakıf Katılım" class="fld"></div>
+      <div><label class="lbl" for="partNote" data-i18n="th_desc">Not</label><textarea id="partNote" rows="2" maxlength="1000" class="fld"></textarea></div>
+      <p id="partHint" class="text-[10px] text-slate-500"></p>
+      <div id="partMsg" class="hidden text-[11px] rounded-lg px-3 py-2"></div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button type="button" data-act="closeModal" data-modal="partModal" class="btn btn-ghost" data-i18n="btn_cancel">İptal</button>
+        <button type="submit" class="btn btn-primary" data-i18n="btn_save">Kaydet</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========== MODAL: BANKA MUTABAKATI ========== -->
+<div id="reconModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+  <div class="glass rounded-2xl w-full max-w-md p-6 shadow-2xl">
+    <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+      <h3 id="reconModalTitle" class="text-base font-bold"></h3>
+      <button data-act="closeModal" data-modal="reconModal" class="text-slate-400 hover:text-white text-lg leading-none" aria-label="close">✕</button>
+    </div>
+    <form id="reconForm" class="space-y-3">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div><label class="lbl" for="reconDate" data-i18n="recon_date">Ekstre Tarihi</label><input id="reconDate" type="date" required class="fld"></div>
+        <div><label class="lbl" for="reconBank" data-i18n="recon_bank">Banka</label><input id="reconBank" type="text" maxlength="200" placeholder="Örn: QNB" class="fld"></div>
+      </div>
+      <div><label class="lbl" for="reconBalance" data-i18n="recon_reported">Bankanın Bildirdiği Bakiye (₺)</label><input id="reconBalance" type="number" required step="0.01" class="fld"></div>
+      <div id="reconPreview" class="text-[11px] rounded-lg px-3 py-2 bg-slate-900/80 border border-slate-800 hidden"></div>
+      <div><label class="lbl" for="reconNote" data-i18n="th_desc">Not</label><textarea id="reconNote" rows="2" maxlength="1000" class="fld"></textarea></div>
+      <div id="reconMsg" class="hidden text-[11px] rounded-lg px-3 py-2"></div>
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-800">
+        <button type="button" data-act="closeModal" data-modal="reconModal" class="btn btn-ghost" data-i18n="btn_cancel">İptal</button>
+        <button type="submit" class="btn btn-primary" data-i18n="btn_save">Kaydet</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div id="pwdModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
   <div class="glass rounded-2xl w-full max-w-sm p-6 shadow-2xl">
     <h3 class="text-base font-bold mb-3" data-i18n="pm_title">Şifre Değiştir</h3>
@@ -482,6 +591,32 @@ const I18N = {
     sp_empty: "Henüz personel planı eklenmedi.",
     sp_new_title: "Yeni Personel Ekle", sp_edit_title: "Personel Planını Düzenle",
     sp_delete_confirm: "Bu personel kaydını silmek istediğinize emin misiniz?",
+    au_tbl_finance_participation_entries: "Katılım Hesabı",
+    at_participation: "Katılım Hesabı",
+    part_desc: "Katılım / kâr payı hesabına yatırılan tutarlar ve banka tarafından bildirilen güncel bakiyeler. Bu bölüm sadece yöneticilere görünür.",
+    btn_new_part: "+ Hareket Ekle",
+    part_type: "Hareket Türü", part_account: "Hesap", part_amount: "Tutar",
+    part_type_deposit: "Yatırım (Para Yatırma)", part_type_withdraw: "Çekim (Para Çekme)", part_type_balance: "Bakiye Bildirimi (Bankanın Bildirdiği Güncel Toplam)",
+    part_new_title: "Katılım Hesabı Hareketi Ekle", part_edit_title: "Hareketi Düzenle",
+    part_empty: "Henüz hareket eklenmedi.",
+    part_delete_confirm: "Bu hareketi silmek istediğinize emin misiniz?",
+    part_hint_deposit: "Hesaba yatırılan/gönderilen tutarı girin.",
+    part_hint_withdraw: "Hesaptan çekilen/geri alınan tutarı girin.",
+    part_hint_balance: "Ek bir tutar değil — bankanın o tarihte bildirdiği TOPLAM bakiyeyi (kâr payı dahil) girin. Sistem bunu yatırdığınız toplamla karşılaştırıp kârı otomatik hesaplar.",
+    sc_part_deposited: "Toplam Yatırılan", sc_part_balance: "Son Bildirilen Bakiye", sc_part_profit: "Kâr / Getiri",
+    sc_part_no_balance: "Henüz bakiye bildirimi girilmedi",
+    sc_part_as_of: "{date} itibarıyla",
+    au_tbl_finance_bank_reconciliations: "Banka Mutabakatı",
+    at_recon: "Banka Mutabakatı",
+    recon_desc: "Banka ekstresindeki gerçek bakiyeyi girin; sistem o tarihe kadarki kayıtlardan olması gereken bakiyeyi hesaplayıp farkı gösterir.",
+    btn_new_recon: "+ Mutabakat Ekle",
+    recon_date: "Ekstre Tarihi", recon_bank: "Banka", recon_reported: "Bankanın Bildirdiği", recon_expected: "Sistemin Hesapladığı", recon_diff: "Fark",
+    recon_new_title: "Yeni Mutabakat Ekle", recon_edit_title: "Mutabakatı Düzenle",
+    recon_empty: "Henüz mutabakat kaydı eklenmedi.",
+    recon_delete_confirm: "Bu mutabakat kaydını silmek istediğinize emin misiniz?",
+    recon_match: "Tutarlı", recon_mismatch: "Fark Var",
+    recon_preview_label: "Bu tarihe kadar sistemin hesapladığı bakiye:",
+    err_balance_required: "Bakiye tutarını girin.",
     err_name_required: "Ad Soyad girin.",
     role_tahir: "Yönetici · Tahir", role_eslem: "Yönetici · Eslem", req_by: "Talep eden:", note_lbl: "Not:",
     csv_h: ["Tarih", "Tür", "Kategori", "Açıklama", "Satıcı/Kaynak", "Fatura No", "Net", "KDV Oranı %", "KDV", "Diğer Vergi", "Toplam", "Ödeme", "Dosya Sayısı"],
@@ -559,6 +694,32 @@ const I18N = {
     sp_empty: "No staff plan added yet.",
     sp_new_title: "Add New Person", sp_edit_title: "Edit Staff Plan",
     sp_delete_confirm: "Are you sure you want to delete this staff record?",
+    au_tbl_finance_participation_entries: "Participation Account",
+    at_participation: "Participation Account",
+    part_desc: "Amounts deposited into the participation / profit-share account and the current balances reported by the bank. Visible only to admins.",
+    btn_new_part: "+ Add Entry",
+    part_type: "Entry Type", part_account: "Account", part_amount: "Amount",
+    part_type_deposit: "Deposit", part_type_withdraw: "Withdrawal", part_type_balance: "Balance Report (Bank's Current Total)",
+    part_new_title: "Add Participation Account Entry", part_edit_title: "Edit Entry",
+    part_empty: "No entries added yet.",
+    part_delete_confirm: "Are you sure you want to delete this entry?",
+    part_hint_deposit: "Enter the amount deposited/sent to the account.",
+    part_hint_withdraw: "Enter the amount withdrawn from the account.",
+    part_hint_balance: "Not an additional amount — enter the TOTAL balance (including profit share) reported by the bank as of this date. The system compares this to your total deposits to calculate profit automatically.",
+    sc_part_deposited: "Total Deposited", sc_part_balance: "Latest Reported Balance", sc_part_profit: "Profit / Return",
+    sc_part_no_balance: "No balance report entered yet",
+    sc_part_as_of: "as of {date}",
+    au_tbl_finance_bank_reconciliations: "Bank Reconciliation",
+    at_recon: "Bank Reconciliation",
+    recon_desc: "Enter the actual balance from your bank statement; the system calculates the expected balance from records up to that date and shows the difference.",
+    btn_new_recon: "+ Add Reconciliation",
+    recon_date: "Statement Date", recon_bank: "Bank", recon_reported: "Bank Reported", recon_expected: "System Calculated", recon_diff: "Difference",
+    recon_new_title: "Add New Reconciliation", recon_edit_title: "Edit Reconciliation",
+    recon_empty: "No reconciliation records added yet.",
+    recon_delete_confirm: "Are you sure you want to delete this reconciliation record?",
+    recon_match: "Matches", recon_mismatch: "Discrepancy",
+    recon_preview_label: "System's calculated balance up to this date:",
+    err_balance_required: "Enter the balance amount.",
     err_name_required: "Enter a full name.",
     role_tahir: "Admin · Tahir", role_eslem: "Admin · Eslem", req_by: "Requested by:", note_lbl: "Note:",
     csv_h: ["Date", "Type", "Category", "Description", "Vendor/Source", "Invoice No", "Net", "VAT Rate %", "VAT", "Other Tax", "Total", "Payment", "File Count"],
@@ -710,6 +871,10 @@ let myRequests = [];         // üye: kendi talepleri
 let adminTab = 'summary';
 let allStaffPlan = [];
 let editingStaffPlanId = null;
+let allPartEntries = [];
+let editingPartId = null;
+let allRecons = [];
+let editingReconId = null;
 let memberTab = 'new';
 let selectedYear = new Date().getFullYear();
 
@@ -838,6 +1003,12 @@ function bindStaticEvents() {
     else if (act === 'deleteStaffPlan') deleteStaffPlan(btn.getAttribute('data-id'));
     else if (act === 'addStaffMonth') addStaffMonthRow('', '');
     else if (act === 'removeStaffMonth') btn.closest('.sp-month-row').remove();
+    else if (act === 'newPartEntry') openPartModal(null);
+    else if (act === 'editPartEntry') openPartModal(btn.getAttribute('data-id'));
+    else if (act === 'deletePartEntry') deletePartEntry(btn.getAttribute('data-id'));
+    else if (act === 'newRecon') openReconModal(null);
+    else if (act === 'editRecon') openReconModal(btn.getAttribute('data-id'));
+    else if (act === 'deleteRecon') deleteRecon(btn.getAttribute('data-id'));
   });
   ['click', 'keydown', 'scroll'].forEach((ev) => document.addEventListener(ev, resetIdle, { passive: true }));
 
@@ -846,6 +1017,11 @@ function bindStaticEvents() {
   $('reqForm').addEventListener('submit', onReqSubmit);
   $('entryForm').addEventListener('submit', onEntrySubmit);
   $('staffPlanForm').addEventListener('submit', onStaffPlanSubmit);
+  $('partForm').addEventListener('submit', onPartSubmit);
+  $('partType').addEventListener('change', updatePartHint);
+  $('reconForm').addEventListener('submit', onReconSubmit);
+  $('reconDate').addEventListener('change', updateReconPreview);
+  $('reconBalance').addEventListener('input', updateReconPreview);
   $('pwdForm').addEventListener('submit', onPwdSubmit);
   $('rFiles').addEventListener('change', () => onFilesChosen($('rFiles'), reqFiles, 'rPending', MAX_FILES_REQ, 'reqMsg'));
   $('eFiles').addEventListener('change', () => onFilesChosen($('eFiles'), entryFiles, 'ePending', MAX_FILES_ENTRY, 'entryMsg'));
@@ -1231,7 +1407,7 @@ function downloadCsv() {
 // =====================================================================
 function switchAdminTab(tab) {
   adminTab = tab;
-  ['summary', 'ledger', 'requests', 'staffplan', 'audit'].forEach((t) => {
+  ['summary', 'ledger', 'requests', 'staffplan', 'participation', 'recon', 'audit'].forEach((t) => {
     $('at' + t[0].toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
     $('adm-' + t).classList.toggle('hidden', t !== tab);
   });
@@ -1239,26 +1415,35 @@ function switchAdminTab(tab) {
   else if (tab === 'ledger') renderLedger();
   else if (tab === 'requests') renderAdminRequests();
   else if (tab === 'staffplan') renderStaffPlan();
+  else if (tab === 'participation') renderParticipation();
+  else if (tab === 'recon') renderRecon();
   else if (tab === 'audit') renderAudit();
 }
 async function loadAdminData() {
-  const [entriesRes, reqRes, staffRes] = await Promise.all([
+  const [entriesRes, reqRes, staffRes, partRes, reconRes] = await Promise.all([
     sb.from('finance_entries').select('*').order('entry_date', { ascending: false }),
     sb.from('expense_requests').select('*').order('created_at', { ascending: false }),
     sb.from('finance_staff_plan').select('*').order('sort_order', { ascending: true }),
+    sb.from('finance_participation_entries').select('*').order('entry_date', { ascending: false }),
+    sb.from('finance_bank_reconciliations').select('*').order('statement_date', { ascending: false }),
   ]);
   if (entriesRes.error) { fatal(friendlyError(entriesRes.error)); return; }
   if (reqRes.error) { fatal(friendlyError(reqRes.error)); return; }
   allEntries = entriesRes.data || [];
   allRequests = reqRes.data || [];
   allStaffPlan = staffRes.error ? [] : (staffRes.data || []);
+  allPartEntries = partRes.error ? [] : (partRes.data || []);
+  allRecons = reconRes.error ? [] : (reconRes.data || []);
   updateReqBadge();
+  updateReconBadge();
   fillYearSelect();
   fillStaticSelects();
   if (adminTab === 'summary') renderSummary();
   else if (adminTab === 'ledger') renderLedger();
   else if (adminTab === 'requests') renderAdminRequests();
   else if (adminTab === 'staffplan') renderStaffPlan();
+  else if (adminTab === 'participation') renderParticipation();
+  else if (adminTab === 'recon') renderRecon();
   else if (adminTab === 'audit') renderAudit();
 }
 function updateReqBadge() {
@@ -1586,6 +1771,208 @@ async function deleteStaffPlan(id) {
   if (!confirm(L('sp_delete_confirm'))) return;
   try {
     const { error } = await sb.from('finance_staff_plan').delete().eq('id', id);
+    if (error) throw error;
+    toast(L('toast_deleted'));
+    await loadAdminData();
+  } catch (err) { toast(friendlyError(err), 'error'); }
+}
+
+// =====================================================================
+// KATILIM HESABI SEKMESİ
+// =====================================================================
+function partTypeLabel(t) {
+  return L({ yatirim: 'part_type_deposit', cekim: 'part_type_withdraw', bakiye_bildirimi: 'part_type_balance' }[t] || 'part_type');
+}
+function partSummary() {
+  const deposited = allPartEntries
+    .filter((e) => e.entry_type === 'yatirim').reduce((s, e) => s + num(e.amount), 0)
+    - allPartEntries.filter((e) => e.entry_type === 'cekim').reduce((s, e) => s + num(e.amount), 0);
+  const balanceRows = allPartEntries.filter((e) => e.entry_type === 'bakiye_bildirimi').slice().sort((a, b) => (a.entry_date < b.entry_date ? -1 : 1));
+  const latest = balanceRows.length ? balanceRows[balanceRows.length - 1] : null;
+  const balance = latest ? num(latest.amount) : deposited;
+  const profit = latest ? balance - deposited : 0;
+  return { deposited, balance, profit, latestDate: latest ? latest.entry_date : null, hasBalance: !!latest };
+}
+function renderParticipation() {
+  const s = partSummary();
+  const profitColor = s.profit > 0 ? 'text-emerald-400' : (s.profit < 0 ? 'text-red-400' : 'text-white');
+  $('partCards').innerHTML = [
+    statCard(L('sc_part_deposited'), money(s.deposited), null, 'text-white'),
+    statCard(L('sc_part_balance'), s.hasBalance ? money(s.balance) : '—', s.hasBalance ? L('sc_part_as_of', { date: fmtDate(s.latestDate) }) : L('sc_part_no_balance'), 'text-indigo-300'),
+    statCard(L('sc_part_profit'), s.hasBalance ? money(s.profit) : '—', s.hasBalance && s.deposited > 0 ? `%${((s.profit / s.deposited) * 100).toFixed(2)}` : null, profitColor),
+  ].join('');
+
+  const body = $('partBody');
+  if (!allPartEntries.length) {
+    body.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500">${esc(L('part_empty'))}</td></tr>`;
+    return;
+  }
+  body.innerHTML = allPartEntries.map((e) => `
+    <tr class="hover:bg-slate-900/40">
+      <td class="p-3 font-mono text-[11px]">${fmtDate(e.entry_date)}</td>
+      <td class="p-3">${esc(partTypeLabel(e.entry_type))}</td>
+      <td class="p-3 text-slate-300">${esc(e.account_name || '—')}</td>
+      <td class="p-3 text-right font-mono font-bold">${money(e.amount)}</td>
+      <td class="p-3 text-slate-400 max-w-[220px] truncate" title="${esc(e.note || '')}">${esc(e.note || '—')}</td>
+      <td class="p-3 text-right whitespace-nowrap">
+        <button data-act="editPartEntry" data-id="${e.id}" class="text-slate-400 hover:text-white px-1" title="${esc(L('btn_edit'))}">✏️</button>
+        <button data-act="deletePartEntry" data-id="${e.id}" class="text-slate-400 hover:text-red-400 px-1" title="${esc(L('btn_delete'))}">🗑️</button>
+      </td>
+    </tr>`).join('');
+}
+function updatePartHint() {
+  const t = $('partType').value;
+  $('partHint').textContent = L({ yatirim: 'part_hint_deposit', cekim: 'part_hint_withdraw', bakiye_bildirimi: 'part_hint_balance' }[t] || '');
+}
+function openPartModal(id) {
+  editingPartId = id;
+  $('partForm').reset();
+  showMsg('partMsg', '');
+  const e = id ? allPartEntries.find((x) => x.id === id) : null;
+  $('partModalTitle').textContent = L(e ? 'part_edit_title' : 'part_new_title');
+  $('partDate').value = e ? e.entry_date : today();
+  $('partType').value = e ? e.entry_type : 'yatirim';
+  $('partAmount').value = e ? e.amount : '';
+  $('partAccountName').value = e ? (e.account_name || '') : '';
+  $('partNote').value = e ? (e.note || '') : '';
+  updatePartHint();
+  openModal('partModal');
+}
+async function onPartSubmit(e) {
+  e.preventDefault();
+  showMsg('partMsg', '');
+  if (!$('partDate').value) return showMsg('partMsg', L('err_date'), 'error');
+  if ($('partAmount').value === '' || !(num($('partAmount').value) >= 0)) return showMsg('partMsg', L('err_amount'), 'error');
+  const payload = {
+    entry_date: $('partDate').value,
+    entry_type: $('partType').value,
+    amount: num($('partAmount').value),
+    account_name: $('partAccountName').value.trim() || null,
+    note: $('partNote').value.trim() || null,
+  };
+  const btn = $('partForm').querySelector('button[type="submit"]');
+  btn.disabled = true;
+  try {
+    const q = editingPartId
+      ? sb.from('finance_participation_entries').update(payload).eq('id', editingPartId)
+      : sb.from('finance_participation_entries').insert(payload);
+    const { error } = await q;
+    if (error) throw error;
+    toast(L('toast_saved'));
+    closeModal('partModal');
+    await loadAdminData();
+  } catch (err) { showMsg('partMsg', friendlyError(err), 'error'); }
+  finally { btn.disabled = false; }
+}
+async function deletePartEntry(id) {
+  if (!confirm(L('part_delete_confirm'))) return;
+  try {
+    const { error } = await sb.from('finance_participation_entries').delete().eq('id', id);
+    if (error) throw error;
+    toast(L('toast_deleted'));
+    await loadAdminData();
+  } catch (err) { toast(friendlyError(err), 'error'); }
+}
+
+// =====================================================================
+// BANKA MUTABAKATI SEKMESİ
+// =====================================================================
+// Belirli bir tarihe KADAR (dahil) tüm finance_entries kayıtlarından
+// "olması gereken" net bakiyeyi hesaplar (gelir - gider - kart).
+function expectedBalanceAsOf(dateStr) {
+  return allEntries.reduce((s, e) => {
+    if (String(e.entry_date) > dateStr) return s;
+    return s + (e.entry_type === 'gelir' ? num(e.total_amount) : -num(e.total_amount));
+  }, 0);
+}
+function updateReconBadge() {
+  const n = allRecons.filter((r) => Math.abs(num(r.reported_balance) - expectedBalanceAsOf(r.statement_date)) > 0.01).length;
+  const b = $('reconBadge');
+  if (n > 0) { b.textContent = n; b.classList.remove('hidden'); } else b.classList.add('hidden');
+}
+function renderRecon() {
+  const body = $('reconBody');
+  if (!allRecons.length) {
+    body.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">${esc(L('recon_empty'))}</td></tr>`;
+    return;
+  }
+  body.innerHTML = allRecons.map((r) => {
+    const expected = expectedBalanceAsOf(r.statement_date);
+    const diff = num(r.reported_balance) - expected;
+    const isMatch = Math.abs(diff) <= 0.01;
+    return `
+      <tr class="hover:bg-slate-900/40 ${isMatch ? '' : 'bg-red-500/5'}">
+        <td class="p-3 font-mono text-[11px]">${fmtDate(r.statement_date)}</td>
+        <td class="p-3 text-slate-300">${esc(r.bank_name || '—')}</td>
+        <td class="p-3 text-right font-mono font-bold">${money(r.reported_balance)}</td>
+        <td class="p-3 text-right font-mono text-slate-300">${money(expected)}</td>
+        <td class="p-3 text-right font-mono font-bold ${isMatch ? 'text-emerald-400' : 'text-red-400'}">${diff >= 0 ? '+' : ''}${money(diff)}</td>
+        <td class="p-3 text-slate-400 max-w-[200px] truncate" title="${esc(r.note || '')}">${esc(r.note || '—')}</td>
+        <td class="p-3 text-right whitespace-nowrap">
+          <span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${isMatch ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-red-500/15 text-red-300 border-red-500/30'} mr-1">${esc(isMatch ? L('recon_match') : L('recon_mismatch'))}</span>
+          <button data-act="editRecon" data-id="${r.id}" class="text-slate-400 hover:text-white px-1" title="${esc(L('btn_edit'))}">✏️</button>
+          <button data-act="deleteRecon" data-id="${r.id}" class="text-slate-400 hover:text-red-400 px-1" title="${esc(L('btn_delete'))}">🗑️</button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+function updateReconPreview() {
+  const date = $('reconDate').value;
+  const box = $('reconPreview');
+  if (!date) { box.classList.add('hidden'); return; }
+  const expected = expectedBalanceAsOf(date);
+  const reportedStr = $('reconBalance').value;
+  let html = `${esc(L('recon_preview_label'))} <strong>${money(expected)}</strong>`;
+  if (reportedStr !== '') {
+    const diff = num(reportedStr) - expected;
+    const isMatch = Math.abs(diff) <= 0.01;
+    html += `<br><span class="${isMatch ? 'text-emerald-400' : 'text-red-400'}">${esc(L('recon_diff'))}: ${diff >= 0 ? '+' : ''}${money(diff)}</span>`;
+  }
+  box.innerHTML = html;
+  box.classList.remove('hidden');
+}
+function openReconModal(id) {
+  editingReconId = id;
+  $('reconForm').reset();
+  showMsg('reconMsg', '');
+  const r = id ? allRecons.find((x) => x.id === id) : null;
+  $('reconModalTitle').textContent = L(r ? 'recon_edit_title' : 'recon_new_title');
+  $('reconDate').value = r ? r.statement_date : today();
+  $('reconBank').value = r ? (r.bank_name || '') : '';
+  $('reconBalance').value = r ? r.reported_balance : '';
+  $('reconNote').value = r ? (r.note || '') : '';
+  updateReconPreview();
+  openModal('reconModal');
+}
+async function onReconSubmit(e) {
+  e.preventDefault();
+  showMsg('reconMsg', '');
+  if (!$('reconDate').value) return showMsg('reconMsg', L('err_date'), 'error');
+  if ($('reconBalance').value === '') return showMsg('reconMsg', L('err_balance_required'), 'error');
+  const payload = {
+    statement_date: $('reconDate').value,
+    bank_name: $('reconBank').value.trim() || null,
+    reported_balance: num($('reconBalance').value),
+    note: $('reconNote').value.trim() || null,
+  };
+  const btn = $('reconForm').querySelector('button[type="submit"]');
+  btn.disabled = true;
+  try {
+    const q = editingReconId
+      ? sb.from('finance_bank_reconciliations').update(payload).eq('id', editingReconId)
+      : sb.from('finance_bank_reconciliations').insert(payload);
+    const { error } = await q;
+    if (error) throw error;
+    toast(L('toast_saved'));
+    closeModal('reconModal');
+    await loadAdminData();
+  } catch (err) { showMsg('reconMsg', friendlyError(err), 'error'); }
+  finally { btn.disabled = false; }
+}
+async function deleteRecon(id) {
+  if (!confirm(L('recon_delete_confirm'))) return;
+  try {
+    const { error } = await sb.from('finance_bank_reconciliations').delete().eq('id', id);
     if (error) throw error;
     toast(L('toast_deleted'));
     await loadAdminData();
