@@ -8,23 +8,36 @@
 <title>DEMIG · Finans & Talepler</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-  // Krem / warm-beige tema: index.html ile aynı palet (bkz. oradaki yorum).
+  // DEMIG kurumsal tema: index.html ile aynı palet (bkz. oradaki yorum).
   tailwind.config = {
     theme: {
       extend: {
         colors: {
           slate: {
-            50:  '#1C140F',
-            100: '#2A2017',
-            200: '#3B2E21',
-            300: '#55432F',
-            400: '#73603F',
-            500: '#948058',
-            600: '#B6A378',
-            700: '#D6C7A1',
-            800: '#E8DEC4',
-            900: '#F1E9D8',
-            950: '#FBF7EE'
+            50:  '#121722',
+            100: '#1C2433',
+            200: '#2A3447',
+            300: '#424F66',
+            400: '#5B6678',
+            500: '#7C8698',
+            600: '#9FA8B6',
+            700: '#C3C9D2',
+            800: '#E3E6EA',
+            900: '#F1F2F5',
+            950: '#F8F9FB'
+          },
+          indigo: {
+            300: '#8CA0C4',
+            400: '#5D7AAB',
+            500: '#2F5088',
+            600: '#1E3A66',
+            700: '#162C4E'
+          },
+          amber: {
+            300: '#E3C878',
+            400: '#D4B155',
+            500: '#B8943A',
+            600: '#96762C'
           }
         }
       }
@@ -35,27 +48,27 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-  body { font-family: 'Inter', sans-serif; background-color: #FBF7EE; color: #2A2017; }
-  .glass { background: rgba(255, 253, 248, 0.85); border: 1px solid rgba(85, 67, 47, 0.10); }
+  body { font-family: 'Inter', sans-serif; background-color: #F8F9FB; color: #1C2433; }
+  .glass { background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(28, 36, 51, 0.08); }
   .hidden { display: none !important; }
   #toast, #entryModal, #noteModal, #filesModal, #pwdModal { position: fixed !important; }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #F1E9D8; }
-  ::-webkit-scrollbar-thumb { background: #D6C7A1; border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: #F1F2F5; }
+  ::-webkit-scrollbar-thumb { background: #C3C9D2; border-radius: 4px; }
   input, select, textarea { color-scheme: light; }
-  .fld { width: 100%; background: #FBF7EE; border: 1px solid #D6C7A1; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #2A2017; }
-  .fld:focus { outline: none; border-color: #6366f1; }
-  .fld[readonly] { color: #73603F; background: #F1E9D8; }
-  .lbl { display: block; font-size: 0.7rem; font-weight: 500; color: #55432F; margin-bottom: 0.25rem; }
+  .fld { width: 100%; background: #F8F9FB; border: 1px solid #C3C9D2; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #1C2433; }
+  .fld:focus { outline: none; border-color: #1E3A66; }
+  .fld[readonly] { color: #5B6678; background: #F1F2F5; }
+  .lbl { display: block; font-size: 0.7rem; font-weight: 500; color: #424F66; margin-bottom: 0.25rem; }
   .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; transition: background .15s; }
-  .btn-primary { background: #4f46e5; color: #fff; } .btn-primary:hover { background: #6366f1; }
-  .btn-ghost { background: #E8DEC4; color: #3B2E21; border: 1px solid #D6C7A1; } .btn-ghost:hover { background: #D6C7A1; }
+  .btn-primary { background: #1E3A66; color: #fff; } .btn-primary:hover { background: #2F5088; }
+  .btn-ghost { background: #E3E6EA; color: #2A3447; border: 1px solid #C3C9D2; } .btn-ghost:hover { background: #C3C9D2; }
   .btn-ok { background: #059669; color: #fff; } .btn-ok:hover { background: #10b981; }
   .btn-danger { background: #dc2626; color: #fff; } .btn-danger:hover { background: #ef4444; }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
   .tabbtn { padding: 0.5rem 0.9rem; border-radius: 0.6rem; font-size: 0.75rem; font-weight: 600; color: #73603F; }
   .tabbtn:hover { color: #2A2017; background: #E8DEC4; }
-  .tabbtn.active { background: #4f46e5; color: #fff; }
+  .tabbtn.active { background: #1E3A66; color: #fff; }
   th { font-weight: 600; }
 </style>
 </head>
@@ -105,7 +118,8 @@
         </div>
         <div>
           <label class="lbl" for="authEmail" data-i18n="lbl_email">E-posta</label>
-          <input id="authEmail" type="email" required autocomplete="email" class="fld">
+          <input id="authEmail" type="email" required autocomplete="email" list="knownEmailsList" class="fld">
+          <datalist id="knownEmailsList"></datalist>
         </div>
         <div>
           <label class="lbl" for="authPassword" data-i18n="lbl_password">Şifre</label>
@@ -336,7 +350,7 @@
   <div class="glass rounded-2xl w-full max-w-2xl p-6 my-6 shadow-2xl">
     <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
       <h3 id="entryModalTitle" class="text-base font-bold"></h3>
-      <button data-act="closeModal" data-modal="entryModal" class="text-slate-400 hover:text-white text-lg leading-none" aria-label="close">✕</button>
+      <button data-act="closeModal" data-modal="entryModal" class="text-slate-400 hover:text-slate-100 text-lg leading-none" aria-label="close">✕</button>
     </div>
     <form id="entryForm" class="space-y-3">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -400,7 +414,7 @@
   <div class="glass rounded-2xl w-full max-w-md p-6 shadow-2xl">
     <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
       <h3 class="text-base font-bold" data-i18n="fm_title">Dosyalar</h3>
-      <button data-act="closeModal" data-modal="filesModal" class="text-slate-400 hover:text-white text-lg leading-none" aria-label="close">✕</button>
+      <button data-act="closeModal" data-modal="filesModal" class="text-slate-400 hover:text-slate-100 text-lg leading-none" aria-label="close">✕</button>
     </div>
     <div id="filesList" class="space-y-2"></div>
   </div>
@@ -412,7 +426,7 @@
   <div class="glass rounded-2xl w-full max-w-xl p-6 my-6 shadow-2xl">
     <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
       <h3 id="staffPlanModalTitle" class="text-base font-bold"></h3>
-      <button data-act="closeModal" data-modal="staffPlanModal" class="text-slate-400 hover:text-white text-lg leading-none" aria-label="close">✕</button>
+      <button data-act="closeModal" data-modal="staffPlanModal" class="text-slate-400 hover:text-slate-100 text-lg leading-none" aria-label="close">✕</button>
     </div>
     <form id="staffPlanForm" class="space-y-3">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -448,7 +462,7 @@
   <div class="glass rounded-2xl w-full max-w-md p-6 shadow-2xl">
     <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
       <h3 id="partModalTitle" class="text-base font-bold"></h3>
-      <button data-act="closeModal" data-modal="partModal" class="text-slate-400 hover:text-white text-lg leading-none" aria-label="close">✕</button>
+      <button data-act="closeModal" data-modal="partModal" class="text-slate-400 hover:text-slate-100 text-lg leading-none" aria-label="close">✕</button>
     </div>
     <form id="partForm" class="space-y-3">
       <div><label class="lbl" for="partType" data-i18n="part_type">Hareket Türü</label>
@@ -479,7 +493,7 @@
   <div class="glass rounded-2xl w-full max-w-md p-6 shadow-2xl">
     <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
       <h3 id="reconModalTitle" class="text-base font-bold"></h3>
-      <button data-act="closeModal" data-modal="reconModal" class="text-slate-400 hover:text-white text-lg leading-none" aria-label="close">✕</button>
+      <button data-act="closeModal" data-modal="reconModal" class="text-slate-400 hover:text-slate-100 text-lg leading-none" aria-label="close">✕</button>
     </div>
     <form id="reconForm" class="space-y-3">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -936,8 +950,8 @@ function applyI18n() {
   document.documentElement.lang = LANG;
   document.querySelectorAll('[data-i18n]').forEach((el) => { el.textContent = L(el.getAttribute('data-i18n')); });
   document.querySelectorAll('[data-i18n-ph]').forEach((el) => { el.setAttribute('placeholder', L(el.getAttribute('data-i18n-ph'))); });
-  $('langTr').className = 'px-2.5 py-1 ' + (LANG === 'tr' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white');
-  $('langEn').className = 'px-2.5 py-1 ' + (LANG === 'en' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-white');
+  $('langTr').className = 'px-2.5 py-1 ' + (LANG === 'tr' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-100');
+  $('langEn').className = 'px-2.5 py-1 ' + (LANG === 'en' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-100');
   fillStaticSelects();
   if (window.lucide) lucide.createIcons();
   if (session) renderCurrentView();
@@ -991,6 +1005,20 @@ async function init() {
   const { data } = await sb.auth.getSession();
   session = data && data.session;
   if (session) await afterLogin(); else showAuthView();
+
+  populateKnownEmailsList();
+}
+
+// Ana siteye (index.html) kayıtlı kişilerin e-postalarını öneri listesi
+// olarak sunar — sadece yazma kolaylığı, giriş yine şifre gerektirir.
+async function populateKnownEmailsList() {
+  try {
+    const { data: rows } = await sb.from('people').select('email');
+    const dl = document.getElementById('knownEmailsList');
+    if (!dl || !rows) return;
+    const emails = [...new Set(rows.map((r) => r.email).filter(Boolean))];
+    dl.innerHTML = emails.map((e) => `<option value="${esc(e)}"></option>`).join('');
+  } catch (e) { /* sessizce geç — bu sadece bir kolaylık özelliği */ }
 }
 function waitFor(cond, timeout) {
   return new Promise((resolve, reject) => {
@@ -1322,11 +1350,11 @@ function renderMyRequests() {
     <div class="glass rounded-2xl p-4">
       <div class="flex flex-wrap items-start justify-between gap-2 mb-2">
         <div>
-          <h4 class="text-sm font-bold text-white">${esc(r.title)}</h4>
+          <h4 class="text-sm font-bold text-slate-100">${esc(r.title)}</h4>
           <p class="text-[11px] text-slate-400">${esc(catLabel(r.category))} · ${fmtDate(r.created_at)}</p>
         </div>
         <div class="flex items-center gap-2">
-          <span class="text-sm font-bold text-white">${money(r.amount)}</span>
+          <span class="text-sm font-bold text-slate-100">${money(r.amount)}</span>
           <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${statusBadgeClass(r.status)}">${esc(L('st_' + r.status))}</span>
         </div>
       </div>
@@ -1491,7 +1519,7 @@ function fillYearSelect() {
 function statCard(title, value, sub, colorClass) {
   return `<div class="glass rounded-2xl p-4">
     <p class="text-[10px] uppercase tracking-wider text-slate-400 mb-1">${esc(title)}</p>
-    <p class="text-xl font-bold ${colorClass || 'text-white'}">${value}</p>
+    <p class="text-xl font-bold ${colorClass || 'text-slate-100'}">${value}</p>
     ${sub ? `<p class="text-[10px] text-slate-500 mt-1">${sub}</p>` : ''}
   </div>`;
 }
@@ -1502,7 +1530,7 @@ function renderSummary() {
   $('sumCards').innerHTML = [
     statCard(L('sc_income'), money(s.income), null, 'text-emerald-400'),
     statCard(L('sc_spent'), money(s.spent), L('sc_spent_sub', { g: money(s.gider), k: money(s.kart) }), 'text-red-400'),
-    statCard(L('sc_remaining'), money(s.remaining), L('sc_pct') + `: %${s.pct.toFixed(1)}`, s.remaining >= 0 ? 'text-white' : 'text-red-400'),
+    statCard(L('sc_remaining'), money(s.remaining), L('sc_pct') + `: %${s.pct.toFixed(1)}`, s.remaining >= 0 ? 'text-slate-100' : 'text-red-400'),
     statCard(L('sc_tax'), money(s.vat + s.other), L('sc_tax_sub', { v: money(s.vat), o: money(s.other) }), 'text-amber-300'),
   ].join('');
 
@@ -1520,7 +1548,7 @@ function renderSummary() {
         <p class="text-base font-bold ${available >= 0 ? 'text-emerald-400' : 'text-red-400'}">${money(available)}</p>
       </div>
     </div>
-    ${c.pendingCount ? `<p class="text-[11px] text-slate-400 mt-3">${esc(L('sc_pending'))}: <strong class="text-white">${money(c.pendingSum)}</strong> (${esc(L('sc_pending_sub', { n: c.pendingCount }))})</p>` : ''}
+    ${c.pendingCount ? `<p class="text-[11px] text-slate-400 mt-3">${esc(L('sc_pending'))}: <strong class="text-slate-100">${money(c.pendingSum)}</strong> (${esc(L('sc_pending_sub', { n: c.pendingCount }))})</p>` : ''}
   `;
 
   const mo = monthly(allEntries, selectedYear);
@@ -1540,7 +1568,7 @@ function renderSummary() {
       <td class="p-2 text-right text-red-300">${row.kart ? money(row.kart) : '—'}</td>
       <td class="p-2 text-right">${row.spent ? money(row.spent) : '—'}</td>
       <td class="p-2 text-right ${row.net >= 0 ? 'text-slate-300' : 'text-red-400'}">${money(row.net)}</td>
-      <td class="p-2 text-right font-semibold ${row.cum >= 0 ? 'text-white' : 'text-red-400'}">${money(row.cum)}</td></tr>`;
+      <td class="p-2 text-right font-semibold ${row.cum >= 0 ? 'text-slate-100' : 'text-red-400'}">${money(row.cum)}</td></tr>`;
   }
   html += `<tr class="font-bold border-t border-slate-700"><td class="p-2">${esc(L('mo_total'))}</td>
     <td class="p-2 text-right text-emerald-400">${money(mo.total.income)}</td>
@@ -1598,7 +1626,7 @@ function renderLedger() {
       <td class="p-2.5 text-right font-mono font-bold">${money(e.total_amount)}</td>
       <td class="p-2.5">${(e.attachments || []).length ? `<button data-act="showFiles" data-files='${esc(JSON.stringify(e.attachments))}' class="text-indigo-300 hover:underline">📎 ${e.attachments.length}</button>` : '—'}</td>
       <td class="p-2.5 text-right whitespace-nowrap">
-        <button data-act="editEntry" data-id="${e.id}" class="text-slate-400 hover:text-white px-1" title="${esc(L('btn_edit'))}">✏️</button>
+        <button data-act="editEntry" data-id="${e.id}" class="text-slate-400 hover:text-slate-100 px-1" title="${esc(L('btn_edit'))}">✏️</button>
         <button data-act="deleteEntry" data-id="${e.id}" class="text-slate-400 hover:text-red-400 px-1" title="${esc(L('btn_delete'))}">🗑️</button>
       </td>
     </tr>`).join('');
@@ -1622,11 +1650,11 @@ function renderAdminRequests() {
       return `<div class="glass rounded-2xl p-4">
         <div class="flex flex-wrap items-start justify-between gap-2 mb-2">
           <div>
-            <h4 class="text-sm font-bold text-white">${esc(r.title)}</h4>
+            <h4 class="text-sm font-bold text-slate-100">${esc(r.title)}</h4>
             <p class="text-[11px] text-slate-400">${esc(L('req_by'))} ${esc(r.requester_name || r.requester_email)} · ${esc(catLabel(r.category))} · ${fmtDate(r.created_at)}${r.needed_by ? ' · ' + esc(L('rq_needed')) + ': ' + fmtDate(r.needed_by) : ''}</p>
           </div>
           <div class="flex items-center gap-2">
-            <span class="text-sm font-bold text-white">${money(r.amount)}</span>
+            <span class="text-sm font-bold text-slate-100">${money(r.amount)}</span>
             <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${statusBadgeClass(r.status)}">${esc(L('st_' + r.status))}</span>
           </div>
         </div>
@@ -1719,13 +1747,13 @@ function renderStaffPlan() {
     const total = months.reduce((s, m) => s + num(amounts[m]), 0) + num(p.lump_sum_amount);
     return `
       <tr class="hover:bg-slate-900/40">
-        <td class="p-3 font-semibold text-white sticky left-0 bg-slate-950/90">${esc(p.person_name)}</td>
+        <td class="p-3 font-semibold text-slate-100 sticky left-0 bg-slate-950/90">${esc(p.person_name)}</td>
         <td class="p-3 text-slate-300">${esc(p.payment_source || '—')}</td>
         <td class="p-3 text-slate-400 max-w-[200px] truncate" title="${esc(p.note || '')}">${esc(p.note || '—')}</td>
         ${months.map((m) => `<td class="p-3 text-right font-mono text-[11px] ${amounts[m] ? 'text-slate-200' : 'text-slate-600'}">${amounts[m] ? money(amounts[m]) : '—'}</td>`).join('')}
         <td class="p-3 text-right font-mono font-bold">${money(total)}</td>
         <td class="p-3 text-right whitespace-nowrap">
-          <button data-act="editStaffPlan" data-id="${p.id}" class="text-slate-400 hover:text-white px-1" title="${esc(L('btn_edit'))}">✏️</button>
+          <button data-act="editStaffPlan" data-id="${p.id}" class="text-slate-400 hover:text-slate-100 px-1" title="${esc(L('btn_edit'))}">✏️</button>
           <button data-act="deleteStaffPlan" data-id="${p.id}" class="text-slate-400 hover:text-red-400 px-1" title="${esc(L('btn_delete'))}">🗑️</button>
         </td>
       </tr>`;
@@ -1828,9 +1856,9 @@ function partSummary() {
 }
 function renderParticipation() {
   const s = partSummary();
-  const profitColor = s.profit > 0 ? 'text-emerald-400' : (s.profit < 0 ? 'text-red-400' : 'text-white');
+  const profitColor = s.profit > 0 ? 'text-emerald-400' : (s.profit < 0 ? 'text-red-400' : 'text-slate-100');
   $('partCards').innerHTML = [
-    statCard(L('sc_part_deposited'), money(s.deposited), null, 'text-white'),
+    statCard(L('sc_part_deposited'), money(s.deposited), null, 'text-slate-100'),
     statCard(L('sc_part_balance'), s.hasBalance ? money(s.balance) : '—', s.hasBalance ? L('sc_part_as_of', { date: fmtDate(s.latestDate) }) : L('sc_part_no_balance'), 'text-indigo-300'),
     statCard(L('sc_part_profit'), s.hasBalance ? money(s.profit) : '—', s.hasBalance && s.deposited > 0 ? `%${((s.profit / s.deposited) * 100).toFixed(2)}` : null, profitColor),
   ].join('');
@@ -1848,7 +1876,7 @@ function renderParticipation() {
       <td class="p-3 text-right font-mono font-bold">${money(e.amount)}</td>
       <td class="p-3 text-slate-400 max-w-[220px] truncate" title="${esc(e.note || '')}">${esc(e.note || '—')}</td>
       <td class="p-3 text-right whitespace-nowrap">
-        <button data-act="editPartEntry" data-id="${e.id}" class="text-slate-400 hover:text-white px-1" title="${esc(L('btn_edit'))}">✏️</button>
+        <button data-act="editPartEntry" data-id="${e.id}" class="text-slate-400 hover:text-slate-100 px-1" title="${esc(L('btn_edit'))}">✏️</button>
         <button data-act="deletePartEntry" data-id="${e.id}" class="text-slate-400 hover:text-red-400 px-1" title="${esc(L('btn_delete'))}">🗑️</button>
       </td>
     </tr>`).join('');
@@ -1943,7 +1971,7 @@ function renderRecon() {
         <td class="p-3 text-slate-400 max-w-[200px] truncate" title="${esc(r.note || '')}">${esc(r.note || '—')}</td>
         <td class="p-3 text-right whitespace-nowrap">
           <span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${isMatch ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-red-500/15 text-red-300 border-red-500/30'} mr-1">${esc(isMatch ? L('recon_match') : L('recon_mismatch'))}</span>
-          <button data-act="editRecon" data-id="${r.id}" class="text-slate-400 hover:text-white px-1" title="${esc(L('btn_edit'))}">✏️</button>
+          <button data-act="editRecon" data-id="${r.id}" class="text-slate-400 hover:text-slate-100 px-1" title="${esc(L('btn_edit'))}">✏️</button>
           <button data-act="deleteRecon" data-id="${r.id}" class="text-slate-400 hover:text-red-400 px-1" title="${esc(L('btn_delete'))}">🗑️</button>
         </td>
       </tr>`;
