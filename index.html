@@ -519,6 +519,14 @@
         </div>
       </div>
 
+      <div id="meetingPendingActionsWrap" class="hidden glass p-5 rounded-2xl shadow-xl border border-amber-500/30">
+        <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2 mb-1">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i><span data-i18n="meetings_pending_title">Toplantıdan Çıkarılan Aksiyonlar — Onay Bekliyor</span>
+        </h3>
+        <p class="text-[11px] text-slate-400 mb-3" data-i18n="meetings_pending_subtitle">Zoom kaydından AI ile çıkarıldı. Sorumlu kişiyi seçip onaylarsanız, o kişinin sol bardaki haftalık to-do listesine eklenir.</p>
+        <div id="meetingPendingActionsContainer" class="space-y-2"></div>
+      </div>
+
       <div class="glass p-4 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3">
         <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg overflow-hidden text-[11px] font-semibold">
           <button onclick="setMeetingFilter('upcoming')" id="meetingFilterBtn-upcoming" class="px-3 py-1.5 transition" data-i18n="meetings_filter_upcoming">Yaklaşan</button>
@@ -1053,6 +1061,10 @@ const I18N = {
     meetings_filter_past: "Geçmiş",
     meetings_filter_all: "Tümü",
     meetings_jump_label: "Haftaya Git:",
+    meetings_pending_title: "Toplantıdan Çıkarılan Aksiyonlar — Onay Bekliyor",
+    meetings_pending_subtitle: "Zoom kaydından AI ile çıkarıldı. Sorumlu kişiyi seçip onaylarsanız, o kişinin sol bardaki haftalık to-do listesine eklenir.",
+    meetings_action_confirm: "Onayla ve Ata",
+    meetings_action_dismiss: "Yoksay",
   },
   en: {
     login_subtitle: "Sign in with your registered name or email",
@@ -1298,6 +1310,10 @@ const I18N = {
     meetings_filter_past: "Past",
     meetings_filter_all: "All",
     meetings_jump_label: "Jump to week:",
+    meetings_pending_title: "Action Items Extracted From Meetings — Pending Approval",
+    meetings_pending_subtitle: "Extracted by AI from the Zoom recording. Pick the responsible person and confirm to add it to their weekly to-do list in the sidebar.",
+    meetings_action_confirm: "Confirm & Assign",
+    meetings_action_dismiss: "Dismiss",
   }
 };
 
@@ -1700,6 +1716,80 @@ async function loadDataFromBackend() {
     tasks = initialTasks;
   } else {
     tasks = taskRows.map(taskFromRow).sort(compareTaskIds);
+  }
+
+  await loadConfirmedMeetingActionItems();
+}
+
+// =====================================================================
+// TOPLANTIDAN OTOMATİK ÇIKARILAN AKSİYON MADDELERİ (ZOOM → AI → ONAY)
+// =====================================================================
+let meetingActionItemsConfirmed = []; // sol bardaki haftalık to-do'lara karışacak onaylı maddeler
+let meetingActionItemsPending = [];   // "Onay Bekliyor" panelinde gösterilecek maddeler
+
+async function loadConfirmedMeetingActionItems() {
+  if (!supabaseClient) { meetingActionItemsConfirmed = []; return; }
+  const { data, error } = await supabaseClient.from('meeting_action_items').select('*').eq('status', 'confirmed');
+  if (error) { console.error('Onaylı aksiyon maddeleri okunamadı:', error); meetingActionItemsConfirmed = []; return; }
+  meetingActionItemsConfirmed = data || [];
+}
+
+async function loadPendingMeetingActionItems() {
+  if (!supabaseClient) { meetingActionItemsPending = []; return; }
+  const { data, error } = await supabaseClient.from('meeting_action_items').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+  if (error) { console.error('Onay bekleyen aksiyon maddeleri okunamadı:', error); meetingActionItemsPending = []; return; }
+  meetingActionItemsPending = data || [];
+}
+
+async function confirmMeetingActionItem(id, personId) {
+  if (!supabaseClient || !personId) return;
+  const { error } = await supabaseClient.from('meeting_action_items')
+    .update({ status: 'confirmed', confirmed_person_id: personId }).eq('id', id);
+  if (error) { console.error('Aksiyon onaylanamadı:', error); return; }
+  await loadPendingMeetingActionItems();
+  await loadConfirmedMeetingActionItems();
+  renderPendingActionItemsPanel();
+  renderSidebarTodos();
+}
+
+async function dismissMeetingActionItem(id) {
+  if (!supabaseClient) return;
+  const { error } = await supabaseClient.from('meeting_action_items').update({ status: 'dismissed' }).eq('id', id);
+  if (error) { console.error('Aksiyon reddedilemedi:', error); return; }
+  await loadPendingMeetingActionItems();
+  renderPendingActionItemsPanel();
+}
+
+async function renderPendingActionItemsPanel() {
+  const container = document.getElementById('meetingPendingActionsContainer');
+  const wrap = document.getElementById('meetingPendingActionsWrap');
+  if (!container || !wrap) return;
+  await loadPendingMeetingActionItems();
+  if (!meetingActionItemsPending.length) { wrap.classList.add('hidden'); container.innerHTML = ''; return; }
+  wrap.classList.remove('hidden');
+  const peopleOpts = registeredPeople.filter(p => !p.isPure)
+    .map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
+  container.innerHTML = meetingActionItemsPending.map(item => `
+    <div class="bg-slate-900/60 border border-slate-700 rounded-lg p-3 flex flex-col md:flex-row md:items-center gap-2">
+      <div class="flex-1 min-w-0">
+        <div class="text-[10px] text-slate-400">${formatMeetingDate(item.week_date)}</div>
+        <div class="text-xs text-slate-100">${escHtml(item.raw_text)}</div>
+        ${item.suggested_person_name ? `<div class="text-[10px] text-slate-500 italic">AI tahmini: ${escHtml(item.suggested_person_name)}</div>` : ''}
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <select id="meetingActionAssignee-${item.id}" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-100">
+          <option value="">—</option>${peopleOpts}
+        </select>
+        <button onclick="confirmMeetingActionItem('${item.id}', document.getElementById('meetingActionAssignee-${item.id}').value)" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold rounded-lg">${translate('meetings_action_confirm')}</button>
+        <button onclick="dismissMeetingActionItem('${item.id}')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold rounded-lg">${translate('meetings_action_dismiss')}</button>
+      </div>
+    </div>
+  `).join('');
+  if (document.getElementById('meetingActionAssignee-' + (meetingActionItemsPending[0] || {}).id)) {
+    meetingActionItemsPending.forEach(item => {
+      const sel = document.getElementById('meetingActionAssignee-' + item.id);
+      if (sel && item.suggested_person_id) sel.value = item.suggested_person_id;
+    });
   }
 }
 
@@ -2532,6 +2622,14 @@ function renderSidebarTodos() {
       }
     });
   });
+  (meetingActionItemsConfirmed || []).forEach(m => {
+    if (filterVal === 'all' || m.confirmed_person_id === targetId) {
+      items.push({
+        task: '📅 ' + (typeof formatMeetingDate === 'function' ? formatMeetingDate(m.week_date) : m.week_date),
+        text: m.raw_text, priority: 'Orta', status: 'Planlandı', isMeeting: true
+      });
+    }
+  });
   items.sort((a, b) => priorityWeight(b.priority) - priorityWeight(a.priority));
 
   if (items.length === 0) {
@@ -3135,6 +3233,7 @@ function updateMeetingFilterButtons() {
 
 async function renderMeetingsSection() {
   await loadMeetingRecords();
+  renderPendingActionItemsPanel();
   const container = document.getElementById('meetingWeeksContainer');
   if (!container) return;
 
