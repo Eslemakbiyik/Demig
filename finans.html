@@ -8,23 +8,36 @@
 <title>DEMIG · Finans & Talepler</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-  // Krem / warm-beige tema: index.html ile aynı palet (bkz. oradaki yorum).
+  // DEMIG kurumsal tema: index.html ile aynı palet (bkz. oradaki yorum).
   tailwind.config = {
     theme: {
       extend: {
         colors: {
           slate: {
-            50:  '#1C140F',
-            100: '#2A2017',
-            200: '#3B2E21',
-            300: '#55432F',
-            400: '#73603F',
-            500: '#948058',
-            600: '#B6A378',
-            700: '#D6C7A1',
-            800: '#E8DEC4',
-            900: '#F1E9D8',
-            950: '#FBF7EE'
+            50:  '#121722',
+            100: '#1C2433',
+            200: '#2A3447',
+            300: '#424F66',
+            400: '#5B6678',
+            500: '#7C8698',
+            600: '#9FA8B6',
+            700: '#C3C9D2',
+            800: '#E3E6EA',
+            900: '#F1F2F5',
+            950: '#F8F9FB'
+          },
+          indigo: {
+            300: '#8CA0C4',
+            400: '#5D7AAB',
+            500: '#2F5088',
+            600: '#1E3A66',
+            700: '#162C4E'
+          },
+          amber: {
+            300: '#E3C878',
+            400: '#D4B155',
+            500: '#B8943A',
+            600: '#96762C'
           }
         }
       }
@@ -35,27 +48,27 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-  body { font-family: 'Inter', sans-serif; background-color: #FBF7EE; color: #2A2017; }
-  .glass { background: rgba(255, 253, 248, 0.85); border: 1px solid rgba(85, 67, 47, 0.10); }
+  body { font-family: 'Inter', sans-serif; background-color: #F8F9FB; color: #1C2433; }
+  .glass { background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(28, 36, 51, 0.08); }
   .hidden { display: none !important; }
   #toast, #entryModal, #noteModal, #filesModal, #pwdModal { position: fixed !important; }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #F1E9D8; }
-  ::-webkit-scrollbar-thumb { background: #D6C7A1; border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: #F1F2F5; }
+  ::-webkit-scrollbar-thumb { background: #C3C9D2; border-radius: 4px; }
   input, select, textarea { color-scheme: light; }
-  .fld { width: 100%; background: #FBF7EE; border: 1px solid #D6C7A1; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #2A2017; }
-  .fld:focus { outline: none; border-color: #6366f1; }
-  .fld[readonly] { color: #73603F; background: #F1E9D8; }
-  .lbl { display: block; font-size: 0.7rem; font-weight: 500; color: #55432F; margin-bottom: 0.25rem; }
+  .fld { width: 100%; background: #F8F9FB; border: 1px solid #C3C9D2; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #1C2433; }
+  .fld:focus { outline: none; border-color: #1E3A66; }
+  .fld[readonly] { color: #5B6678; background: #F1F2F5; }
+  .lbl { display: block; font-size: 0.7rem; font-weight: 500; color: #424F66; margin-bottom: 0.25rem; }
   .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; transition: background .15s; }
-  .btn-primary { background: #4f46e5; color: #fff; } .btn-primary:hover { background: #6366f1; }
-  .btn-ghost { background: #E8DEC4; color: #3B2E21; border: 1px solid #D6C7A1; } .btn-ghost:hover { background: #D6C7A1; }
+  .btn-primary { background: #1E3A66; color: #fff; } .btn-primary:hover { background: #2F5088; }
+  .btn-ghost { background: #E3E6EA; color: #2A3447; border: 1px solid #C3C9D2; } .btn-ghost:hover { background: #C3C9D2; }
   .btn-ok { background: #059669; color: #fff; } .btn-ok:hover { background: #10b981; }
   .btn-danger { background: #dc2626; color: #fff; } .btn-danger:hover { background: #ef4444; }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
   .tabbtn { padding: 0.5rem 0.9rem; border-radius: 0.6rem; font-size: 0.75rem; font-weight: 600; color: #73603F; }
   .tabbtn:hover { color: #2A2017; background: #E8DEC4; }
-  .tabbtn.active { background: #4f46e5; color: #fff; }
+  .tabbtn.active { background: #1E3A66; color: #fff; }
   th { font-weight: 600; }
 </style>
 </head>
@@ -105,7 +118,8 @@
         </div>
         <div>
           <label class="lbl" for="authEmail" data-i18n="lbl_email">E-posta</label>
-          <input id="authEmail" type="email" required autocomplete="email" class="fld">
+          <input id="authEmail" type="email" required autocomplete="email" list="knownEmailsList" class="fld">
+          <datalist id="knownEmailsList"></datalist>
         </div>
         <div>
           <label class="lbl" for="authPassword" data-i18n="lbl_password">Şifre</label>
@@ -991,6 +1005,20 @@ async function init() {
   const { data } = await sb.auth.getSession();
   session = data && data.session;
   if (session) await afterLogin(); else showAuthView();
+
+  populateKnownEmailsList();
+}
+
+// Ana siteye (index.html) kayıtlı kişilerin e-postalarını öneri listesi
+// olarak sunar — sadece yazma kolaylığı, giriş yine şifre gerektirir.
+async function populateKnownEmailsList() {
+  try {
+    const { data: rows } = await sb.from('people').select('email');
+    const dl = document.getElementById('knownEmailsList');
+    if (!dl || !rows) return;
+    const emails = [...new Set(rows.map((r) => r.email).filter(Boolean))];
+    dl.innerHTML = emails.map((e) => `<option value="${esc(e)}"></option>`).join('');
+  } catch (e) { /* sessizce geç — bu sadece bir kolaylık özelliği */ }
 }
 function waitFor(cond, timeout) {
   return new Promise((resolve, reject) => {

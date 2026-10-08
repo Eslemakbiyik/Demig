@@ -6,27 +6,42 @@
 <title>demigproject - Proje Yönetim & İlerleme Portalı v5</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-  // Krem / warm-beige tema: Tailwind'in "slate" skalasını ters çevirip
-  // sıcak krem-kahve tonlarıyla yeniden tanımlıyoruz. Sitede zaten
-  // yüzlerce yerde kullanılan bg-slate-900, text-slate-400, border-slate-800
-  // gibi sınıflar otomatik olarak krem temaya döner — tek satır değişiklik
-  // gerekmeden tüm arayüz güncellenir.
+  // DEMIG kurumsal tema: açık, nötr gri-beyaz zemin + logo renkleri
+  // (lacivert / bordo / altın). Tailwind'in "slate" (zemin/metin),
+  // "indigo" (ana vurgu rengi — lacivert) ve "amber" (ikincil vurgu —
+  // altın) skalalarını yeniden tanımlıyoruz. Sitede zaten yüzlerce yerde
+  // kullanılan bg-slate-900, text-indigo-400, bg-amber-500 gibi sınıflar
+  // otomatik olarak bu temaya döner — tek satır değişiklik gerekmeden
+  // tüm arayüz güncellenir.
   tailwind.config = {
     theme: {
       extend: {
         colors: {
           slate: {
-            50:  '#1C140F',
-            100: '#2A2017',
-            200: '#3B2E21',
-            300: '#55432F',
-            400: '#73603F',
-            500: '#948058',
-            600: '#B6A378',
-            700: '#D6C7A1',
-            800: '#E8DEC4',
-            900: '#F1E9D8',
-            950: '#FBF7EE'
+            50:  '#121722',
+            100: '#1C2433',
+            200: '#2A3447',
+            300: '#424F66',
+            400: '#5B6678',
+            500: '#7C8698',
+            600: '#9FA8B6',
+            700: '#C3C9D2',
+            800: '#E3E6EA',
+            900: '#F1F2F5',
+            950: '#F8F9FB'
+          },
+          indigo: { // DEMIG lacivert — ana vurgu
+            300: '#8CA0C4',
+            400: '#5D7AAB',
+            500: '#2F5088',
+            600: '#1E3A66',
+            700: '#162C4E'
+          },
+          amber: { // DEMIG altın — ikincil vurgu
+            300: '#E3C878',
+            400: '#D4B155',
+            500: '#B8943A',
+            600: '#96762C'
           }
         }
       }
@@ -39,13 +54,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-  body { font-family: 'Inter', sans-serif; background-color: #FBF7EE; color: #2A2017; }
-  .glass { background: rgba(255, 253, 248, 0.85); backdrop-filter: blur(14px); border: 1px solid rgba(85, 67, 47, 0.10); }
-  .glass-card { background: rgba(241, 233, 216, 0.75); border: 1px solid rgba(85, 67, 47, 0.10); }
+  body { font-family: 'Inter', sans-serif; background-color: #F8F9FB; color: #1C2433; }
+  .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(14px); border: 1px solid rgba(28, 36, 51, 0.08); }
+  .glass-card { background: rgba(241, 242, 245, 0.75); border: 1px solid rgba(28, 36, 51, 0.08); }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #F1E9D8; }
-  ::-webkit-scrollbar-thumb { background: #D6C7A1; border-radius: 4px; }
-  .editable-input:focus { outline: 2px solid #6366f1; background: #E8DEC4; color: #2A2017; }
+  ::-webkit-scrollbar-track { background: #F1F2F5; }
+  ::-webkit-scrollbar-thumb { background: #C3C9D2; border-radius: 4px; }
+  .editable-input:focus { outline: 2px solid #1E3A66; background: #E3E6EA; color: #1C2433; }
   /* Tailwind CDN bazen "flex/grid" sınıflarını "hidden" sınıfından sonra üretip onu geçersiz
      kılabiliyor; bu kural "hidden" sınıfının HER ZAMAN kazanmasını garanti eder. */
   .hidden { display: none !important; }
@@ -77,28 +92,18 @@
     <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="login_name_label">Ad Soyad</label>
-        <input type="text" id="userName" required placeholder="Örn: M. Tahir Kılavuz" data-i18n-placeholder="login_name_placeholder" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
-        <p class="text-[10px] text-slate-500 mt-1" data-i18n="login_name_hint">Proje Ekibi sayfasındaki tam ad ve e-postanızı kullanın — kişisel özellikler doğru çalışsın.</p>
+        <select id="userName" required onchange="onLoginPersonSelected()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+          <option value="" data-i18n="login_name_placeholder_opt">Adınızı seçin...</option>
+        </select>
+        <p class="text-[10px] text-slate-500 mt-1" data-i18n="login_name_hint">Listede göremiyorsanız Proje Ekibi sayfasından eklenmenizi isteyin.</p>
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="login_email_label">E-Posta Adresi</label>
-        <input type="email" id="userEmail" required placeholder="ornek@sabanciuniv.edu" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+        <input type="email" id="userEmail" required readonly placeholder="—" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-300 cursor-not-allowed">
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="login_dept_label">Departman / Rol</label>
-        <select id="userDept" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
-          <option value="Principal Investigator (PI)">Principal Investigator (PI)</option>
-          <option value="Research Partner & Coordinator">Research Partner & Coordinator</option>
-          <option value="Senior Researcher">Senior Researcher</option>
-          <option value="Researcher & Methodologist">Researcher & Methodologist</option>
-          <option value="Researcher & Trainer">Researcher & Trainer</option>
-          <option value="Researcher & Adjudicator">Researcher & Adjudicator</option>
-          <option value="Researcher">Researcher</option>
-          <option value="Legal Counsel">Legal Counsel</option>
-          <option value="CS & AI Consultant">CS & AI Consultant</option>
-          <option value="Developer (Qrateria)">Developer (Qrateria)</option>
-          <option value="Project Assistant">Project Assistant</option>
-        </select>
+        <input type="text" id="userDept" readonly placeholder="—" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-300 cursor-not-allowed">
       </div>
       <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-lg shadow-lg shadow-indigo-600/30 transition duration-200 mt-2" data-i18n="login_submit">
         Sisteme Giriş Yap
@@ -838,10 +843,11 @@ const DEMIG_LOGO_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAiEAA
 // =====================================================================
 const I18N = {
   tr: {
-    login_subtitle: "Sisteme kayıtlı ad-soyad veya e-posta ile giriş yapın",
+    login_subtitle: "Listeden adınızı seçerek giriş yapın",
     login_name_label: "Ad Soyad",
     login_name_placeholder: "Örn: M. Tahir Kılavuz",
-    login_name_hint: "Proje Ekibi sayfasındaki tam ad ve e-postanızı kullanın — kişisel özellikler doğru çalışsın.",
+    login_name_placeholder_opt: "Adınızı seçin...",
+    login_name_hint: "Listede göremiyorsanız Proje Ekibi sayfasından eklenmenizi isteyin.",
     login_email_label: "E-Posta Adresi",
     login_dept_label: "Departman / Rol",
     login_submit: "Sisteme Giriş Yap",
@@ -1095,10 +1101,11 @@ const I18N = {
     meetings_upload_empty: "Lütfen bir transkript yapıştırın veya dosya yükleyin.",
   },
   en: {
-    login_subtitle: "Sign in with your registered name or email",
+    login_subtitle: "Sign in by picking your name from the list",
     login_name_label: "Full Name",
     login_name_placeholder: "e.g. M. Tahir Kılavuz",
-    login_name_hint: "Use your exact full name and email from the Project Team page — so personal features work correctly.",
+    login_name_placeholder_opt: "Select your name...",
+    login_name_hint: "Can't find yourself? Ask to be added on the Project Team page.",
     login_email_label: "Email Address",
     login_dept_label: "Department / Role",
     login_submit: "Sign In",
@@ -2221,6 +2228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   initExternalLibraries();
   lucide.createIcons();
   applyStaticI18n();
+  populateLoginPersonSelect();
   if (currentUser) {
     document.getElementById('authModal').classList.add('hidden');
     document.getElementById('loadingScreen').classList.remove('hidden');
@@ -2239,9 +2247,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
+function populateLoginPersonSelect() {
+  const sel = document.getElementById('userName');
+  if (!sel) return;
+  const sorted = [...seedPeople].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+  sel.innerHTML = `<option value="" data-i18n="login_name_placeholder_opt">${translate('login_name_placeholder_opt')}</option>` +
+    sorted.map(p => `<option value="${p.id}">${escHtmlLogin(p.name)}</option>`).join('');
+}
+
+function escHtmlLogin(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function onLoginPersonSelected() {
+  const sel = document.getElementById('userName');
+  const person = seedPeople.find(p => p.id === sel.value);
+  document.getElementById('userEmail').value = person ? person.email : '';
+  document.getElementById('userDept').value = person ? person.role : '';
+}
+
 async function handleLogin(e) {
   e.preventDefault();
-  currentUser = { name: document.getElementById('userName').value, email: document.getElementById('userEmail').value, dept: document.getElementById('userDept').value };
+  const selectedId = document.getElementById('userName').value;
+  const person = seedPeople.find(p => p.id === selectedId);
+  currentUser = person
+    ? { name: person.name, email: person.email, dept: person.role }
+    : { name: document.getElementById('userName').value, email: document.getElementById('userEmail').value, dept: document.getElementById('userDept').value };
   localStorage.setItem('demigproject_user', JSON.stringify(currentUser));
   document.getElementById('authModal').classList.add('hidden');
   document.getElementById('loadingScreen').classList.remove('hidden');
@@ -2308,7 +2339,7 @@ function renderDiagrams() {
   if (progressChartObj) progressChartObj.destroy();
   progressChartObj = new Chart(ctxProg, {
     type: 'bar',
-    data: { labels: tasks.map(t => t.id), datasets: [{ label: 'İlerleme (%)', data: tasks.map(t => t.progress), backgroundColor: tasks.map(t => t.status === 'Tamamlandı' ? '#10b981' : '#6366f1'), borderRadius: 6 }] },
+    data: { labels: tasks.map(t => t.id), datasets: [{ label: 'İlerleme (%)', data: tasks.map(t => t.progress), backgroundColor: tasks.map(t => t.status === 'Tamamlandı' ? '#10b981' : '#1E3A66'), borderRadius: 6 }] },
     options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100, ticks: { color: '#64748b' }, grid: { color: '#e2e8f0' } }, x: { ticks: { color: '#64748b' }, grid: { display: false } } }, plugins: { legend: { display: false } } }
   });
 }
