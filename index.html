@@ -552,19 +552,36 @@
         <div id="meetingPendingActionsContainer" class="space-y-2"></div>
       </div>
 
-      <div class="glass p-4 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg overflow-hidden text-[11px] font-semibold">
-          <button onclick="setMeetingFilter('upcoming')" id="meetingFilterBtn-upcoming" class="px-3 py-1.5 transition" data-i18n="meetings_filter_upcoming">Yaklaşan</button>
-          <button onclick="setMeetingFilter('past')" id="meetingFilterBtn-past" class="px-3 py-1.5 transition" data-i18n="meetings_filter_past">Geçmiş</button>
-          <button onclick="setMeetingFilter('all')" id="meetingFilterBtn-all" class="px-3 py-1.5 transition" data-i18n="meetings_filter_all">Tümü</button>
+      <div class="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4 items-start">
+        <div class="glass p-4 rounded-2xl shadow-xl">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-bold text-slate-100 flex items-center space-x-1.5">
+              <i data-lucide="calendar-days" class="w-4 h-4 text-indigo-400"></i><span data-i18n="meetings_calendar_title">Toplantı Takvimi</span>
+            </h3>
+            <div class="flex items-center space-x-1">
+              <button onclick="shiftMeetingCalendarMonth(-1)" class="p-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
+              <span id="meetingCalendarMonthLabel" class="text-[11px] font-semibold text-slate-200 w-[84px] text-center"></span>
+              <button onclick="shiftMeetingCalendarMonth(1)" class="p-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+            </div>
+          </div>
+          <div id="meetingCalendarGrid"></div>
+          <div class="mt-3 flex flex-col gap-1.5 text-[10px] text-slate-400">
+            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-indigo-400 inline-block"></span><span data-i18n="meetings_week_subgroup_badge">Subgroup Hafta</span></span>
+            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span><span data-i18n="meetings_week_fullgroup_badge">Full Group Hafta</span></span>
+          </div>
         </div>
-        <div class="flex items-center space-x-2">
-          <label class="text-[11px] text-slate-400" data-i18n="meetings_jump_label">Haftaya Git:</label>
-          <select id="meetingJumpSelect" onchange="jumpToMeetingWeek(this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100"></select>
+
+        <div class="space-y-3">
+          <div class="glass p-3 rounded-2xl shadow-xl flex items-center">
+            <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg overflow-hidden text-[11px] font-semibold">
+              <button onclick="setMeetingFilter('upcoming')" id="meetingFilterBtn-upcoming" class="px-3 py-1.5 transition" data-i18n="meetings_filter_upcoming">Yaklaşan</button>
+              <button onclick="setMeetingFilter('past')" id="meetingFilterBtn-past" class="px-3 py-1.5 transition" data-i18n="meetings_filter_past">Geçmiş</button>
+              <button onclick="setMeetingFilter('all')" id="meetingFilterBtn-all" class="px-3 py-1.5 transition" data-i18n="meetings_filter_all">Tümü</button>
+            </div>
+          </div>
+          <div id="meetingWeeksContainer" class="space-y-3"></div>
         </div>
       </div>
-
-      <div id="meetingWeeksContainer" class="space-y-3"></div>
     </section>
 
   </main>
@@ -1087,6 +1104,7 @@ const I18N = {
     meetings_filter_past: "Geçmiş",
     meetings_filter_all: "Tümü",
     meetings_jump_label: "Haftaya Git:",
+    meetings_calendar_title: "Toplantı Takvimi",
     meetings_pending_title: "Toplantıdan Çıkarılan Aksiyonlar — Onay Bekliyor",
     meetings_pending_subtitle: "Zoom kaydından AI ile çıkarıldı. Sorumlu kişiyi seçip onaylarsanız, o kişinin sol bardaki haftalık to-do listesine eklenir.",
     meetings_action_confirm: "Onayla ve Ata",
@@ -1345,6 +1363,7 @@ const I18N = {
     meetings_filter_past: "Past",
     meetings_filter_all: "All",
     meetings_jump_label: "Jump to week:",
+    meetings_calendar_title: "Meeting Calendar",
     meetings_pending_title: "Action Items Extracted From Meetings — Pending Approval",
     meetings_pending_subtitle: "Extracted by AI from the Zoom recording. Pick the responsible person and confirm to add it to their weekly to-do list in the sidebar.",
     meetings_action_confirm: "Confirm & Assign",
@@ -3263,7 +3282,29 @@ const MEETING_WEEKS = [
   { date: '2025-12-23', type: 'sub' },
   { date: '2025-12-30', type: 'full' }
 ];
-let meetingRecords = {}; // { '2025-10-14': { recording_link, notes_link, action_text } }
+let meetingRecords = {}; // { 'WEEKDATE__TRACKID': { recording_link, notes_link, action_text } }
+
+// Her hafta tipi için ayrı ayrı takip edilen "görüşme parçaları" (tracks).
+// Her track'in kendi kaydı, notu ve aksiyon takibi vardır — tek bir ortak
+// haftalık not yerine, her görüşmenin kendi geçmişi tutulur.
+const MEETING_TRACKS = {
+  sub: [
+    { id: 'other_side', time: '17:00–17:30', labelKey: 'meetings_slot_1' },
+    { id: 'expert_survey', time: '17:30–18:00', labelKey: 'meetings_slot_2' },
+    { id: 'synthetic_agents', time: '18:00–18:30', labelKey: 'meetings_slot_3_sub' },
+    { id: 'model_dev', time: '18:30–19:00', labelKey: 'meetings_slot_4_sub' }
+  ],
+  full: [
+    { id: 'other_side', time: '17:00–17:30', labelKey: 'meetings_slot_1' },
+    { id: 'expert_survey', time: '17:30–18:00', labelKey: 'meetings_slot_2' },
+    { id: 'full_group', time: '18:00–18:30', labelKey: 'meetings_slot_3_full' },
+    { id: 'synthetic_agents', time: '18:30–19:00', labelKey: 'meetings_slot_4_full' }
+  ]
+};
+
+function meetingRecordKey(weekDate, trackId) {
+  return weekDate + '__' + trackId;
+}
 
 async function loadMeetingRecords() {
   if (!supabaseClient) {
@@ -3273,30 +3314,36 @@ async function loadMeetingRecords() {
   const { data, error } = await supabaseClient.from('meeting_records').select('*');
   if (error) { console.error('Toplantı kayıtları okunamadı:', error); meetingRecords = {}; return; }
   meetingRecords = {};
-  (data || []).forEach(row => { meetingRecords[row.week_date] = row; });
+  (data || []).forEach(row => {
+    const trackId = row.track_id || '_general';
+    meetingRecords[meetingRecordKey(row.week_date, trackId)] = row;
+  });
 }
 
-async function persistMeetingRecord(weekDate) {
-  const rec = meetingRecords[weekDate] || {};
+async function persistMeetingRecord(weekDate, trackId) {
+  const recKey = meetingRecordKey(weekDate, trackId);
+  const rec = meetingRecords[recKey] || {};
   if (!supabaseClient) {
     localStorage.setItem('demigproject_meetings_v1', JSON.stringify(meetingRecords));
     return;
   }
   const row = {
     week_date: weekDate,
+    track_id: trackId,
     recording_link: rec.recording_link || null,
     notes_link: rec.notes_link || null,
     action_text: rec.action_text || null,
     updated_by: currentUser ? currentUser.name : null
   };
-  const { error } = await supabaseClient.from('meeting_records').upsert(row);
+  const { error } = await supabaseClient.from('meeting_records').upsert(row, { onConflict: 'week_date,track_id' });
   if (error) console.error('Toplantı kaydı kaydedilemedi:', error);
 }
 
-function updateMeetingField(weekDate, key, val) {
-  if (!meetingRecords[weekDate]) meetingRecords[weekDate] = { week_date: weekDate };
-  meetingRecords[weekDate][key] = val;
-  persistMeetingRecord(weekDate);
+function updateMeetingField(weekDate, trackId, key, val) {
+  const recKey = meetingRecordKey(weekDate, trackId);
+  if (!meetingRecords[recKey]) meetingRecords[recKey] = { week_date: weekDate, track_id: trackId };
+  meetingRecords[recKey][key] = val;
+  persistMeetingRecord(weekDate, trackId);
 }
 
 function escHtml(s) {
@@ -3339,6 +3386,8 @@ function jumpToMeetingWeek(date) {
   if (!MEETING_WEEKS.some(w => w.date === date)) return;
   meetingFilter = 'all';
   expandedMeetingWeeks.add(date);
+  const d = new Date(date + 'T00:00:00');
+  meetingCalendarCursor = { year: d.getFullYear(), month: d.getMonth() };
   renderMeetingsSection();
   setTimeout(() => {
     const el = document.getElementById('meetingWeek-' + date);
@@ -3346,10 +3395,71 @@ function jumpToMeetingWeek(date) {
   }, 50);
 }
 
-function populateMeetingJumpSelect() {
-  const sel = document.getElementById('meetingJumpSelect');
-  if (!sel) return;
-  sel.innerHTML = `<option value="">—</option>` + MEETING_WEEKS.map(w => `<option value="${w.date}">${formatMeetingDate(w.date)}</option>`).join('');
+// -------- Küçük Toplantı Takvimi (ay görünümü, Subgroup/Full Group işaretli) --------
+let meetingCalendarCursor = null; // { year, month(0-indexed) }
+
+function initMeetingCalendarCursor() {
+  if (meetingCalendarCursor) return;
+  const t = todayIso();
+  const upcoming = MEETING_WEEKS.find(w => w.date >= t) || MEETING_WEEKS[0];
+  const d = new Date(upcoming.date + 'T00:00:00');
+  meetingCalendarCursor = { year: d.getFullYear(), month: d.getMonth() };
+}
+
+function shiftMeetingCalendarMonth(delta) {
+  initMeetingCalendarCursor();
+  let m = meetingCalendarCursor.month + delta;
+  let y = meetingCalendarCursor.year;
+  if (m < 0) { m = 11; y -= 1; }
+  if (m > 11) { m = 0; y += 1; }
+  meetingCalendarCursor = { year: y, month: m };
+  renderMeetingCalendar();
+}
+
+function meetingWeekForDate(iso) {
+  return MEETING_WEEKS.find(w => w.date === iso);
+}
+
+function renderMeetingCalendar() {
+  initMeetingCalendarCursor();
+  const grid = document.getElementById('meetingCalendarGrid');
+  const label = document.getElementById('meetingCalendarMonthLabel');
+  if (!grid || !label) return;
+  const { year, month } = meetingCalendarCursor;
+  const monthDate = new Date(year, month, 1);
+  label.textContent = monthDate.toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { month: 'long', year: 'numeric' });
+
+  const dayNames = currentLang === 'tr' ? ['Pt','Sa','Ça','Pe','Cu','Ct','Pz'] : ['Mo','Tu','We','Th','Fr','Sa','Su'];
+  const firstDay = new Date(year, month, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7; // Pazartesi başlangıçlı
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const t = todayIso();
+
+  let cells = '';
+  for (let i = 0; i < startOffset; i++) cells += `<div></div>`;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const iso = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+    const week = meetingWeekForDate(iso);
+    const isToday = iso === t;
+    let dot = '';
+    let attrs = '';
+    if (week) {
+      const dotColor = week.type === 'sub' ? 'bg-indigo-400' : 'bg-amber-400';
+      dot = `<span class="w-1.5 h-1.5 rounded-full ${dotColor} absolute bottom-1 left-1/2 -translate-x-1/2"></span>`;
+      attrs = `onclick="jumpToMeetingWeek('${iso}')" title="${formatMeetingDate(iso)}"`;
+    }
+    cells += `
+      <div ${attrs} class="relative h-8 flex items-center justify-center text-[11px] rounded-lg ${week ? 'cursor-pointer font-semibold text-slate-100 hover:bg-slate-800' : 'text-slate-600'} ${isToday ? 'ring-1 ring-indigo-400' : ''}">
+        ${day}${dot}
+      </div>`;
+  }
+
+  grid.innerHTML = `
+    <div class="grid grid-cols-7 gap-0.5 mb-1 text-[10px] text-slate-500 font-bold uppercase text-center">
+      ${dayNames.map(d => `<div>${d}</div>`).join('')}
+    </div>
+    <div class="grid grid-cols-7 gap-0.5">${cells}</div>
+  `;
 }
 
 function updateMeetingFilterButtons() {
@@ -3379,7 +3489,7 @@ async function renderMeetingsSection() {
   }
 
   updateMeetingFilterButtons();
-  populateMeetingJumpSelect();
+  renderMeetingCalendar();
   populateMeetingUploadWeekSelect();
 
   if (!weeks.length) {
@@ -3388,12 +3498,15 @@ async function renderMeetingsSection() {
   }
 
   container.innerHTML = weeks.map(w => {
-    const rec = meetingRecords[w.date] || {};
+    const tracks = MEETING_TRACKS[w.type] || [];
     const isOpen = expandedMeetingWeeks.has(w.date);
     const badge = w.type === 'sub'
       ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${translate('meetings_week_subgroup_badge')}</span>`
       : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">${translate('meetings_week_fullgroup_badge')}</span>`;
-    const hasContent = rec.recording_link || rec.notes_link || rec.action_text;
+    const hasContent = tracks.some(t => {
+      const rec = meetingRecords[meetingRecordKey(w.date, t.id)] || {};
+      return rec.recording_link || rec.notes_link || rec.action_text;
+    });
     return `
       <div id="meetingWeek-${w.date}" class="glass rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
         <button onclick="toggleMeetingWeek('${w.date}')" class="w-full flex items-center justify-between flex-wrap gap-2 p-5 text-left transition hover:bg-slate-900/40">
@@ -3404,27 +3517,41 @@ async function renderMeetingsSection() {
           </div>
           ${badge}
         </button>
-        <div class="${isOpen ? '' : 'hidden'} px-5 pb-5">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div>
-              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_recording_label')}</label>
-              <input type="url" value="${escHtml(rec.recording_link || '')}" placeholder="${translate('meetings_link_placeholder')}"
-                onchange="updateMeetingField('${w.date}', 'recording_link', this.value)"
-                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500">
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_notes_label')}</label>
-              <input type="url" value="${escHtml(rec.notes_link || '')}" placeholder="${translate('meetings_link_placeholder')}"
-                onchange="updateMeetingField('${w.date}', 'notes_link', this.value)"
-                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500">
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_action_label')}</label>
-              <textarea rows="1" placeholder="${translate('meetings_action_placeholder')}"
-                onchange="updateMeetingField('${w.date}', 'action_text', this.value)"
-                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500">${escHtml(rec.action_text || '')}</textarea>
-            </div>
-          </div>
+        <div class="${isOpen ? '' : 'hidden'} px-5 pb-5 space-y-2.5">
+          ${tracks.map(t => {
+            const rec = meetingRecords[meetingRecordKey(w.date, t.id)] || {};
+            const trackSaved = rec.recording_link || rec.notes_link || rec.action_text;
+            return `
+            <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-3.5">
+              <div class="flex items-center justify-between mb-2.5 flex-wrap gap-1.5">
+                <div class="flex items-center space-x-2">
+                  <span class="font-mono text-[10px] text-slate-500">${t.time}</span>
+                  <span class="text-xs font-semibold text-slate-200">${translate(t.labelKey)}</span>
+                </div>
+                ${trackSaved ? `<i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-400" title="${translate('meetings_saved')}"></i>` : ''}
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_recording_label')}</label>
+                  <input type="url" value="${escHtml(rec.recording_link || '')}" placeholder="${translate('meetings_link_placeholder')}"
+                    onchange="updateMeetingField('${w.date}', '${t.id}', 'recording_link', this.value)"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_notes_label')}</label>
+                  <input type="url" value="${escHtml(rec.notes_link || '')}" placeholder="${translate('meetings_link_placeholder')}"
+                    onchange="updateMeetingField('${w.date}', '${t.id}', 'notes_link', this.value)"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500">
+                </div>
+                <div>
+                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_action_label')}</label>
+                  <textarea rows="1" placeholder="${translate('meetings_action_placeholder')}"
+                    onchange="updateMeetingField('${w.date}', '${t.id}', 'action_text', this.value)"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500">${escHtml(rec.action_text || '')}</textarea>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
         </div>
       </div>
     `;
