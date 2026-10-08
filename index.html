@@ -71,22 +71,22 @@
     </div>
     <div class="text-center mb-6">
       <img id="loginLogoImg" src="" alt="DEMIG Logo" class="h-16 w-auto mx-auto mb-3">
-      <h2 class="text-2xl font-bold tracking-tight text-white">Demig Project</h2>
+      <h2 class="text-2xl font-bold tracking-tight text-slate-100">Demig Project</h2>
       <p class="text-xs text-slate-400 mt-1" data-i18n="login_subtitle">Sisteme kayıtlı ad-soyad veya e-posta ile giriş yapın</p>
     </div>
     <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="login_name_label">Ad Soyad</label>
-        <input type="text" id="userName" required placeholder="Örn: M. Tahir Kılavuz" data-i18n-placeholder="login_name_placeholder" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+        <input type="text" id="userName" required placeholder="Örn: M. Tahir Kılavuz" data-i18n-placeholder="login_name_placeholder" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
         <p class="text-[10px] text-slate-500 mt-1" data-i18n="login_name_hint">Proje Ekibi sayfasındaki tam ad ve e-postanızı kullanın — kişisel özellikler doğru çalışsın.</p>
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="login_email_label">E-Posta Adresi</label>
-        <input type="email" id="userEmail" required placeholder="ornek@sabanciuniv.edu" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+        <input type="email" id="userEmail" required placeholder="ornek@sabanciuniv.edu" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="login_dept_label">Departman / Rol</label>
-        <select id="userDept" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+        <select id="userDept" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
           <option value="Principal Investigator (PI)">Principal Investigator (PI)</option>
           <option value="Research Partner & Coordinator">Research Partner & Coordinator</option>
           <option value="Senior Researcher">Senior Researcher</option>
@@ -119,7 +119,7 @@
       <div class="p-5 border-b border-slate-800 flex items-center space-x-3">
         <img id="sidebarLogoImg" src="" alt="DEMIG Logo" class="h-10 w-auto shrink-0">
         <div>
-          <h1 class="text-base font-bold tracking-wider text-white">demigproject</h1>
+          <h1 class="text-base font-bold tracking-wider text-slate-100">demigproject</h1>
           <p class="text-[10px] text-slate-400">Sabancı Univ. DEMIG Group</p>
         </div>
       </div>
@@ -133,32 +133,32 @@
         <button onclick="switchTab('diagrams')" id="tab-diagrams" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 bg-indigo-600 text-white transition">
           <i data-lucide="bar-chart-2" class="w-4 h-4"></i><span data-i18n="nav_diagrams">Diyagram & Grafikler</span>
         </button>
-        <button onclick="switchTab('roadmap')" id="tab-roadmap" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <button onclick="switchTab('roadmap')" id="tab-roadmap" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
           <i data-lucide="git-merge" class="w-4 h-4"></i><span data-i18n="nav_roadmap">İlerleme Haritası</span>
         </button>
-        <button onclick="switchTab('tasks')" id="tab-tasks" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <button onclick="switchTab('tasks')" id="tab-tasks" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
           <i data-lucide="check-square" class="w-4 h-4"></i><span data-i18n="nav_tasks">Görev Takibi & Veri Girişi</span>
         </button>
-        <button onclick="switchTab('people')" id="tab-people" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <button onclick="switchTab('people')" id="tab-people" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
           <i data-lucide="users" class="w-4 h-4"></i><span data-i18n="nav_people">Proje Ekibi</span>
         </button>
-        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
           <i data-lucide="pie-chart" class="w-4 h-4"></i><span data-i18n="nav_dashboard">Yönetici Özet Raporu</span>
         </button>
-        <button onclick="switchTab('attendance')" id="tab-attendance" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <button onclick="switchTab('attendance')" id="tab-attendance" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
           <i data-lucide="user-check" class="w-4 h-4"></i><span data-i18n="nav_attendance">Katılım Takibi</span>
         </button>
-        <button onclick="switchTab('chat')" id="tab-chat" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <button onclick="switchTab('chat')" id="tab-chat" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
           <i data-lucide="message-circle" class="w-4 h-4"></i><span data-i18n="nav_chat">Ekip Sohbeti</span>
           <span id="chatUnreadBadge" class="hidden ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center"></span>
         </button>
-        <button onclick="switchTab('meetings')" id="tab-meetings" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <button onclick="switchTab('meetings')" id="tab-meetings" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
           <i data-lucide="calendar-clock" class="w-4 h-4"></i><span data-i18n="nav_meetings">Toplantı Takvimi</span>
         </button>
-        <a href="finans.html" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+        <a href="finans.html" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
           <i data-lucide="wallet" class="w-4 h-4"></i><span data-i18n="nav_finance">Finans & Talepler</span>
         </a>
-        <button onclick="startTour()" id="tab-guide" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-amber-300 hover:text-white hover:bg-slate-800 transition border-t border-slate-800 mt-1 pt-3">
+        <button onclick="startTour()" id="tab-guide" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-amber-300 hover:text-slate-100 hover:bg-slate-800 transition border-t border-slate-800 mt-1 pt-3">
           <i data-lucide="help-circle" class="w-4 h-4"></i><span data-i18n="nav_guide">Kullanım Kılavuzu</span>
         </button>
       </nav>
@@ -168,12 +168,12 @@
           <i data-lucide="list-checks" class="w-3 h-3"></i><span data-i18n="sidebar_my_todos">Haftalık To-Do'larım</span>
           <span id="myTodoBadge" class="hidden bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">+1</span>
         </div>
-        <select id="sidebarPersonFilter" onchange="renderSidebarTodos()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-[10px] text-white mb-2"></select>
+        <select id="sidebarPersonFilter" onchange="renderSidebarTodos()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-[10px] text-slate-100 mb-2"></select>
         <div id="sidebarTodoList" class="space-y-1.5 max-h-56 overflow-y-auto pr-1"></div>
       </div>
 
       <div class="p-3 border-t border-slate-800">
-        <button onclick="logout()" class="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-red-600/20 hover:text-red-300 transition">
+        <button onclick="logout()" class="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-red-600/20 hover:text-red-300 transition">
           <i data-lucide="log-out" class="w-4 h-4"></i><span data-i18n="sidebar_logout">Sistem Çıkışı Yap</span>
         </button>
       </div>
@@ -184,7 +184,7 @@
         <div id="currentUserDisplay" class="text-xs font-semibold text-slate-200 truncate">...</div>
         <div id="currentEmailDisplay" class="text-[10px] text-slate-400 truncate">...</div>
       </div>
-      <button onclick="logout()" id="logoutIconBtn" data-i18n-title="sidebar_logout_short" title="Çıkış Yap" class="p-1.5 text-slate-400 hover:text-white bg-slate-800 rounded-lg hover:bg-slate-700 transition shrink-0 ml-2">
+      <button onclick="logout()" id="logoutIconBtn" data-i18n-title="sidebar_logout_short" title="Çıkış Yap" class="p-1.5 text-slate-400 hover:text-slate-100 bg-slate-800 rounded-lg hover:bg-slate-700 transition shrink-0 ml-2">
         <i data-lucide="log-out" class="w-4 h-4"></i>
       </button>
     </div>
@@ -204,7 +204,7 @@
     <section id="view-diagrams" class="space-y-6">
       <div class="glass p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 border border-indigo-500/20 shadow-xl">
         <div>
-          <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+          <h2 class="text-xl font-bold text-slate-100 flex items-center space-x-2">
             <i data-lucide="activity" class="w-5 h-5 text-indigo-400"></i><span data-i18n="diagrams_title">Proje İlerlemesi</span>
           </h2>
           <p class="text-xs text-slate-400 mt-1" data-i18n="diagrams_subtitle">DEMIG AI Development Workplan çizelgesi ve güncel ilerleme istatistikleri.</p>
@@ -289,7 +289,7 @@
     <section id="view-roadmap" class="hidden space-y-6">
       <div class="glass p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 border border-indigo-500/20 shadow-xl">
         <div>
-          <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+          <h2 class="text-xl font-bold text-slate-100 flex items-center space-x-2">
             <i data-lucide="git-merge" class="w-5 h-5 text-indigo-400"></i><span data-i18n="roadmap_title">demigproject İlerleme Haritası</span>
           </h2>
           <p class="text-xs text-slate-400 mt-1" data-i18n="roadmap_subtitle">Kartların üzerine tıklayarak başlıkları, notları veya durumları anında güncelleyebilir, haftalık to-do ekleyebilirsiniz.</p>
@@ -306,7 +306,7 @@
     <section id="view-tasks" class="hidden space-y-6">
       <div class="glass p-6 rounded-2xl flex items-center justify-between shadow-xl">
         <div>
-          <h2 class="text-lg font-bold text-white" data-i18n="tasks_title">Görev & Süreç Takibi</h2>
+          <h2 class="text-lg font-bold text-slate-100" data-i18n="tasks_title">Görev & Süreç Takibi</h2>
           <p class="text-xs text-slate-400" data-i18n="tasks_subtitle">Verilerin veya linklerin üzerine tıklayarak doğrudan içini güncelleyebilir, oka tıklayarak haftalık to-do listesini açabilirsiniz.</p>
         </div>
         <button onclick="openTaskModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-2 transition shadow-lg shadow-indigo-600/30">
@@ -336,7 +336,7 @@
     <section id="view-people" class="hidden space-y-6">
       <div class="glass p-6 rounded-2xl shadow-xl flex items-center justify-between">
         <div>
-          <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+          <h2 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
             <i data-lucide="users" class="w-5 h-5 text-indigo-400"></i><span data-i18n="people_title">Proje Ekibi ve Rol Tanımları</span>
           </h2>
           <p class="text-xs text-slate-400 mt-1" data-i18n="people_subtitle">Tüm kayıtlı araştırmacılar, danışmanlar ve 12 kişilik Sabancı PURE etiketleme ekibi. E-posta alanına tıklayıp kişinin gerçekte kullandığı adresi girebilirsiniz — haftalık görev ve hatırlatma mailleri buraya gider.</p>
@@ -346,13 +346,13 @@
       <div class="glass p-6 rounded-2xl border border-indigo-500/30 shadow-xl">
         <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
           <div>
-            <h3 class="text-base font-bold text-white flex items-center space-x-2">
+            <h3 class="text-base font-bold text-slate-100 flex items-center space-x-2">
               <span class="px-2.5 py-1 bg-indigo-500/20 text-indigo-300 rounded-lg text-xs border border-indigo-500/30" data-i18n="people_pure_badge">12 Üyeli Ekip</span>
               <span data-i18n="people_pure_title">PURE & Galata Öğrenci Anotatör Ekibi</span>
             </h3>
             <p class="text-xs text-slate-400 mt-0.5" data-i18n="people_pure_subtitle">3 Aşama Etiketleme ve Hakemleme (Dual Annotation & Adjudication) Sorumluları</p>
           </div>
-          <button onclick="togglePureList()" id="togglePureBtn" class="text-xs text-indigo-400 hover:text-white flex items-center space-x-1 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
+          <button onclick="togglePureList()" id="togglePureBtn" class="text-xs text-indigo-400 hover:text-slate-100 flex items-center space-x-1 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
             <span data-i18n="people_toggle_list">Listeyi Daralt/Genişlet</span><i data-lucide="chevron-down" class="w-4 h-4"></i>
           </button>
         </div>
@@ -364,7 +364,7 @@
       <div class="glass p-6 rounded-2xl shadow-xl space-y-6 border border-slate-800">
         <div class="space-y-4 pb-4 border-b border-slate-800">
           <div>
-            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+            <h2 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
               <i data-lucide="sparkles" class="w-5 h-5 text-indigo-400"></i><span data-i18n="dashboard_title">Proje Özeti & AI Raporlayıcı</span>
             </h2>
             <p class="text-xs text-slate-400 mt-1" data-i18n="dashboard_subtitle">İstediğiniz tarih aralığı, belirli görev veya ekip filtrelerini uygulayarak Timeline, İşbirliği ve Haftalık To-Do detaylarını içeren akıllı AI raporu üretin.</p>
@@ -372,15 +372,15 @@
           <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             <div>
               <label class="block text-[11px] font-semibold text-slate-300 mb-1" data-i18n="report_start_date">Başlangıç Tarihi</label>
-              <input type="date" id="reportStartDate" value="2025-11-01" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
+              <input type="date" id="reportStartDate" value="2025-11-01" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100">
             </div>
             <div>
               <label class="block text-[11px] font-semibold text-slate-300 mb-1" data-i18n="report_end_date">Bitiş Tarihi (Rapor Kesim)</label>
-              <input type="date" id="reportEndDate" value="2026-08-31" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
+              <input type="date" id="reportEndDate" value="2026-08-31" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100">
             </div>
             <div>
               <label class="block text-[11px] font-semibold text-slate-300 mb-1" data-i18n="report_task_filter">Görev / Aşama Filtresi</label>
-              <select id="reportTaskFilter" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
+              <select id="reportTaskFilter" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100">
                 <option value="ALL" data-i18n="report_all_tasks">Tüm Görevler ve Aşamalar</option>
               </select>
             </div>
@@ -409,7 +409,7 @@
 
     <section id="view-attendance" class="hidden space-y-6">
       <div class="glass p-6 rounded-2xl shadow-xl">
-        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+        <h2 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
           <i data-lucide="user-check" class="w-5 h-5 text-indigo-400"></i><span data-i18n="attendance_title">Katılım / Giriş Takibi</span>
         </h2>
         <p class="text-xs text-slate-400 mt-1" data-i18n="attendance_subtitle">Ekip üyelerinin siteye en son ne zaman giriş yaptığını ve hiç giriş yapmayanları buradan görebilirsiniz.</p>
@@ -435,7 +435,7 @@
     <section id="view-chat" class="hidden space-y-6">
       <div class="glass p-6 rounded-2xl shadow-xl flex items-center justify-between">
         <div>
-          <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+          <h2 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
             <i data-lucide="message-circle" class="w-5 h-5 text-indigo-400"></i><span data-i18n="chat_title">Ekip Sohbeti</span>
           </h2>
           <p class="text-xs text-slate-400 mt-1" data-i18n="chat_subtitle">Ekip arkadaşlarınızla ortak sohbet alanı veya birebir özel mesajlaşma.</p>
@@ -455,10 +455,10 @@
           <div id="chatPersonList"></div>
         </div>
         <div class="flex-1 flex flex-col min-w-0">
-          <div id="chatHeaderLabel" class="px-4 py-2.5 border-b border-slate-800 text-xs font-bold text-white flex items-center space-x-1.5"></div>
+          <div id="chatHeaderLabel" class="px-4 py-2.5 border-b border-slate-800 text-xs font-bold text-slate-100 flex items-center space-x-1.5"></div>
           <div id="chatMessagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
           <form onsubmit="sendChatMessage(event)" class="flex items-center space-x-2 p-3 border-t border-slate-800">
-            <input type="text" id="chatInput" required data-i18n-placeholder="chat_input_placeholder" placeholder="Bir mesaj yazın..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+            <input type="text" id="chatInput" required data-i18n-placeholder="chat_input_placeholder" placeholder="Bir mesaj yazın..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
             <button type="submit" class="p-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shrink-0">
               <i data-lucide="send" class="w-4 h-4"></i>
             </button>
@@ -469,7 +469,7 @@
 
     <section id="view-meetings" class="hidden space-y-6">
       <div class="glass p-6 rounded-2xl shadow-xl">
-        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+        <h2 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
           <i data-lucide="calendar-clock" class="w-5 h-5 text-indigo-400"></i><span data-i18n="meetings_title">Research Group Meeting Schedule</span>
         </h2>
         <p class="text-xs text-slate-400 mt-1" data-i18n="meetings_subtitle">Her Çarşamba 17:00–19:00 · 14 Ekim – 30 Aralık, Subgroup toplantılarıyla başlar.</p>
@@ -519,6 +519,46 @@
         </div>
       </div>
 
+      <div class="glass p-5 rounded-2xl shadow-xl">
+        <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2 mb-1">
+          <i data-lucide="upload" class="w-4 h-4 text-indigo-400"></i><span data-i18n="meetings_upload_title">Toplantı Transkripti Yükle</span>
+        </h3>
+        <p class="text-[11px] text-slate-400 mb-3" data-i18n="meetings_upload_subtitle">Zoom'dan indirdiğiniz transkripti (.txt/.vtt) yükleyin ya da aşağıya yapıştırın. Yapay zeka aksiyon maddelerini ve sorumlu kişileri bulup "Onay Bekliyor" listesine ekleyecek.</p>
+        <div class="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-3 items-start">
+          <select id="meetingUploadWeekSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
+          <div class="space-y-2">
+            <input type="file" id="meetingTranscriptFile" accept=".txt,.vtt,.srt" onchange="handleMeetingTranscriptFile(event)" class="w-full text-[11px] text-slate-400 file:mr-2 file:px-2.5 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200 file:text-[11px] file:font-semibold">
+            <textarea id="meetingTranscriptText" rows="4" placeholder="...veya transkripti doğrudan buraya yapıştırın" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500"></textarea>
+            <div class="flex items-center gap-2">
+              <button onclick="submitMeetingTranscript()" id="meetingTranscriptSubmitBtn" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg flex items-center gap-1.5">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i><span data-i18n="meetings_upload_btn">AI ile Analiz Et</span>
+              </button>
+              <span id="meetingTranscriptStatus" class="text-[11px] text-slate-400"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="meetingPendingActionsWrap" class="hidden glass p-5 rounded-2xl shadow-xl border border-amber-500/30">
+        <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2 mb-1">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i><span data-i18n="meetings_pending_title">Toplantıdan Çıkarılan Aksiyonlar — Onay Bekliyor</span>
+        </h3>
+        <p class="text-[11px] text-slate-400 mb-3" data-i18n="meetings_pending_subtitle">Zoom kaydından AI ile çıkarıldı. Sorumlu kişiyi seçip onaylarsanız, o kişinin sol bardaki haftalık to-do listesine eklenir.</p>
+        <div id="meetingPendingActionsContainer" class="space-y-2"></div>
+      </div>
+
+      <div class="glass p-4 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg overflow-hidden text-[11px] font-semibold">
+          <button onclick="setMeetingFilter('upcoming')" id="meetingFilterBtn-upcoming" class="px-3 py-1.5 transition" data-i18n="meetings_filter_upcoming">Yaklaşan</button>
+          <button onclick="setMeetingFilter('past')" id="meetingFilterBtn-past" class="px-3 py-1.5 transition" data-i18n="meetings_filter_past">Geçmiş</button>
+          <button onclick="setMeetingFilter('all')" id="meetingFilterBtn-all" class="px-3 py-1.5 transition" data-i18n="meetings_filter_all">Tümü</button>
+        </div>
+        <div class="flex items-center space-x-2">
+          <label class="text-[11px] text-slate-400" data-i18n="meetings_jump_label">Haftaya Git:</label>
+          <select id="meetingJumpSelect" onchange="jumpToMeetingWeek(this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100"></select>
+        </div>
+      </div>
+
       <div id="meetingWeeksContainer" class="space-y-3"></div>
     </section>
 
@@ -531,15 +571,15 @@
       <div class="flex items-center space-x-3">
         <div class="p-2 bg-indigo-600/30 text-indigo-400 rounded-lg"><i data-lucide="file-check" class="w-6 h-6"></i></div>
         <div>
-          <h3 class="text-base font-bold text-white" data-i18n="ai_report_title">AI Özel Yönetici & Çalışma Raporu</h3>
+          <h3 class="text-base font-bold text-slate-100" data-i18n="ai_report_title">AI Özel Yönetici & Çalışma Raporu</h3>
           <p class="text-xs text-slate-400" id="reportCutoffLabel" data-i18n="ai_report_cutoff">Filtrelenmiş Rapor Çıktısı</p>
         </div>
       </div>
       <div class="flex items-center space-x-3">
-        <button onclick="window.print()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5 border border-slate-700">
+        <button onclick="window.print()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg text-xs font-semibold flex items-center space-x-1.5 border border-slate-700">
           <i data-lucide="printer" class="w-3.5 h-3.5"></i><span data-i18n="ai_report_print">Yazdır / PDF İndir</span>
         </button>
-        <button onclick="closeAIReportModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+        <button onclick="closeAIReportModal()" class="text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
     </div>
     <div id="aiReportContainer" class="space-y-6 bg-slate-900/90 p-6 rounded-xl border border-slate-800 text-xs leading-relaxed"></div>
@@ -549,19 +589,19 @@
 <div id="taskModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
   <div class="glass p-6 rounded-2xl w-full max-w-2xl border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
     <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
-      <h3 id="modalTaskTitle" class="text-lg font-bold text-white" data-i18n="task_modal_title">Görev Ekle / Düzenle</h3>
-      <button onclick="closeTaskModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <h3 id="modalTaskTitle" class="text-lg font-bold text-slate-100" data-i18n="task_modal_title">Görev Ekle / Düzenle</h3>
+      <button onclick="closeTaskModal()" class="text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
 
     <div class="flex items-center space-x-2 mb-4">
       <button type="button" onclick="switchTaskModalTab('main')" id="taskModalTabMainBtn" class="px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition" data-i18n="task_modal_tab_main">Ana Görev</button>
-      <button type="button" onclick="switchTaskModalTab('sub')" id="taskModalTabSubBtn" class="px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white transition" data-i18n="task_modal_tab_sub">Alt Görev (Haftalık To-Do)</button>
+      <button type="button" onclick="switchTaskModalTab('sub')" id="taskModalTabSubBtn" class="px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 hover:text-slate-100 transition" data-i18n="task_modal_tab_sub">Alt Görev (Haftalık To-Do)</button>
     </div>
 
     <div id="taskModalSubPanel" class="hidden space-y-4">
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="subtask_parent_label">Hangi Ana Görevin Altına Eklenecek?</label>
-        <select id="subtaskParentSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"></select>
+        <select id="subtaskParentSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100"></select>
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="subtask_assignee_label">Sorumlu Kişi(ler)</label>
@@ -570,17 +610,17 @@
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="start_date_label">Başlangıç Tarihi</label>
-          <input type="date" id="subtaskStart" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <input type="date" id="subtaskStart" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="end_date_label">Bitiş Tarihi</label>
-          <input type="date" id="subtaskEnd" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <input type="date" id="subtaskEnd" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
         </div>
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="priority_label">Öncelik</label>
-          <select id="subtaskPriority" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <select id="subtaskPriority" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
             <option value="Yüksek" data-i18n="priority_high">Yüksek</option>
             <option value="Orta" selected data-i18n="priority_medium">Orta</option>
             <option value="Düşük" data-i18n="priority_low">Düşük</option>
@@ -588,7 +628,7 @@
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="status_label">Durum</label>
-          <select id="subtaskStatus" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <select id="subtaskStatus" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
             <option value="Başlamadı" selected data-i18n="status_not_started">Başlamadı</option>
             <option value="Devam Ediyor" data-i18n="status_in_progress">Devam Ediyor</option>
             <option value="Tamamlandı" data-i18n="status_completed">Tamamlandı</option>
@@ -597,11 +637,11 @@
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="link_label">Dosya / Bağlantı Linki (URL)</label>
-        <input type="url" id="subtaskLink" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+        <input type="url" id="subtaskLink" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="subtask_desc_label">Açıklama (Bu hafta ne yapılacak?)</label>
-        <textarea id="subtaskText" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"></textarea>
+        <textarea id="subtaskText" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100"></textarea>
       </div>
       <div class="flex justify-end space-x-3 pt-4 border-t border-slate-800">
         <button type="button" onclick="closeTaskModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg" data-i18n="btn_cancel">İptal</button>
@@ -614,12 +654,12 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="module_label">Aşama / Paketi</label>
-          <select id="taskModuleSelect" onchange="handleTaskModuleSelectChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"></select>
-          <input type="text" id="taskModule" required data-i18n-placeholder="module_new_placeholder" placeholder="Yeni aşama adını yazın" class="hidden mt-2 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <select id="taskModuleSelect" onchange="handleTaskModuleSelectChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100"></select>
+          <input type="text" id="taskModule" required data-i18n-placeholder="module_new_placeholder" placeholder="Yeni aşama adını yazın" class="hidden mt-2 w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="task_name_label">Görev Adı</label>
-          <input type="text" id="taskName" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <input type="text" id="taskName" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
         </div>
       </div>
       <div>
@@ -630,7 +670,7 @@
             <div id="assigneesCheckboxesSenior" class="flex flex-col gap-1.5"></div>
           </div>
           <div class="pt-2 border-t border-slate-800">
-            <button type="button" onclick="toggleModalPureGroup()" id="modalPureToggleBtn" class="text-[10px] font-bold text-indigo-400 hover:text-white uppercase tracking-wider mb-1.5 flex items-center space-x-1">
+            <button type="button" onclick="toggleModalPureGroup()" id="modalPureToggleBtn" class="text-[10px] font-bold text-indigo-400 hover:text-slate-100 uppercase tracking-wider mb-1.5 flex items-center space-x-1">
               <i data-lucide="chevron-right" id="modalPureToggleIcon" class="w-3 h-3"></i>
               <span data-i18n="pure_team_12">PURE & Galata Anotatör Ekibi (12 Kişi)</span>
             </button>
@@ -641,15 +681,15 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="start_date_label">Başlangıç Tarihi</label>
-          <input type="date" id="taskStart" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <input type="date" id="taskStart" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="end_date_label">Bitiş Tarihi</label>
-          <input type="date" id="taskEnd" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <input type="date" id="taskEnd" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="status_label">Durum</label>
-          <select id="taskStatus" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <select id="taskStatus" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
             <option value="Tamamlandı" data-i18n="status_completed">Tamamlandı</option>
             <option value="Devam Ediyor" data-i18n="status_in_progress">Devam Ediyor</option>
             <option value="Planlandı" data-i18n="status_planned">Planlandı</option>
@@ -659,16 +699,16 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1">İlerleme Yüzdesi (%)</label>
-          <input type="number" id="taskProgress" min="0" max="100" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <input type="number" id="taskProgress" min="0" max="100" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="link_label">Dosya / Bağlantı Linki (URL)</label>
-          <input type="url" id="taskLink" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <input type="url" id="taskLink" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
         </div>
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="notes_label">Açıklama ve Güncelleme Notları</label>
-        <textarea id="taskNotes" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"></textarea>
+        <textarea id="taskNotes" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100"></textarea>
       </div>
       <div class="flex justify-end space-x-3 pt-4 border-t border-slate-800">
         <button type="button" onclick="closeTaskModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg" data-i18n="btn_cancel">İptal</button>
@@ -684,7 +724,7 @@
     <div class="inline-flex p-4 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 mb-4">
       <i data-lucide="compass" class="w-8 h-8"></i>
     </div>
-    <h3 class="text-xl font-bold text-white mb-2" data-i18n="tour_welcome_title">Siteye Hoş Geldiniz! 👋</h3>
+    <h3 class="text-xl font-bold text-slate-100 mb-2" data-i18n="tour_welcome_title">Siteye Hoş Geldiniz! 👋</h3>
     <p class="text-sm text-slate-300 leading-relaxed mb-5" data-i18n="tour_welcome_desc">İsterseniz size siteyi kısaca gezdirelim.</p>
     <div class="flex gap-3">
       <button onclick="dismissTourWelcome()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg border border-slate-700 transition" data-i18n="tour_welcome_skip">Şimdi Değil</button>
@@ -711,8 +751,8 @@
   <div id="tourSpotlight2" class="hidden absolute rounded-xl pointer-events-none" style="left:0;top:0;width:0;height:0;border:2px solid #818cf8;"></div>
   <div id="tourTooltip" class="absolute bg-slate-900 rounded-2xl p-4 border border-indigo-500/40 shadow-2xl" style="width:340px;max-width:calc(100vw - 24px);">
     <div class="flex items-start justify-between gap-3 mb-1">
-      <h4 id="tourStepTitle" class="text-sm font-bold text-white"></h4>
-      <button onclick="endTour()" data-i18n-title="tour_close" title="Kapat" class="text-slate-400 hover:text-white shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
+      <h4 id="tourStepTitle" class="text-sm font-bold text-slate-100"></h4>
+      <button onclick="endTour()" data-i18n-title="tour_close" title="Kapat" class="text-slate-400 hover:text-slate-100 shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <p id="tourStepDesc" class="text-xs text-slate-300 leading-relaxed mb-3"></p>
     <div class="w-full h-1 bg-slate-800 rounded-full overflow-hidden mb-3">
@@ -733,8 +773,8 @@
 <div id="weeklyTodoModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
   <div class="glass p-6 rounded-2xl w-full max-w-lg border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
     <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-800">
-      <h3 id="weeklyTodoModalTitle" class="text-sm font-bold text-white" data-i18n="weekly_modal_add_title">Haftalık Görev Ekle</h3>
-      <button onclick="closeWeeklyTodoModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <h3 id="weeklyTodoModalTitle" class="text-sm font-bold text-slate-100" data-i18n="weekly_modal_add_title">Haftalık Görev Ekle</h3>
+      <button onclick="closeWeeklyTodoModal()" class="text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
     </div>
     <form id="weeklyTodoForm" onsubmit="saveWeeklyTodo(event)" class="space-y-4">
       <input type="hidden" id="weeklyTodoId">
@@ -745,17 +785,17 @@
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="start_date_label">Başlangıç Tarihi</label>
-          <input type="date" id="weeklyTodoStart" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <input type="date" id="weeklyTodoStart" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="end_date_label">Bitiş Tarihi</label>
-          <input type="date" id="weeklyTodoEnd" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <input type="date" id="weeklyTodoEnd" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
         </div>
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="priority_label">Öncelik</label>
-          <select id="weeklyTodoPriority" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <select id="weeklyTodoPriority" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
             <option value="Yüksek" data-i18n="priority_high">Yüksek</option>
             <option value="Orta" selected data-i18n="priority_medium">Orta</option>
             <option value="Düşük" data-i18n="priority_low">Düşük</option>
@@ -763,7 +803,7 @@
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="status_label">Durum</label>
-          <select id="weeklyTodoStatus" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+          <select id="weeklyTodoStatus" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
             <option value="Başlamadı" selected data-i18n="status_not_started">Başlamadı</option>
             <option value="Devam Ediyor" data-i18n="status_in_progress">Devam Ediyor</option>
             <option value="Tamamlandı" data-i18n="status_completed">Tamamlandı</option>
@@ -772,11 +812,11 @@
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="link_label">Dosya / Bağlantı Linki (URL)</label>
-        <input type="url" id="weeklyTodoLink" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+        <input type="url" id="weeklyTodoLink" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="subtask_desc_label">Açıklama (Bu hafta ne yapılacak?)</label>
-        <textarea id="weeklyTodoText" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white"></textarea>
+        <textarea id="weeklyTodoText" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100"></textarea>
       </div>
       <div class="flex justify-end space-x-3 pt-4 border-t border-slate-800">
         <button type="button" onclick="closeWeeklyTodoModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg" data-i18n="btn_cancel">İptal</button>
@@ -1037,6 +1077,22 @@ const I18N = {
     meetings_link_placeholder: "https://...",
     meetings_action_placeholder: "Bu hafta yapılacaklar / takip edilecek aksiyonlar...",
     meetings_saved: "Kaydedildi",
+    meetings_filter_upcoming: "Yaklaşan",
+    meetings_filter_past: "Geçmiş",
+    meetings_filter_all: "Tümü",
+    meetings_jump_label: "Haftaya Git:",
+    meetings_pending_title: "Toplantıdan Çıkarılan Aksiyonlar — Onay Bekliyor",
+    meetings_pending_subtitle: "Zoom kaydından AI ile çıkarıldı. Sorumlu kişiyi seçip onaylarsanız, o kişinin sol bardaki haftalık to-do listesine eklenir.",
+    meetings_action_confirm: "Onayla ve Ata",
+    meetings_action_dismiss: "Yoksay",
+    meetings_upload_title: "Toplantı Transkripti Yükle",
+    meetings_upload_subtitle: "Zoom'dan indirdiğiniz transkripti (.txt/.vtt) yükleyin ya da aşağıya yapıştırın. Yapay zeka aksiyon maddelerini ve sorumlu kişileri bulup \"Onay Bekliyor\" listesine ekleyecek.",
+    meetings_upload_btn: "AI ile Analiz Et",
+    meetings_upload_working: "Analiz ediliyor...",
+    meetings_upload_done: "{n} aksiyon maddesi bulundu, onay bekliyor.",
+    meetings_upload_none: "Aksiyon maddesi bulunamadı.",
+    meetings_upload_error: "Bir hata oluştu, tekrar deneyin.",
+    meetings_upload_empty: "Lütfen bir transkript yapıştırın veya dosya yükleyin.",
   },
   en: {
     login_subtitle: "Sign in with your registered name or email",
@@ -1278,6 +1334,22 @@ const I18N = {
     meetings_link_placeholder: "https://...",
     meetings_action_placeholder: "This week's actions / things to follow up on...",
     meetings_saved: "Saved",
+    meetings_filter_upcoming: "Upcoming",
+    meetings_filter_past: "Past",
+    meetings_filter_all: "All",
+    meetings_jump_label: "Jump to week:",
+    meetings_pending_title: "Action Items Extracted From Meetings — Pending Approval",
+    meetings_pending_subtitle: "Extracted by AI from the Zoom recording. Pick the responsible person and confirm to add it to their weekly to-do list in the sidebar.",
+    meetings_action_confirm: "Confirm & Assign",
+    meetings_action_dismiss: "Dismiss",
+    meetings_upload_title: "Upload Meeting Transcript",
+    meetings_upload_subtitle: "Upload the transcript you downloaded from Zoom (.txt/.vtt) or paste it below. AI will find action items and responsible people and add them to the \"Pending Approval\" list.",
+    meetings_upload_btn: "Analyze with AI",
+    meetings_upload_working: "Analyzing...",
+    meetings_upload_done: "{n} action item(s) found, pending approval.",
+    meetings_upload_none: "No action items found.",
+    meetings_upload_error: "Something went wrong, please try again.",
+    meetings_upload_empty: "Please paste a transcript or upload a file.",
   }
 };
 
@@ -1323,14 +1395,14 @@ function applyStaticI18n() {
   const langBtnTr = document.getElementById('langBtnTr');
   const langBtnEn = document.getElementById('langBtnEn');
   if (langBtnTr && langBtnEn) {
-    langBtnTr.className = currentLang === 'tr' ? "px-2.5 py-1 transition bg-indigo-600 text-white" : "px-2.5 py-1 transition text-slate-400 hover:text-white";
-    langBtnEn.className = currentLang === 'en' ? "px-2.5 py-1 transition bg-indigo-600 text-white" : "px-2.5 py-1 transition text-slate-400 hover:text-white";
+    langBtnTr.className = currentLang === 'tr' ? "px-2.5 py-1 transition bg-indigo-600 text-white" : "px-2.5 py-1 transition text-slate-400 hover:text-slate-100";
+    langBtnEn.className = currentLang === 'en' ? "px-2.5 py-1 transition bg-indigo-600 text-white" : "px-2.5 py-1 transition text-slate-400 hover:text-slate-100";
   }
   const langBtnTrS = document.getElementById('langBtnTrSidebar');
   const langBtnEnS = document.getElementById('langBtnEnSidebar');
   if (langBtnTrS && langBtnEnS) {
-    langBtnTrS.className = currentLang === 'tr' ? "flex-1 px-2.5 py-1.5 transition bg-indigo-600 text-white" : "flex-1 px-2.5 py-1.5 transition text-slate-400 hover:text-white";
-    langBtnEnS.className = currentLang === 'en' ? "flex-1 px-2.5 py-1.5 transition bg-indigo-600 text-white" : "flex-1 px-2.5 py-1.5 transition text-slate-400 hover:text-white";
+    langBtnTrS.className = currentLang === 'tr' ? "flex-1 px-2.5 py-1.5 transition bg-indigo-600 text-white" : "flex-1 px-2.5 py-1.5 transition text-slate-400 hover:text-slate-100";
+    langBtnEnS.className = currentLang === 'en' ? "flex-1 px-2.5 py-1.5 transition bg-indigo-600 text-white" : "flex-1 px-2.5 py-1.5 transition text-slate-400 hover:text-slate-100";
   }
 }
 
@@ -1681,6 +1753,145 @@ async function loadDataFromBackend() {
   } else {
     tasks = taskRows.map(taskFromRow).sort(compareTaskIds);
   }
+
+  await loadConfirmedMeetingActionItems();
+}
+
+// =====================================================================
+// TOPLANTIDAN OTOMATİK ÇIKARILAN AKSİYON MADDELERİ (ZOOM → AI → ONAY)
+// =====================================================================
+let meetingActionItemsConfirmed = []; // sol bardaki haftalık to-do'lara karışacak onaylı maddeler
+let meetingActionItemsPending = [];   // "Onay Bekliyor" panelinde gösterilecek maddeler
+
+async function loadConfirmedMeetingActionItems() {
+  if (!supabaseClient) { meetingActionItemsConfirmed = []; return; }
+  const { data, error } = await supabaseClient.from('meeting_action_items').select('*').eq('status', 'confirmed');
+  if (error) { console.error('Onaylı aksiyon maddeleri okunamadı:', error); meetingActionItemsConfirmed = []; return; }
+  meetingActionItemsConfirmed = data || [];
+}
+
+async function loadPendingMeetingActionItems() {
+  if (!supabaseClient) { meetingActionItemsPending = []; return; }
+  const { data, error } = await supabaseClient.from('meeting_action_items').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+  if (error) { console.error('Onay bekleyen aksiyon maddeleri okunamadı:', error); meetingActionItemsPending = []; return; }
+  meetingActionItemsPending = data || [];
+}
+
+async function confirmMeetingActionItem(id, personId) {
+  if (!supabaseClient || !personId) return;
+  const { error } = await supabaseClient.from('meeting_action_items')
+    .update({ status: 'confirmed', confirmed_person_id: personId }).eq('id', id);
+  if (error) { console.error('Aksiyon onaylanamadı:', error); return; }
+  await loadPendingMeetingActionItems();
+  await loadConfirmedMeetingActionItems();
+  renderPendingActionItemsPanel();
+  renderSidebarTodos();
+}
+
+async function dismissMeetingActionItem(id) {
+  if (!supabaseClient) return;
+  const { error } = await supabaseClient.from('meeting_action_items').update({ status: 'dismissed' }).eq('id', id);
+  if (error) { console.error('Aksiyon reddedilemedi:', error); return; }
+  await loadPendingMeetingActionItems();
+  renderPendingActionItemsPanel();
+}
+
+async function renderPendingActionItemsPanel() {
+  const container = document.getElementById('meetingPendingActionsContainer');
+  const wrap = document.getElementById('meetingPendingActionsWrap');
+  if (!container || !wrap) return;
+  await loadPendingMeetingActionItems();
+  if (!meetingActionItemsPending.length) { wrap.classList.add('hidden'); container.innerHTML = ''; return; }
+  wrap.classList.remove('hidden');
+  const peopleOpts = registeredPeople.filter(p => !p.isPure)
+    .map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
+  container.innerHTML = meetingActionItemsPending.map(item => `
+    <div class="bg-slate-900/60 border border-slate-700 rounded-lg p-3 flex flex-col md:flex-row md:items-center gap-2">
+      <div class="flex-1 min-w-0">
+        <div class="text-[10px] text-slate-400">${formatMeetingDate(item.week_date)}</div>
+        <div class="text-xs text-slate-100">${escHtml(item.raw_text)}</div>
+        ${item.suggested_person_name ? `<div class="text-[10px] text-slate-500 italic">AI tahmini: ${escHtml(item.suggested_person_name)}</div>` : ''}
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <select id="meetingActionAssignee-${item.id}" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-100">
+          <option value="">—</option>${peopleOpts}
+        </select>
+        <button onclick="confirmMeetingActionItem('${item.id}', document.getElementById('meetingActionAssignee-${item.id}').value)" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold rounded-lg">${translate('meetings_action_confirm')}</button>
+        <button onclick="dismissMeetingActionItem('${item.id}')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold rounded-lg">${translate('meetings_action_dismiss')}</button>
+      </div>
+    </div>
+  `).join('');
+  if (document.getElementById('meetingActionAssignee-' + (meetingActionItemsPending[0] || {}).id)) {
+    meetingActionItemsPending.forEach(item => {
+      const sel = document.getElementById('meetingActionAssignee-' + item.id);
+      if (sel && item.suggested_person_id) sel.value = item.suggested_person_id;
+    });
+  }
+}
+
+// ---------------------------------------------------------------------
+// Manuel Transkript Yükleme (Zoom'dan indirip siteye yapıştırma/yükleme)
+// ---------------------------------------------------------------------
+function populateMeetingUploadWeekSelect() {
+  const sel = document.getElementById('meetingUploadWeekSelect');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = MEETING_WEEKS.map(w => `<option value="${w.date}">${formatMeetingDate(w.date)}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+function vttOrSrtToPlainText(raw) {
+  return raw.split('\n').filter(line => {
+    const t = line.trim();
+    if (!t) return false;
+    if (/^WEBVTT/.test(t)) return false;
+    if (/^\d+$/.test(t)) return false;
+    if (/-->/.test(t)) return false;
+    return true;
+  }).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function handleMeetingTranscriptFile(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let text = String(reader.result || '');
+    if (/\.(vtt|srt)$/i.test(file.name)) text = vttOrSrtToPlainText(text);
+    document.getElementById('meetingTranscriptText').value = text;
+  };
+  reader.readAsText(file);
+}
+
+async function submitMeetingTranscript() {
+  const weekDate = document.getElementById('meetingUploadWeekSelect').value;
+  const text = document.getElementById('meetingTranscriptText').value.trim();
+  const statusEl = document.getElementById('meetingTranscriptStatus');
+  const btn = document.getElementById('meetingTranscriptSubmitBtn');
+  if (!text) { statusEl.textContent = translate('meetings_upload_empty'); return; }
+  if (!supabaseClient) { statusEl.textContent = translate('meetings_upload_error'); return; }
+
+  btn.disabled = true;
+  statusEl.textContent = translate('meetings_upload_working');
+  try {
+    const { data, error } = await supabaseClient.functions.invoke('extract-meeting-actions', {
+      body: { week_date: weekDate, transcript_text: text }
+    });
+    if (error) throw error;
+    const count = (data && data.count) || 0;
+    statusEl.textContent = count > 0
+      ? translate('meetings_upload_done').replace('{n}', count)
+      : translate('meetings_upload_none');
+    document.getElementById('meetingTranscriptText').value = '';
+    document.getElementById('meetingTranscriptFile').value = '';
+    await renderPendingActionItemsPanel();
+    await loadMeetingRecords();
+  } catch (err) {
+    console.error('Transkript analiz hatası:', err);
+    statusEl.textContent = translate('meetings_upload_error');
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // =====================================================================
@@ -1743,7 +1954,7 @@ async function renderAttendanceTable() {
       ? `<span class="px-2 py-0.5 rounded text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">${translate('attendance_active')}</span>`
       : `<span class="px-2 py-0.5 rounded text-[11px] bg-red-500/20 text-red-300 border border-red-500/30">${translate('attendance_never')}</span>`;
     tr.innerHTML = `
-      <td class="p-3 font-semibold text-white">${p.name}</td>
+      <td class="p-3 font-semibold text-slate-100">${p.name}</td>
       <td class="p-3 text-slate-400">${p.role || p.dept || ''}</td>
       <td class="p-3 font-mono text-[11px] text-slate-300">${lastLoginStr}</td>
       <td class="p-3 font-mono text-indigo-300">${info ? info.count : 0}</td>
@@ -2174,7 +2385,7 @@ function weeklyTodoListHTML(t, taskIdx) {
           </div>
           <div class="flex items-center gap-1 shrink-0">
             <button onclick="sendReminderEmail(${taskIdx}, '${w.id}')" class="text-slate-400 hover:text-amber-400" title="${translate('reminder_send')}"><i data-lucide="bell" class="w-3.5 h-3.5"></i></button>
-            <button onclick="openWeeklyTodoModal(${taskIdx}, '${w.id}')" class="text-slate-400 hover:text-white" title="${translate('edit')}"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+            <button onclick="openWeeklyTodoModal(${taskIdx}, '${w.id}')" class="text-slate-400 hover:text-slate-100" title="${translate('edit')}"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
             <button onclick="deleteWeeklyTodo(${taskIdx}, '${w.id}')" class="text-slate-400 hover:text-red-400" title="${translate('delete')}"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
           </div>
         </div>
@@ -2280,7 +2491,7 @@ function toggleTasksRow(idx) {
 function populateWeeklyTodoAssigneeSelect() {
   const box = document.getElementById('weeklyTodoAssignee');
   box.innerHTML = registeredPeople.filter(p => !p.isPure).map(p => `
-    <label class="flex items-center space-x-1.5 cursor-pointer text-slate-300 hover:text-white">
+    <label class="flex items-center space-x-1.5 cursor-pointer text-slate-300 hover:text-slate-100">
       <input type="checkbox" value="${p.id}" class="weekly-todo-person-checkbox rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
       <span class="truncate">@${p.name}</span>
     </label>
@@ -2512,6 +2723,14 @@ function renderSidebarTodos() {
       }
     });
   });
+  (meetingActionItemsConfirmed || []).forEach(m => {
+    if (filterVal === 'all' || m.confirmed_person_id === targetId) {
+      items.push({
+        task: '📅 ' + (typeof formatMeetingDate === 'function' ? formatMeetingDate(m.week_date) : m.week_date),
+        text: m.raw_text, priority: 'Orta', status: 'Planlandı', isMeeting: true
+      });
+    }
+  });
   items.sort((a, b) => priorityWeight(b.priority) - priorityWeight(a.priority));
 
   if (items.length === 0) {
@@ -2588,8 +2807,8 @@ function renderExcelGanttMatrix() {
     }
 
     tr.innerHTML = `
-      <td class="p-2.5 font-sans font-semibold text-white sticky left-0 bg-slate-950 border-r border-slate-800 truncate" title="${t.name}">
-        <button onclick="toggleGanttRow(${tIdx})" class="inline-flex items-center justify-center w-4 h-4 mr-1 text-slate-400 hover:text-white bg-slate-800 rounded transition align-middle">
+      <td class="p-2.5 font-sans font-semibold text-slate-100 sticky left-0 bg-slate-950 border-r border-slate-800 truncate" title="${t.name}">
+        <button onclick="toggleGanttRow(${tIdx})" class="inline-flex items-center justify-center w-4 h-4 mr-1 text-slate-400 hover:text-slate-100 bg-slate-800 rounded transition align-middle">
           <i data-lucide="${isExpanded ? 'chevron-down' : 'chevron-right'}" class="w-3 h-3"></i>
         </button>
         ${t.name}${todoBadge}
@@ -2664,12 +2883,12 @@ function renderRoadmap() {
               <option value="Devam Ediyor" ${t.status === 'Devam Ediyor' ? 'selected' : ''}>${translate('status_in_progress')}</option>
               <option value="Planlandı" ${t.status === 'Planlandı' ? 'selected' : ''}>${translate('status_planned')}</option>
             </select>
-            <button onclick="editTask('${t.id}')" class="p-1 text-slate-400 hover:text-white bg-slate-800 rounded hover:bg-slate-700 transition" title="${translate('edit')}">
+            <button onclick="editTask('${t.id}')" class="p-1 text-slate-400 hover:text-slate-100 bg-slate-800 rounded hover:bg-slate-700 transition" title="${translate('edit')}">
               <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
             </button>
           </div>
         </div>
-        <input type="text" value="${t.name}" onchange="updateTaskInline(${index}, 'name', this.value)" class="text-sm font-bold text-white mb-1.5 bg-transparent border-b border-transparent hover:border-indigo-500 focus:border-indigo-500 editable-input px-1 py-0.5 rounded w-full">
+        <input type="text" value="${t.name}" onchange="updateTaskInline(${index}, 'name', this.value)" class="text-sm font-bold text-slate-100 mb-1.5 bg-transparent border-b border-transparent hover:border-indigo-500 focus:border-indigo-500 editable-input px-1 py-0.5 rounded w-full">
         <div class="text-[11px] text-indigo-300 font-medium mb-2">${taggedNames || translate('no_responsible')}</div>
         <textarea onchange="updateTaskInline(${index}, 'notes', this.value)" rows="2" class="text-xs text-slate-300 italic bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 editable-input w-full">${t.notes}</textarea>
         ${weeklyTodoSummaryHTML(t, index)}
@@ -2689,7 +2908,7 @@ function weeklyTodoSummaryHTML(t, index) {
         <i data-lucide="list-checks" class="w-3.5 h-3.5"></i>
         <span>${total > 0 ? `${translate('weekly_todo_list_title')}: ${done}/${total} ${translate('status_completed').toLowerCase()}` : translate('weekly_todo_not_added')}</span>
       </div>
-      <button onclick="goToTaskInTracker(${index})" class="text-[10px] font-semibold text-indigo-400 hover:text-white flex items-center space-x-1">
+      <button onclick="goToTaskInTracker(${index})" class="text-[10px] font-semibold text-indigo-400 hover:text-slate-100 flex items-center space-x-1">
         <span>${translate('weekly_todo_view_in_tracker')}</span>
         <i data-lucide="arrow-right" class="w-3 h-3"></i>
       </button>
@@ -2743,13 +2962,13 @@ function renderTasksTable() {
 
     tr.innerHTML = `
       <td class="p-3 font-mono font-bold text-indigo-400">
-        <button onclick="toggleTasksRow(${index})" class="inline-flex items-center justify-center w-4 h-4 mr-1 text-slate-400 hover:text-white bg-slate-800 rounded transition align-middle">
+        <button onclick="toggleTasksRow(${index})" class="inline-flex items-center justify-center w-4 h-4 mr-1 text-slate-400 hover:text-slate-100 bg-slate-800 rounded transition align-middle">
           <i data-lucide="${isExpanded ? 'chevron-down' : 'chevron-right'}" class="w-3 h-3"></i>
         </button>
         ${t.id}${subtaskBadge}
         <div class="text-[10px] text-slate-400 font-normal ml-5">${t.module}</div>
       </td>
-      <td class="p-3 font-semibold text-white max-w-xs">
+      <td class="p-3 font-semibold text-slate-100 max-w-xs">
         <input type="text" value="${t.name}" onchange="updateTaskInline(${index}, 'name', this.value)" class="bg-transparent border-b border-transparent hover:border-slate-700 editable-input px-1 py-0.5 rounded w-full">
       </td>
       <td class="p-3 max-w-xs"><div class="flex flex-wrap">${taggedChips}</div></td>
@@ -2806,11 +3025,11 @@ function renderPeople() {
     card.innerHTML = `
       <div class="flex items-start justify-between gap-2">
         <div>
-          <h3 class="text-sm font-bold text-white">${p.name}</h3>
+          <h3 class="text-sm font-bold text-slate-100">${p.name}</h3>
           <span class="text-xs text-indigo-400 font-semibold">${p.role}</span>
         </div>
         <div class="flex items-center gap-1 shrink-0">
-          <input type="email" id="personEmail-${p.id}" value="${p.email}" title="${translate('email_tooltip_long')}" class="text-[10px] text-slate-300 bg-slate-800/80 px-2 py-1 rounded border border-slate-700 font-mono w-40 text-right focus:outline-none focus:border-indigo-500 focus:text-white">
+          <input type="email" id="personEmail-${p.id}" value="${p.email}" title="${translate('email_tooltip_long')}" class="text-[10px] text-slate-300 bg-slate-800/80 px-2 py-1 rounded border border-slate-700 font-mono w-40 text-right focus:outline-none focus:border-indigo-500 focus:text-slate-100">
           <button onclick="savePersonEmail('${p.id}')" title="${translate('btn_save')}" class="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shrink-0"><i data-lucide="check" class="w-3.5 h-3.5"></i></button>
         </div>
       </div>
@@ -2821,10 +3040,10 @@ function renderPeople() {
     const item = document.createElement('div');
     item.className = "bg-slate-900/80 p-3 rounded-xl border border-slate-800 hover:border-indigo-500/40 transition";
     item.innerHTML = `
-      <div class="font-bold text-white text-xs">${p.name}</div>
+      <div class="font-bold text-slate-100 text-xs">${p.name}</div>
       <div class="text-[10px] text-indigo-300 mt-0.5">${p.dept}</div>
       <div class="flex items-center gap-1 mt-1">
-        <input type="email" id="personEmail-${p.id}" value="${p.email}" title="${translate('email_tooltip_short')}" class="text-[10px] text-slate-400 bg-slate-900/90 px-1.5 py-1 rounded border border-slate-800 font-mono flex-1 min-w-0 focus:outline-none focus:border-indigo-500 focus:text-white">
+        <input type="email" id="personEmail-${p.id}" value="${p.email}" title="${translate('email_tooltip_short')}" class="text-[10px] text-slate-400 bg-slate-900/90 px-1.5 py-1 rounded border border-slate-800 font-mono flex-1 min-w-0 focus:outline-none focus:border-indigo-500 focus:text-slate-100">
         <button onclick="savePersonEmail('${p.id}')" title="${translate('btn_save')}" class="p-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded shrink-0"><i data-lucide="check" class="w-3 h-3"></i></button>
       </div>
     `;
@@ -2872,7 +3091,7 @@ function generateAIExecutiveReport() {
     const periodStr = `${translatedMonthName(sIdx)} - ${translatedMonthName(eIdx)}`;
     return `
       <tr class="border-b border-slate-800/60">
-        <td class="p-2 font-bold text-white">${t.id} - ${t.name}</td>
+        <td class="p-2 font-bold text-slate-100">${t.id} - ${t.name}</td>
         <td class="p-2 text-center text-amber-300 font-semibold">${periodStr}</td>
         <td class="p-2 text-center font-bold ${t.status === 'Tamamlandı' ? 'text-emerald-400' : 'text-indigo-400'}">%${t.progress} (${statusLabel(t.status)})</td>
       </tr>
@@ -2903,7 +3122,7 @@ function generateAIExecutiveReport() {
     return `
       <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
         <div class="flex items-center justify-between">
-          <h5 class="text-xs font-bold text-white flex items-center space-x-2">
+          <h5 class="text-xs font-bold text-slate-100 flex items-center space-x-2">
             <span class="px-2 py-0.5 bg-indigo-600/30 text-indigo-400 rounded">${t.id}</span>
             <span>${t.name}</span>
           </h5>
@@ -2928,7 +3147,7 @@ function generateAIExecutiveReport() {
     <div class="border-b border-slate-800 pb-4 flex items-center space-x-4">
       <img src="${DEMIG_LOGO_DATA_URI}" alt="DEMIG Logo" class="h-14 w-auto shrink-0">
       <div>
-        <h2 class="text-xl font-bold text-white mb-1">${translate('report_org_title')}</h2>
+        <h2 class="text-xl font-bold text-slate-100 mb-1">${translate('report_org_title')}</h2>
         <h3 class="text-sm font-semibold text-indigo-400">${translate('report_subtitle')}</h3>
         <div class="text-[11px] text-slate-400 mt-2 flex justify-between">
           <span><strong>${translate('logged_in_as')}</strong> ${currentUser ? currentUser.name : translate('system_admin')}</span>
@@ -2937,7 +3156,7 @@ function generateAIExecutiveReport() {
       </div>
     </div>
     <div class="space-y-3">
-      <h4 class="text-xs font-bold text-white uppercase tracking-wider border-l-4 border-indigo-500 pl-2 flex items-center space-x-2">
+      <h4 class="text-xs font-bold text-slate-100 uppercase tracking-wider border-l-4 border-indigo-500 pl-2 flex items-center space-x-2">
         <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i><span>${translate('report_timeline_section')}</span>
       </h4>
       <div class="overflow-x-auto">
@@ -2954,7 +3173,7 @@ function generateAIExecutiveReport() {
       </div>
     </div>
     <div class="space-y-3">
-      <h4 class="text-xs font-bold text-white uppercase tracking-wider border-l-4 border-emerald-500 pl-2 flex items-center space-x-2">
+      <h4 class="text-xs font-bold text-slate-100 uppercase tracking-wider border-l-4 border-emerald-500 pl-2 flex items-center space-x-2">
         <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i><span>${translate('report_collab_section')} (${filteredTasks.length} ${translate('report_collab_section_count')})</span>
       </h4>
       <div class="space-y-3">${collaborationHTML || `<p class="text-slate-400">${translate('report_no_collab')}</p>`}</div>
@@ -2986,7 +3205,7 @@ function closeSidebar() {
 function switchTab(tab) {
   ['diagrams', 'roadmap', 'tasks', 'people', 'dashboard', 'attendance', 'chat', 'meetings'].forEach(t => {
     document.getElementById('view-' + t).classList.add('hidden');
-    document.getElementById('tab-' + t).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition";
+    document.getElementById('tab-' + t).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition";
   });
   document.getElementById('view-' + tab).classList.remove('hidden');
   document.getElementById('tab-' + tab).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 bg-indigo-600 text-white transition";
@@ -3058,39 +3277,122 @@ function formatMeetingDate(iso) {
   return d.toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
+let meetingFilter = 'upcoming'; // 'upcoming' | 'past' | 'all'
+let expandedMeetingWeeks = null; // Set of week dates that are open; null = not initialized yet
+
+function todayIso() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function filteredMeetingWeeks() {
+  const t = todayIso();
+  if (meetingFilter === 'upcoming') return MEETING_WEEKS.filter(w => w.date >= t);
+  if (meetingFilter === 'past') return MEETING_WEEKS.filter(w => w.date < t);
+  return MEETING_WEEKS;
+}
+
+function setMeetingFilter(f) {
+  meetingFilter = f;
+  renderMeetingsSection();
+}
+
+function toggleMeetingWeek(date) {
+  if (expandedMeetingWeeks.has(date)) expandedMeetingWeeks.delete(date);
+  else expandedMeetingWeeks.add(date);
+  renderMeetingsSection();
+}
+
+function jumpToMeetingWeek(date) {
+  if (!date) return;
+  if (!MEETING_WEEKS.some(w => w.date === date)) return;
+  meetingFilter = 'all';
+  expandedMeetingWeeks.add(date);
+  renderMeetingsSection();
+  setTimeout(() => {
+    const el = document.getElementById('meetingWeek-' + date);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 50);
+}
+
+function populateMeetingJumpSelect() {
+  const sel = document.getElementById('meetingJumpSelect');
+  if (!sel) return;
+  sel.innerHTML = `<option value="">—</option>` + MEETING_WEEKS.map(w => `<option value="${w.date}">${formatMeetingDate(w.date)}</option>`).join('');
+}
+
+function updateMeetingFilterButtons() {
+  const variants = { upcoming: 'meetingFilterBtn-upcoming', past: 'meetingFilterBtn-past', all: 'meetingFilterBtn-all' };
+  Object.keys(variants).forEach(key => {
+    const btn = document.getElementById(variants[key]);
+    if (!btn) return;
+    btn.className = key === meetingFilter
+      ? "px-3 py-1.5 transition bg-indigo-600 text-white"
+      : "px-3 py-1.5 transition text-slate-400 hover:text-slate-100";
+  });
+}
+
 async function renderMeetingsSection() {
   await loadMeetingRecords();
+  renderPendingActionItemsPanel();
   const container = document.getElementById('meetingWeeksContainer');
   if (!container) return;
-  container.innerHTML = MEETING_WEEKS.map(w => {
+
+  const weeks = filteredMeetingWeeks();
+
+  if (expandedMeetingWeeks === null) {
+    expandedMeetingWeeks = new Set();
+    const t = todayIso();
+    const nextWeek = MEETING_WEEKS.find(w => w.date >= t) || MEETING_WEEKS[0];
+    if (nextWeek) expandedMeetingWeeks.add(nextWeek.date);
+  }
+
+  updateMeetingFilterButtons();
+  populateMeetingJumpSelect();
+  populateMeetingUploadWeekSelect();
+
+  if (!weeks.length) {
+    container.innerHTML = `<div class="glass rounded-2xl p-6 text-center text-xs text-slate-400">—</div>`;
+    return;
+  }
+
+  container.innerHTML = weeks.map(w => {
     const rec = meetingRecords[w.date] || {};
+    const isOpen = expandedMeetingWeeks.has(w.date);
     const badge = w.type === 'sub'
       ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${translate('meetings_week_subgroup_badge')}</span>`
       : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">${translate('meetings_week_fullgroup_badge')}</span>`;
+    const hasContent = rec.recording_link || rec.notes_link || rec.action_text;
     return `
-      <div class="glass rounded-2xl p-5 border border-slate-800 shadow-xl">
-        <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
-          <h3 class="text-sm font-bold text-white">${formatMeetingDate(w.date)}</h3>
+      <div id="meetingWeek-${w.date}" class="glass rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
+        <button onclick="toggleMeetingWeek('${w.date}')" class="w-full flex items-center justify-between flex-wrap gap-2 p-5 text-left transition hover:bg-slate-900/40">
+          <div class="flex items-center space-x-2.5">
+            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}"></i>
+            <h3 class="text-sm font-bold text-slate-100">${formatMeetingDate(w.date)}</h3>
+            ${hasContent ? `<i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400" title="${translate('meetings_saved')}"></i>` : ''}
+          </div>
           ${badge}
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div>
-            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_recording_label')}</label>
-            <input type="url" value="${escHtml(rec.recording_link || '')}" placeholder="${translate('meetings_link_placeholder')}"
-              onchange="updateMeetingField('${w.date}', 'recording_link', this.value)"
-              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-white editable-input focus:outline-none focus:border-indigo-500">
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_notes_label')}</label>
-            <input type="url" value="${escHtml(rec.notes_link || '')}" placeholder="${translate('meetings_link_placeholder')}"
-              onchange="updateMeetingField('${w.date}', 'notes_link', this.value)"
-              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-white editable-input focus:outline-none focus:border-indigo-500">
-          </div>
-          <div>
-            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_action_label')}</label>
-            <textarea rows="1" placeholder="${translate('meetings_action_placeholder')}"
-              onchange="updateMeetingField('${w.date}', 'action_text', this.value)"
-              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-white editable-input focus:outline-none focus:border-indigo-500">${escHtml(rec.action_text || '')}</textarea>
+        </button>
+        <div class="${isOpen ? '' : 'hidden'} px-5 pb-5">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_recording_label')}</label>
+              <input type="url" value="${escHtml(rec.recording_link || '')}" placeholder="${translate('meetings_link_placeholder')}"
+                onchange="updateMeetingField('${w.date}', 'recording_link', this.value)"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_notes_label')}</label>
+              <input type="url" value="${escHtml(rec.notes_link || '')}" placeholder="${translate('meetings_link_placeholder')}"
+                onchange="updateMeetingField('${w.date}', 'notes_link', this.value)"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500">
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_action_label')}</label>
+              <textarea rows="1" placeholder="${translate('meetings_action_placeholder')}"
+                onchange="updateMeetingField('${w.date}', 'action_text', this.value)"
+                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500">${escHtml(rec.action_text || '')}</textarea>
+            </div>
           </div>
         </div>
       </div>
@@ -3107,7 +3409,7 @@ function populateModalAssignees() {
 
   const makeLabel = (p) => {
     const label = document.createElement('label');
-    label.className = "flex items-center space-x-1.5 cursor-pointer text-slate-300 hover:text-white";
+    label.className = "flex items-center space-x-1.5 cursor-pointer text-slate-300 hover:text-slate-100";
     label.innerHTML = `
       <input type="checkbox" value="${p.id}" class="task-person-checkbox rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
       <span class="truncate">@${p.name}</span>
@@ -3196,7 +3498,7 @@ function switchTaskModalTab(tab) {
   const mainBtn = document.getElementById('taskModalTabMainBtn');
   const subBtn = document.getElementById('taskModalTabSubBtn');
   const activeCls = "px-3.5 py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition";
-  const inactiveCls = "px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 hover:text-white transition";
+  const inactiveCls = "px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-800 text-slate-400 hover:text-slate-100 transition";
 
   if (tab === 'sub') {
     mainForm.classList.add('hidden');
@@ -3225,7 +3527,7 @@ function populateSubtaskModalSelects() {
 
   const assigneeBox = document.getElementById('subtaskAssignee');
   assigneeBox.innerHTML = registeredPeople.filter(p => !p.isPure).map(p => `
-    <label class="flex items-center space-x-1.5 cursor-pointer text-slate-300 hover:text-white">
+    <label class="flex items-center space-x-1.5 cursor-pointer text-slate-300 hover:text-slate-100">
       <input type="checkbox" value="${p.id}" class="subtask-person-checkbox rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
       <span class="truncate">@${p.name}</span>
     </label>
