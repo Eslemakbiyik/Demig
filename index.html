@@ -519,6 +519,26 @@
         </div>
       </div>
 
+      <div class="glass p-5 rounded-2xl shadow-xl">
+        <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2 mb-1">
+          <i data-lucide="upload" class="w-4 h-4 text-indigo-400"></i><span data-i18n="meetings_upload_title">Toplantı Transkripti Yükle</span>
+        </h3>
+        <p class="text-[11px] text-slate-400 mb-3" data-i18n="meetings_upload_subtitle">Zoom'dan indirdiğiniz transkripti (.txt/.vtt) yükleyin ya da aşağıya yapıştırın. Yapay zeka aksiyon maddelerini ve sorumlu kişileri bulup "Onay Bekliyor" listesine ekleyecek.</p>
+        <div class="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-3 items-start">
+          <select id="meetingUploadWeekSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
+          <div class="space-y-2">
+            <input type="file" id="meetingTranscriptFile" accept=".txt,.vtt,.srt" onchange="handleMeetingTranscriptFile(event)" class="w-full text-[11px] text-slate-400 file:mr-2 file:px-2.5 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200 file:text-[11px] file:font-semibold">
+            <textarea id="meetingTranscriptText" rows="4" placeholder="...veya transkripti doğrudan buraya yapıştırın" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500"></textarea>
+            <div class="flex items-center gap-2">
+              <button onclick="submitMeetingTranscript()" id="meetingTranscriptSubmitBtn" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg flex items-center gap-1.5">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i><span data-i18n="meetings_upload_btn">AI ile Analiz Et</span>
+              </button>
+              <span id="meetingTranscriptStatus" class="text-[11px] text-slate-400"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="meetingPendingActionsWrap" class="hidden glass p-5 rounded-2xl shadow-xl border border-amber-500/30">
         <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2 mb-1">
           <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i><span data-i18n="meetings_pending_title">Toplantıdan Çıkarılan Aksiyonlar — Onay Bekliyor</span>
@@ -1065,6 +1085,14 @@ const I18N = {
     meetings_pending_subtitle: "Zoom kaydından AI ile çıkarıldı. Sorumlu kişiyi seçip onaylarsanız, o kişinin sol bardaki haftalık to-do listesine eklenir.",
     meetings_action_confirm: "Onayla ve Ata",
     meetings_action_dismiss: "Yoksay",
+    meetings_upload_title: "Toplantı Transkripti Yükle",
+    meetings_upload_subtitle: "Zoom'dan indirdiğiniz transkripti (.txt/.vtt) yükleyin ya da aşağıya yapıştırın. Yapay zeka aksiyon maddelerini ve sorumlu kişileri bulup \"Onay Bekliyor\" listesine ekleyecek.",
+    meetings_upload_btn: "AI ile Analiz Et",
+    meetings_upload_working: "Analiz ediliyor...",
+    meetings_upload_done: "{n} aksiyon maddesi bulundu, onay bekliyor.",
+    meetings_upload_none: "Aksiyon maddesi bulunamadı.",
+    meetings_upload_error: "Bir hata oluştu, tekrar deneyin.",
+    meetings_upload_empty: "Lütfen bir transkript yapıştırın veya dosya yükleyin.",
   },
   en: {
     login_subtitle: "Sign in with your registered name or email",
@@ -1314,6 +1342,14 @@ const I18N = {
     meetings_pending_subtitle: "Extracted by AI from the Zoom recording. Pick the responsible person and confirm to add it to their weekly to-do list in the sidebar.",
     meetings_action_confirm: "Confirm & Assign",
     meetings_action_dismiss: "Dismiss",
+    meetings_upload_title: "Upload Meeting Transcript",
+    meetings_upload_subtitle: "Upload the transcript you downloaded from Zoom (.txt/.vtt) or paste it below. AI will find action items and responsible people and add them to the \"Pending Approval\" list.",
+    meetings_upload_btn: "Analyze with AI",
+    meetings_upload_working: "Analyzing...",
+    meetings_upload_done: "{n} action item(s) found, pending approval.",
+    meetings_upload_none: "No action items found.",
+    meetings_upload_error: "Something went wrong, please try again.",
+    meetings_upload_empty: "Please paste a transcript or upload a file.",
   }
 };
 
@@ -1790,6 +1826,71 @@ async function renderPendingActionItemsPanel() {
       const sel = document.getElementById('meetingActionAssignee-' + item.id);
       if (sel && item.suggested_person_id) sel.value = item.suggested_person_id;
     });
+  }
+}
+
+// ---------------------------------------------------------------------
+// Manuel Transkript Yükleme (Zoom'dan indirip siteye yapıştırma/yükleme)
+// ---------------------------------------------------------------------
+function populateMeetingUploadWeekSelect() {
+  const sel = document.getElementById('meetingUploadWeekSelect');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = MEETING_WEEKS.map(w => `<option value="${w.date}">${formatMeetingDate(w.date)}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+function vttOrSrtToPlainText(raw) {
+  return raw.split('\n').filter(line => {
+    const t = line.trim();
+    if (!t) return false;
+    if (/^WEBVTT/.test(t)) return false;
+    if (/^\d+$/.test(t)) return false;
+    if (/-->/.test(t)) return false;
+    return true;
+  }).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function handleMeetingTranscriptFile(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let text = String(reader.result || '');
+    if (/\.(vtt|srt)$/i.test(file.name)) text = vttOrSrtToPlainText(text);
+    document.getElementById('meetingTranscriptText').value = text;
+  };
+  reader.readAsText(file);
+}
+
+async function submitMeetingTranscript() {
+  const weekDate = document.getElementById('meetingUploadWeekSelect').value;
+  const text = document.getElementById('meetingTranscriptText').value.trim();
+  const statusEl = document.getElementById('meetingTranscriptStatus');
+  const btn = document.getElementById('meetingTranscriptSubmitBtn');
+  if (!text) { statusEl.textContent = translate('meetings_upload_empty'); return; }
+  if (!supabaseClient) { statusEl.textContent = translate('meetings_upload_error'); return; }
+
+  btn.disabled = true;
+  statusEl.textContent = translate('meetings_upload_working');
+  try {
+    const { data, error } = await supabaseClient.functions.invoke('extract-meeting-actions', {
+      body: { week_date: weekDate, transcript_text: text }
+    });
+    if (error) throw error;
+    const count = (data && data.count) || 0;
+    statusEl.textContent = count > 0
+      ? translate('meetings_upload_done').replace('{n}', count)
+      : translate('meetings_upload_none');
+    document.getElementById('meetingTranscriptText').value = '';
+    document.getElementById('meetingTranscriptFile').value = '';
+    await renderPendingActionItemsPanel();
+    await loadMeetingRecords();
+  } catch (err) {
+    console.error('Transkript analiz hatası:', err);
+    statusEl.textContent = translate('meetings_upload_error');
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -3248,6 +3349,7 @@ async function renderMeetingsSection() {
 
   updateMeetingFilterButtons();
   populateMeetingJumpSelect();
+  populateMeetingUploadWeekSelect();
 
   if (!weeks.length) {
     container.innerHTML = `<div class="glass rounded-2xl p-6 text-center text-xs text-slate-400">—</div>`;
