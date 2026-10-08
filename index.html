@@ -3355,7 +3355,7 @@ function formatMeetingDate(iso) {
   return d.toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
-let meetingFilter = 'upcoming'; // 'upcoming' | 'past' | 'all'
+let meetingFilter = 'all'; // 'upcoming' | 'past' | 'all'
 let expandedMeetingWeeks = null; // Set of week dates that are open; null = not initialized yet
 
 function todayIso() {
