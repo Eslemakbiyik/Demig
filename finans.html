@@ -6,31 +6,55 @@
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
 <title>DEMIG · Finans & Talepler</title>
-<script src="https://cdn.tailwindcss.com" defer></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Krem / warm-beige tema: index.html ile aynı palet (bkz. oradaki yorum).
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          slate: {
+            50:  '#1C140F',
+            100: '#2A2017',
+            200: '#3B2E21',
+            300: '#55432F',
+            400: '#73603F',
+            500: '#948058',
+            600: '#B6A378',
+            700: '#D6C7A1',
+            800: '#E8DEC4',
+            900: '#F1E9D8',
+            950: '#FBF7EE'
+          }
+        }
+      }
+    }
+  };
+</script>
 <script src="https://unpkg.com/lucide@latest" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-  body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #f8fafc; }
-  .glass { background: rgba(26, 34, 52, 0.85); border: 1px solid rgba(255,255,255,0.08); }
+  body { font-family: 'Inter', sans-serif; background-color: #FBF7EE; color: #2A2017; }
+  .glass { background: rgba(255, 253, 248, 0.85); border: 1px solid rgba(85, 67, 47, 0.10); }
   .hidden { display: none !important; }
   #toast, #entryModal, #noteModal, #filesModal, #pwdModal { position: fixed !important; }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #0b0f19; }
-  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-  input, select, textarea { color-scheme: dark; }
-  .fld { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #fff; }
+  ::-webkit-scrollbar-track { background: #F1E9D8; }
+  ::-webkit-scrollbar-thumb { background: #D6C7A1; border-radius: 4px; }
+  input, select, textarea { color-scheme: light; }
+  .fld { width: 100%; background: #FBF7EE; border: 1px solid #D6C7A1; border-radius: 0.5rem; padding: 0.5rem 0.75rem; font-size: 0.75rem; color: #2A2017; }
   .fld:focus { outline: none; border-color: #6366f1; }
-  .fld[readonly] { color: #94a3b8; background: #0b1220; }
-  .lbl { display: block; font-size: 0.7rem; font-weight: 500; color: #cbd5e1; margin-bottom: 0.25rem; }
+  .fld[readonly] { color: #73603F; background: #F1E9D8; }
+  .lbl { display: block; font-size: 0.7rem; font-weight: 500; color: #55432F; margin-bottom: 0.25rem; }
   .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; transition: background .15s; }
   .btn-primary { background: #4f46e5; color: #fff; } .btn-primary:hover { background: #6366f1; }
-  .btn-ghost { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; } .btn-ghost:hover { background: #334155; }
+  .btn-ghost { background: #E8DEC4; color: #3B2E21; border: 1px solid #D6C7A1; } .btn-ghost:hover { background: #D6C7A1; }
   .btn-ok { background: #059669; color: #fff; } .btn-ok:hover { background: #10b981; }
   .btn-danger { background: #dc2626; color: #fff; } .btn-danger:hover { background: #ef4444; }
   .btn:disabled { opacity: .5; cursor: not-allowed; }
-  .tabbtn { padding: 0.5rem 0.9rem; border-radius: 0.6rem; font-size: 0.75rem; font-weight: 600; color: #94a3b8; }
-  .tabbtn:hover { color: #fff; background: #1e293b; }
+  .tabbtn { padding: 0.5rem 0.9rem; border-radius: 0.6rem; font-size: 0.75rem; font-weight: 600; color: #73603F; }
+  .tabbtn:hover { color: #2A2017; background: #E8DEC4; }
   .tabbtn.active { background: #4f46e5; color: #fff; }
   th { font-weight: 600; }
 </style>
@@ -201,8 +225,8 @@
             <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider text-[10px]">
               <tr>
                 <th class="p-3" data-i18n="th_date">Tarih</th><th class="p-3" data-i18n="th_type">Tür</th><th class="p-3" data-i18n="th_category">Kategori</th>
-                <th class="p-3" data-i18n="th_desc">Açıklama</th><th class="p-3" data-i18n="th_vendor">Satıcı / Kaynak</th><th class="p-3" data-i18n="th_invoice">Fatura No</th>
-                <th class="p-3 text-right" data-i18n="th_net">Net</th><th class="p-3 text-right" data-i18n="th_vat">KDV</th><th class="p-3 text-right" data-i18n="th_other">Diğer Vergi</th>
+                <th class="p-3" data-i18n="th_desc">Açıklama</th><th class="p-3" data-i18n="th_vendor">Satıcı / Detay</th>
+                <th class="p-3 text-right" data-i18n="th_tax_detail">Net / KDV</th>
                 <th class="p-3 text-right" data-i18n="th_total">Toplam</th><th class="p-3" data-i18n="th_files">Dosya</th><th class="p-3 text-right" data-i18n="th_actions">İşlem</th>
               </tr>
             </thead>
@@ -334,10 +358,11 @@
           <select id="eRate" class="fld"><option value="0">0</option><option value="1">1</option><option value="10">10</option><option value="20" selected>20</option></select></div>
         <div class="taxonly"><label class="lbl" for="eVat" data-i18n="lbl_vat_amount">KDV Tutarı (₺)</label><input id="eVat" type="number" min="0" step="0.01" class="fld"></div>
       </div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="taxonly"><label class="lbl" for="eOther" data-i18n="lbl_other_tax">Diğer Vergi / Stopaj (₺)</label><input id="eOther" type="number" min="0" step="0.01" value="0" class="fld"></div>
         <div><label class="lbl" for="eTotal" data-i18n="lbl_total">Toplam (₺)</label><input id="eTotal" type="text" readonly class="fld font-bold"></div>
         <div><label class="lbl" for="ePay" data-i18n="lbl_pay">Ödeme Yöntemi</label><select id="ePay" class="fld"></select></div>
+        <div><label class="lbl" for="eBank" data-i18n="lbl_bank">Banka / Hesap</label><select id="eBank" class="fld"></select></div>
       </div>
 
       <div>
@@ -510,6 +535,7 @@ const CATS = [
   ['Ödenek', 'cat_grant'], ['Diğer', 'cat_other'],
 ];
 const PAYS = [['Havale/EFT', 'pay_eft'], ['Kredi Kartı', 'pay_card'], ['Nakit', 'pay_cash'], ['Ödenek Hesabı', 'pay_grant'], ['Diğer', 'pay_other']];
+const BANKS = ['İş Bankası', 'Garanti BBVA', 'Vakıfbank', 'Ziraat Bankası', 'Akbank', 'QNB', 'Yapı Kredi', 'Ödenek Hesabı', 'Diğer'];
 const TYPES = ['gelir', 'gider', 'kart'];
 const STATUSES = ['beklemede', 'onaylandi', 'reddedildi', 'odendi', 'iptal'];
 
@@ -535,11 +561,11 @@ const I18N = {
     lbl_month: "Ay", lbl_type: "Tür", lbl_search: "Ara", ph_search: "Açıklama, satıcı, fatura no...",
     btn_new_entry: "+ Yeni Kayıt", btn_csv: "CSV İndir",
     th_date: "Tarih", th_type: "Tür", th_category: "Kategori", th_desc: "Açıklama", th_vendor: "Satıcı / Kaynak", th_invoice: "Fatura No",
-    th_net: "Net", th_vat: "KDV", th_other: "Diğer Vergi", th_total: "Toplam", th_files: "Dosya", th_actions: "İşlem",
+    th_net: "Net", th_vat: "KDV", th_other: "Diğer Vergi", th_tax_detail: "Net / KDV", th_total: "Toplam", th_files: "Dosya", th_actions: "İşlem",
     lbl_show: "Göster", th_when: "Zaman", th_who: "Kim", th_action: "İşlem", th_table: "Tablo", th_summary: "Özet",
     lbl_date: "Tarih", lbl_desc: "Açıklama", lbl_amount_mode: "Tutar Girişi", opt_excl: "KDV hariç", opt_incl: "KDV dahil",
     lbl_amount: "Tutar (₺)", lbl_vat_rate: "KDV Oranı (%)", lbl_vat_amount: "KDV Tutarı (₺)", lbl_other_tax: "Diğer Vergi / Stopaj (₺)",
-    lbl_total: "Toplam (₺)", lbl_pay: "Ödeme Yöntemi", lbl_attach: "Fatura / Dekont / Ekler", lbl_invoice: "Fatura / Dekont No",
+    lbl_total: "Toplam (₺)", lbl_pay: "Ödeme Yöntemi", lbl_bank: "Banka / Hesap", lbl_attach: "Fatura / Dekont / Ekler", lbl_invoice: "Fatura / Dekont No",
     btn_cancel: "İptal", btn_save: "Kaydet", btn_confirm: "Onayla", fm_title: "Dosyalar",
     pm_title: "Şifre Değiştir", lbl_new_pwd: "Yeni Şifre", lbl_new_pwd2: "Yeni Şifre (tekrar)", btn_change: "Değiştir",
     // --- dinamik ---
@@ -619,7 +645,7 @@ const I18N = {
     err_balance_required: "Bakiye tutarını girin.",
     err_name_required: "Ad Soyad girin.",
     role_tahir: "Yönetici · Tahir", role_eslem: "Yönetici · Eslem", req_by: "Talep eden:", note_lbl: "Not:",
-    csv_h: ["Tarih", "Tür", "Kategori", "Açıklama", "Satıcı/Kaynak", "Fatura No", "Net", "KDV Oranı %", "KDV", "Diğer Vergi", "Toplam", "Ödeme", "Dosya Sayısı"],
+    csv_h: ["Tarih", "Tür", "Kategori", "Açıklama", "Satıcı/Kaynak", "Fatura No", "Net", "KDV Oranı %", "KDV", "Diğer Vergi", "Toplam", "Ödeme", "Banka/Hesap", "Dosya Sayısı"],
   },
   en: {
     title: "Finance & Requests", btn_pwd: "Password", logout: "Log out", back_site: "← Main Site",
@@ -639,11 +665,11 @@ const I18N = {
     lbl_month: "Month", lbl_type: "Type", lbl_search: "Search", ph_search: "Description, vendor, invoice no...",
     btn_new_entry: "+ New Entry", btn_csv: "Download CSV",
     th_date: "Date", th_type: "Type", th_category: "Category", th_desc: "Description", th_vendor: "Vendor / Source", th_invoice: "Invoice No",
-    th_net: "Net", th_vat: "VAT", th_other: "Other Tax", th_total: "Total", th_files: "Files", th_actions: "Actions",
+    th_net: "Net", th_vat: "VAT", th_other: "Other Tax", th_tax_detail: "Net / VAT", th_total: "Total", th_files: "Files", th_actions: "Actions",
     lbl_show: "Show", th_when: "When", th_who: "Who", th_action: "Action", th_table: "Table", th_summary: "Summary",
     lbl_date: "Date", lbl_desc: "Description", lbl_amount_mode: "Amount Entry", opt_excl: "Excl. VAT", opt_incl: "Incl. VAT",
     lbl_amount: "Amount (₺)", lbl_vat_rate: "VAT Rate (%)", lbl_vat_amount: "VAT Amount (₺)", lbl_other_tax: "Other Tax / Withholding (₺)",
-    lbl_total: "Total (₺)", lbl_pay: "Payment Method", lbl_attach: "Invoice / Receipt / Attachments", lbl_invoice: "Invoice / Receipt No",
+    lbl_total: "Total (₺)", lbl_pay: "Payment Method", lbl_bank: "Bank / Account", lbl_attach: "Invoice / Receipt / Attachments", lbl_invoice: "Invoice / Receipt No",
     btn_cancel: "Cancel", btn_save: "Save", btn_confirm: "Approve", fm_title: "Files",
     pm_title: "Change Password", lbl_new_pwd: "New Password", lbl_new_pwd2: "New Password (repeat)", btn_change: "Change",
     lbl_vendor: "Vendor / Company", lbl_source: "Funding Source",
@@ -722,7 +748,7 @@ const I18N = {
     err_balance_required: "Enter the balance amount.",
     err_name_required: "Enter a full name.",
     role_tahir: "Admin · Tahir", role_eslem: "Admin · Eslem", req_by: "Requested by:", note_lbl: "Note:",
-    csv_h: ["Date", "Type", "Category", "Description", "Vendor/Source", "Invoice No", "Net", "VAT Rate %", "VAT", "Other Tax", "Total", "Payment", "File Count"],
+    csv_h: ["Date", "Type", "Category", "Description", "Vendor/Source", "Invoice No", "Net", "VAT Rate %", "VAT", "Other Tax", "Total", "Payment", "Bank/Account", "File Count"],
   },
 };
 
@@ -845,7 +871,7 @@ function buildCsv(entries) {
       e.entry_date, L('ty_' + e.entry_type), catLabel(e.category === null ? '' : e.category) === '—' ? '' : catLabel(e.category),
       e.description, e.vendor, e.invoice_no,
       csvNum(e.net_amount), csvNum(e.vat_rate), csvNum(e.vat_amount), csvNum(e.other_tax_amount), csvNum(e.total_amount),
-      payLabel(e.payment_method) === '—' ? '' : payLabel(e.payment_method), (e.attachments || []).length,
+      payLabel(e.payment_method) === '—' ? '' : payLabel(e.payment_method), e.bank_account || '', (e.attachments || []).length,
     ].map(csvCell).join(';'));
   }
   return '\ufeff' + lines.join('\r\n');
@@ -925,6 +951,7 @@ function fillStaticSelects() {
   if ($('rCategory')) $('rCategory').innerHTML = `<option value="">—</option>` + catOpts;
   if ($('eCategory')) { const dl = $('catList'); if (dl) dl.innerHTML = CATS.map(([v]) => `<option value="${esc(v)}">`).join(''); }
   if ($('ePay')) { const cur = $('ePay').value; $('ePay').innerHTML = `<option value="">—</option>` + payOpts; if (cur) $('ePay').value = cur; }
+  if ($('eBank')) { const cur = $('eBank').value; $('eBank').innerHTML = `<option value="">—</option>` + BANKS.map((b) => `<option value="${esc(b)}">${esc(b)}</option>`).join(''); if (cur) $('eBank').value = cur; }
   if ($('fType')) { const cur = $('fType').value; $('fType').innerHTML = `<option value="">${esc(L('ty_all'))}</option>` + typeOpts; $('fType').value = cur || ''; }
   if ($('eType')) { const cur = $('eType').value; $('eType').innerHTML = typeOpts; if (cur) $('eType').value = cur; onEntryTypeChange(); }
   if ($('reqFilter')) {
@@ -1354,7 +1381,7 @@ function openEntryModal(id) {
     $('eType').value = entry.entry_type; $('eDate').value = entry.entry_date; $('eCategory').value = entry.category || '';
     $('eDesc').value = entry.description || ''; $('eVendor').value = entry.vendor || ''; $('eInvoice').value = entry.invoice_no || '';
     $('eAmount').value = entry.net_amount; $('eRate').value = entry.vat_rate; $('eVat').value = entry.vat_amount; $('eVat').dataset.manual = '1';
-    $('eOther').value = entry.other_tax_amount; $('ePay').value = entry.payment_method || '';
+    $('eOther').value = entry.other_tax_amount; $('ePay').value = entry.payment_method || ''; $('eBank').value = entry.bank_account || '';
     entryExisting = (entry.attachments || []).slice();
   }
   onEntryTypeChange();
@@ -1377,7 +1404,7 @@ async function onEntrySubmit(e) {
       entry_type: $('eType').value, entry_date: $('eDate').value, category: $('eCategory').value.trim() || null,
       description: $('eDesc').value.trim(), vendor: $('eVendor').value.trim() || null, invoice_no: $('eInvoice').value.trim() || null,
       net_amount: r.net, vat_rate: r.rate, vat_amount: r.vat, other_tax_amount: r.other, total_amount: r.total,
-      payment_method: $('ePay').value || null, attachments,
+      payment_method: $('ePay').value || null, bank_account: $('eBank').value || null, attachments,
     };
     const q = editingEntryId ? sb.from('finance_entries').update(payload).eq('id', editingEntryId) : sb.from('finance_entries').insert(payload);
     const { error } = await q;
@@ -1550,18 +1577,24 @@ function filteredEntries() {
 }
 function renderLedger() {
   const rows = filteredEntries();
-  $('ledgerBody').innerHTML = !rows.length ? `<tr><td colspan="12" class="p-6 text-center text-slate-500">${esc(L('empty_entries'))}</td></tr>` :
+  $('ledgerBody').innerHTML = !rows.length ? `<tr><td colspan="9" class="p-6 text-center text-slate-500">${esc(L('empty_entries'))}</td></tr>` :
     rows.map((e) => `
     <tr class="hover:bg-slate-900/40">
       <td class="p-2.5 font-mono text-[11px]">${fmtDate(e.entry_date)}</td>
       <td class="p-2.5"><span class="px-1.5 py-0.5 rounded text-[10px] font-semibold ${e.entry_type === 'gelir' ? 'bg-emerald-500/15 text-emerald-300' : 'bg-red-500/15 text-red-300'}">${esc(L('ty_' + e.entry_type))}</span></td>
       <td class="p-2.5">${esc(catLabel(e.category))}</td>
       <td class="p-2.5 max-w-[220px] truncate" title="${esc(e.description)}">${esc(e.description)}</td>
-      <td class="p-2.5">${esc(e.vendor || '—')}</td>
-      <td class="p-2.5 font-mono text-[11px]">${esc(e.invoice_no || '—')}</td>
-      <td class="p-2.5 text-right font-mono">${money(e.net_amount)}</td>
-      <td class="p-2.5 text-right font-mono text-slate-400">${e.vat_amount ? money(e.vat_amount) : '—'}</td>
-      <td class="p-2.5 text-right font-mono text-slate-400">${e.other_tax_amount ? money(e.other_tax_amount) : '—'}</td>
+      <td class="p-2.5 max-w-[180px]">
+        <div class="truncate font-medium">${esc(e.vendor || '—')}</div>
+        <div class="flex items-center gap-1 mt-0.5 flex-wrap">
+          ${e.invoice_no ? `<span class="font-mono text-[10px] text-slate-500">#${esc(e.invoice_no)}</span>` : ''}
+          ${e.bank_account ? `<span class="px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700">${esc(e.bank_account)}</span>` : ''}
+        </div>
+      </td>
+      <td class="p-2.5 text-right text-[11px]">
+        <div class="font-mono">${money(e.net_amount)}</div>
+        ${e.vat_amount ? `<div class="font-mono text-slate-500">+${money(e.vat_amount)}</div>` : ''}
+      </td>
       <td class="p-2.5 text-right font-mono font-bold">${money(e.total_amount)}</td>
       <td class="p-2.5">${(e.attachments || []).length ? `<button data-act="showFiles" data-files='${esc(JSON.stringify(e.attachments))}' class="text-indigo-300 hover:underline">📎 ${e.attachments.length}</button>` : '—'}</td>
       <td class="p-2.5 text-right whitespace-nowrap">

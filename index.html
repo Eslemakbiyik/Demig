@@ -4,20 +4,48 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>demigproject - Proje Yönetim & İlerleme Portalı v5</title>
-<script src="https://cdn.tailwindcss.com" defer></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  // Krem / warm-beige tema: Tailwind'in "slate" skalasını ters çevirip
+  // sıcak krem-kahve tonlarıyla yeniden tanımlıyoruz. Sitede zaten
+  // yüzlerce yerde kullanılan bg-slate-900, text-slate-400, border-slate-800
+  // gibi sınıflar otomatik olarak krem temaya döner — tek satır değişiklik
+  // gerekmeden tüm arayüz güncellenir.
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          slate: {
+            50:  '#1C140F',
+            100: '#2A2017',
+            200: '#3B2E21',
+            300: '#55432F',
+            400: '#73603F',
+            500: '#948058',
+            600: '#B6A378',
+            700: '#D6C7A1',
+            800: '#E8DEC4',
+            900: '#F1E9D8',
+            950: '#FBF7EE'
+          }
+        }
+      }
+    }
+  };
+</script>
 <script src="https://unpkg.com/lucide@latest" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-  body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #f8fafc; }
-  .glass { background: rgba(26, 34, 52, 0.85); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.08); }
-  .glass-card { background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255, 255, 255, 0.08); }
+  body { font-family: 'Inter', sans-serif; background-color: #FBF7EE; color: #2A2017; }
+  .glass { background: rgba(255, 253, 248, 0.85); backdrop-filter: blur(14px); border: 1px solid rgba(85, 67, 47, 0.10); }
+  .glass-card { background: rgba(241, 233, 216, 0.75); border: 1px solid rgba(85, 67, 47, 0.10); }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #0b0f19; }
-  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-  .editable-input:focus { outline: 2px solid #6366f1; background: #1e293b; color: #ffffff; }
+  ::-webkit-scrollbar-track { background: #F1E9D8; }
+  ::-webkit-scrollbar-thumb { background: #D6C7A1; border-radius: 4px; }
+  .editable-input:focus { outline: 2px solid #6366f1; background: #E8DEC4; color: #2A2017; }
   /* Tailwind CDN bazen "flex/grid" sınıflarını "hidden" sınıfından sonra üretip onu geçersiz
      kılabiliyor; bu kural "hidden" sınıfının HER ZAMAN kazanmasını garanti eder. */
   .hidden { display: none !important; }
@@ -123,6 +151,9 @@
         <button onclick="switchTab('chat')" id="tab-chat" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
           <i data-lucide="message-circle" class="w-4 h-4"></i><span data-i18n="nav_chat">Ekip Sohbeti</span>
           <span id="chatUnreadBadge" class="hidden ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center"></span>
+        </button>
+        <button onclick="switchTab('meetings')" id="tab-meetings" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <i data-lucide="calendar-clock" class="w-4 h-4"></i><span data-i18n="nav_meetings">Toplantı Takvimi</span>
         </button>
         <a href="finans.html" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition">
           <i data-lucide="wallet" class="w-4 h-4"></i><span data-i18n="nav_finance">Finans & Talepler</span>
@@ -434,6 +465,61 @@
           </form>
         </div>
       </div>
+    </section>
+
+    <section id="view-meetings" class="hidden space-y-6">
+      <div class="glass p-6 rounded-2xl shadow-xl">
+        <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+          <i data-lucide="calendar-clock" class="w-5 h-5 text-indigo-400"></i><span data-i18n="meetings_title">Research Group Meeting Schedule</span>
+        </h2>
+        <p class="text-xs text-slate-400 mt-1" data-i18n="meetings_subtitle">Her Çarşamba 17:00–19:00 · 14 Ekim – 30 Aralık, Subgroup toplantılarıyla başlar.</p>
+        <div class="mt-4 flex flex-wrap items-center gap-3 text-xs">
+          <a href="https://sabanciuniv.zoom.us/j/96437394095" target="_blank" rel="noopener" class="inline-flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition">
+            <i data-lucide="video" class="w-4 h-4"></i><span data-i18n="meetings_zoom_btn">Sabit Zoom Linki</span>
+          </a>
+          <span class="text-slate-500 font-mono text-[11px]">sabanciuniv.zoom.us/j/96437394095</span>
+        </div>
+        <div class="mt-3 flex items-start space-x-2 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2.5">
+          <i data-lucide="info" class="w-4 h-4 shrink-0 mt-0.5"></i>
+          <span data-i18n="meetings_agenda_note">Eslem, Çarşamba sabahları toplantı gündem maddelerini toplar ve o gün hangi "ihtiyaç halinde" toplantılarının yapılacağıyla birlikte ekiple paylaşır.</span>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="p-3" data-i18n="meetings_th_time">Saat</th>
+                <th class="p-3" data-i18n="meetings_th_subgroup">Subgroup Hafta</th>
+                <th class="p-3" data-i18n="meetings_th_fullgroup">Full Group Hafta</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60">
+              <tr>
+                <td class="p-3 font-mono text-[11px] text-slate-400">17:00–17:30</td>
+                <td class="p-3" colspan="2" data-i18n="meetings_slot_1">Other Side Projects (ihtiyaç halinde) — Zeynep veya Helin</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono text-[11px] text-slate-400">17:30–18:00</td>
+                <td class="p-3" colspan="2" data-i18n="meetings_slot_2">Expert Survey — Ayşenur, Eslem</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono text-[11px] text-slate-400">18:00–18:30</td>
+                <td class="p-3" data-i18n="meetings_slot_3_sub">Synthetic Agents (Selim, Sena)</td>
+                <td class="p-3" data-i18n="meetings_slot_3_full">Full Group Meeting (Herkes)</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono text-[11px] text-slate-400">18:30–19:00</td>
+                <td class="p-3" data-i18n="meetings_slot_4_sub">Model Development (ihtiyaç halinde — Selim, Helin, Ahmet, Abdullatif)</td>
+                <td class="p-3" data-i18n="meetings_slot_4_full">Synthetic Agents (Selim, Sena)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="meetingWeeksContainer" class="space-y-3"></div>
     </section>
 
   </main>
@@ -929,6 +1015,28 @@ const I18N = {
     chat_dm_with: "ile özel sohbet",
     chat_feedback_label: "Hata Bildir / Öneri",
     chat_feedback_placeholder: "Karşılaştığınız hatayı, önerinizi veya şikayetinizi yazın...",
+    nav_meetings: "Toplantı Takvimi",
+    meetings_title: "Research Group Meeting Schedule",
+    meetings_subtitle: "Her Çarşamba 17:00–19:00 · 14 Ekim – 30 Aralık, Subgroup toplantılarıyla başlar.",
+    meetings_zoom_btn: "Sabit Zoom Linki",
+    meetings_agenda_note: "Eslem, Çarşamba sabahları toplantı gündem maddelerini toplar ve o gün hangi \"ihtiyaç halinde\" toplantılarının yapılacağıyla birlikte ekiple paylaşır.",
+    meetings_th_time: "Saat",
+    meetings_th_subgroup: "Subgroup Hafta",
+    meetings_th_fullgroup: "Full Group Hafta",
+    meetings_slot_1: "Other Side Projects (ihtiyaç halinde) — Zeynep veya Helin",
+    meetings_slot_2: "Expert Survey — Ayşenur, Eslem",
+    meetings_slot_3_sub: "Synthetic Agents (Selim, Sena)",
+    meetings_slot_3_full: "Full Group Meeting (Herkes)",
+    meetings_slot_4_sub: "Model Development (ihtiyaç halinde — Selim, Helin, Ahmet, Abdullatif)",
+    meetings_slot_4_full: "Synthetic Agents (Selim, Sena)",
+    meetings_week_subgroup_badge: "Subgroup Hafta",
+    meetings_week_fullgroup_badge: "Full Group Hafta",
+    meetings_recording_label: "Toplantı Kaydı (Video/Ses Linki)",
+    meetings_notes_label: "Toplantı Notları (Doküman Linki)",
+    meetings_action_label: "Aksiyon Takibi / To-Do",
+    meetings_link_placeholder: "https://...",
+    meetings_action_placeholder: "Bu hafta yapılacaklar / takip edilecek aksiyonlar...",
+    meetings_saved: "Kaydedildi",
   },
   en: {
     login_subtitle: "Sign in with your registered name or email",
@@ -1148,6 +1256,28 @@ const I18N = {
     chat_dm_with: "private chat with",
     chat_feedback_label: "Report Bug / Suggest",
     chat_feedback_placeholder: "Describe the bug, suggestion or complaint...",
+    nav_meetings: "Meeting Schedule",
+    meetings_title: "Research Group Meeting Schedule",
+    meetings_subtitle: "Every Wednesday, 17:00–19:00 · October 14 – December 30, starting with subgroup meetings.",
+    meetings_zoom_btn: "Standing Zoom Link",
+    meetings_agenda_note: "Eslem collects meeting items on Wednesday mornings and shares them with the group, including which 'when needed' meetings will take place that day.",
+    meetings_th_time: "Time",
+    meetings_th_subgroup: "Subgroup Weeks",
+    meetings_th_fullgroup: "Full Group Weeks",
+    meetings_slot_1: "Other Side Projects (when needed) — Zeynep or Helin",
+    meetings_slot_2: "Expert Survey — Ayşenur, Eslem",
+    meetings_slot_3_sub: "Synthetic Agents (Selim, Sena)",
+    meetings_slot_3_full: "Full Group Meeting (Everyone)",
+    meetings_slot_4_sub: "Model Development (when needed — Selim, Helin, Ahmet, Abdullatif)",
+    meetings_slot_4_full: "Synthetic Agents (Selim, Sena)",
+    meetings_week_subgroup_badge: "Subgroup Week",
+    meetings_week_fullgroup_badge: "Full Group Week",
+    meetings_recording_label: "Meeting Recording (Video/Audio Link)",
+    meetings_notes_label: "Meeting Notes (Document Link)",
+    meetings_action_label: "Action Tracking / To-Do",
+    meetings_link_placeholder: "https://...",
+    meetings_action_placeholder: "This week's actions / things to follow up on...",
+    meetings_saved: "Saved",
   }
 };
 
@@ -2854,7 +2984,7 @@ function closeSidebar() {
 }
 
 function switchTab(tab) {
-  ['diagrams', 'roadmap', 'tasks', 'people', 'dashboard', 'attendance', 'chat'].forEach(t => {
+  ['diagrams', 'roadmap', 'tasks', 'people', 'dashboard', 'attendance', 'chat', 'meetings'].forEach(t => {
     document.getElementById('view-' + t).classList.add('hidden');
     document.getElementById('tab-' + t).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-white hover:bg-slate-800 transition";
   });
@@ -2863,6 +2993,110 @@ function switchTab(tab) {
   closeSidebar();
   if (tab === 'attendance') renderAttendanceTable();
   if (tab === 'chat') { populateChatPersonList(); loadChatMessages(); if (!tourActive) markChatAsRead(); }
+  if (tab === 'meetings') renderMeetingsSection();
+}
+
+// =====================================================================
+// TOPLANTI TAKVİMİ (RESEARCH GROUP MEETING SCHEDULE & RECORDS)
+// =====================================================================
+const MEETING_WEEKS = [
+  { date: '2025-10-14', type: 'sub' },
+  { date: '2025-10-21', type: 'full' },
+  { date: '2025-10-28', type: 'sub' },
+  { date: '2025-11-04', type: 'full' },
+  { date: '2025-11-11', type: 'sub' },
+  { date: '2025-11-18', type: 'full' },
+  { date: '2025-11-25', type: 'sub' },
+  { date: '2025-12-02', type: 'full' },
+  { date: '2025-12-09', type: 'sub' },
+  { date: '2025-12-16', type: 'full' },
+  { date: '2025-12-23', type: 'sub' },
+  { date: '2025-12-30', type: 'full' }
+];
+let meetingRecords = {}; // { '2025-10-14': { recording_link, notes_link, action_text } }
+
+async function loadMeetingRecords() {
+  if (!supabaseClient) {
+    meetingRecords = JSON.parse(localStorage.getItem('demigproject_meetings_v1')) || {};
+    return;
+  }
+  const { data, error } = await supabaseClient.from('meeting_records').select('*');
+  if (error) { console.error('Toplantı kayıtları okunamadı:', error); meetingRecords = {}; return; }
+  meetingRecords = {};
+  (data || []).forEach(row => { meetingRecords[row.week_date] = row; });
+}
+
+async function persistMeetingRecord(weekDate) {
+  const rec = meetingRecords[weekDate] || {};
+  if (!supabaseClient) {
+    localStorage.setItem('demigproject_meetings_v1', JSON.stringify(meetingRecords));
+    return;
+  }
+  const row = {
+    week_date: weekDate,
+    recording_link: rec.recording_link || null,
+    notes_link: rec.notes_link || null,
+    action_text: rec.action_text || null,
+    updated_by: currentUser ? currentUser.name : null
+  };
+  const { error } = await supabaseClient.from('meeting_records').upsert(row);
+  if (error) console.error('Toplantı kaydı kaydedilemedi:', error);
+}
+
+function updateMeetingField(weekDate, key, val) {
+  if (!meetingRecords[weekDate]) meetingRecords[weekDate] = { week_date: weekDate };
+  meetingRecords[weekDate][key] = val;
+  persistMeetingRecord(weekDate);
+}
+
+function escHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function formatMeetingDate(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+async function renderMeetingsSection() {
+  await loadMeetingRecords();
+  const container = document.getElementById('meetingWeeksContainer');
+  if (!container) return;
+  container.innerHTML = MEETING_WEEKS.map(w => {
+    const rec = meetingRecords[w.date] || {};
+    const badge = w.type === 'sub'
+      ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${translate('meetings_week_subgroup_badge')}</span>`
+      : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">${translate('meetings_week_fullgroup_badge')}</span>`;
+    return `
+      <div class="glass rounded-2xl p-5 border border-slate-800 shadow-xl">
+        <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
+          <h3 class="text-sm font-bold text-white">${formatMeetingDate(w.date)}</h3>
+          ${badge}
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_recording_label')}</label>
+            <input type="url" value="${escHtml(rec.recording_link || '')}" placeholder="${translate('meetings_link_placeholder')}"
+              onchange="updateMeetingField('${w.date}', 'recording_link', this.value)"
+              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-white editable-input focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_notes_label')}</label>
+            <input type="url" value="${escHtml(rec.notes_link || '')}" placeholder="${translate('meetings_link_placeholder')}"
+              onchange="updateMeetingField('${w.date}', 'notes_link', this.value)"
+              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-white editable-input focus:outline-none focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_action_label')}</label>
+            <textarea rows="1" placeholder="${translate('meetings_action_placeholder')}"
+              onchange="updateMeetingField('${w.date}', 'action_text', this.value)"
+              class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-white editable-input focus:outline-none focus:border-indigo-500">${escHtml(rec.action_text || '')}</textarea>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  lucide.createIcons();
 }
 
 function populateModalAssignees() {
