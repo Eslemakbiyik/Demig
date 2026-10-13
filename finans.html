@@ -6,6 +6,7 @@
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
 <title>DEMIG · Finans & Talepler</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   // DEMIG kurumsal tema: index.html ile aynı palet (bkz. oradaki yorum).
@@ -109,7 +110,7 @@
       <p class="text-[11px] text-slate-400 mb-4 leading-relaxed" data-i18n="auth_note">Bu bölüm ana sitedeki girişten bağımsızdır ve gerçek bir hesap (e-posta + şifre) ister.</p>
       <div class="flex gap-2 mb-4">
         <button data-act="authTab" data-tab="login" id="authTabLogin" class="tabbtn active flex-1" data-i18n="tab_login">Giriş Yap</button>
-        <button data-act="authTab" data-tab="signup" id="authTabSignup" class="tabbtn flex-1" data-i18n="tab_signup">Hesap Oluştur</button>
+        <button data-act="authTab" data-tab="signup" id="authTabSignup" class="hidden"></button>
       </div>
       <form id="authForm" class="space-y-3" autocomplete="on">
         <div id="authNameWrap" class="hidden">
@@ -128,6 +129,8 @@
         </div>
         <div id="authMsg" class="hidden text-[11px] rounded-lg px-3 py-2"></div>
         <button id="authSubmit" type="submit" class="btn btn-primary w-full" data-i18n="btn_login">Giriş Yap</button>
+        <button type="button" id="authForgot" class="w-full text-center text-[11px] text-indigo-400 hover:text-slate-100">Şifremi unuttum</button>
+        <p class="text-[10px] text-slate-500 leading-relaxed">Hesabınız ana sitedeki (demigproject) hesabınızla aynıdır. Ana sitede giriş yaptıysanız burada otomatik giriş yapılır. Hesabınız yoksa önce ana sitede "İlk Kez Giriş" ile şifre belirleyin.</p>
       </form>
     </div>
   </section>
@@ -135,9 +138,9 @@
   <!-- ========== DAVET KODU ========== -->
   <section id="view-join" class="hidden max-w-md mx-auto">
     <div class="glass rounded-2xl p-6 shadow-2xl">
-      <h2 class="text-lg font-bold mb-1 flex items-center gap-2"><i data-lucide="key-round" class="w-5 h-5 text-indigo-400"></i><span data-i18n="join_title">Davet Kodu</span></h2>
-      <p class="text-[11px] text-slate-400 mb-4 leading-relaxed" data-i18n="join_desc">Harcama talebi oluşturabilmek için ekip davet kodunu girin.</p>
-      <form id="joinForm" class="space-y-3">
+      <h2 class="text-lg font-bold mb-1 flex items-center gap-2"><i data-lucide="shield-off" class="w-5 h-5 text-red-400"></i><span>Erişim yok</span></h2>
+      <p class="text-[11px] text-slate-400 mb-2 leading-relaxed">Bu hesap aktif proje ekibinde görünmüyor ya da pasif (OFF) durumda; harcama talebi oluşturulamaz. Bunun bir hata olduğunu düşünüyorsanız proje yöneticileriyle iletişime geçin.</p>
+      <form id="joinForm" class="space-y-3 hidden">
         <div>
           <label class="lbl" for="joinCode" data-i18n="lbl_code">Davet Kodu</label>
           <input id="joinCode" type="password" required autocomplete="off" class="fld">
@@ -264,7 +267,10 @@
     <div id="adm-staffplan" class="hidden space-y-4">
       <div class="glass rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
         <p class="text-[11px] text-slate-400" data-i18n="sp_desc">Ekip üyelerinin aylık ödeme planı ve kaynağı. Bu bölüm sadece yöneticilere görünür.</p>
-        <button data-act="newStaffPlan" class="btn btn-primary" data-i18n="btn_new_person">+ Personel Ekle</button>
+        <div class="flex gap-2">
+          <button data-act="exportStaffPlan" class="btn btn-ghost">Excel'e Aktar</button>
+          <button data-act="newStaffPlan" class="btn btn-primary" data-i18n="btn_new_person">+ Personel Ekle</button>
+        </div>
       </div>
       <div class="glass rounded-2xl overflow-hidden">
         <div class="overflow-x-auto">
@@ -276,6 +282,15 @@
           </table>
         </div>
       </div>
+      <details id="staffArchiveWrap" class="glass rounded-2xl overflow-hidden hidden">
+        <summary class="cursor-pointer p-4 text-sm font-semibold text-slate-300 flex items-center justify-between list-none"><span>📦 Arşiv <span id="staffArchiveCount" class="text-[11px] text-slate-500"></span></span><span class="text-slate-500">▾</span></summary>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="bg-slate-900/90 text-slate-500 uppercase tracking-wider text-[10px]"><tr id="staffArchiveHeaderRow"></tr></thead>
+            <tbody id="staffArchiveBody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+      </details>
     </div>
 
     <!-- Katılım Hesabı -->
@@ -999,6 +1014,7 @@ async function init() {
 
   sb.auth.onAuthStateChange((event, s) => {
     session = s;
+    if (event === 'PASSWORD_RECOVERY') {}
     if (event === 'SIGNED_OUT') { resetIdle(false); showAuthView(); }
   });
 
@@ -1013,9 +1029,11 @@ async function init() {
 // olarak sunar — sadece yazma kolaylığı, giriş yine şifre gerektirir.
 async function populateKnownEmailsList() {
   try {
-    const { data: rows } = await sb.from('people').select('email');
     const dl = document.getElementById('knownEmailsList');
-    if (!dl || !rows) return;
+    if (!dl) return;
+    // login_roster: yalnızca AKTİF ve giriş yetkili ana ekip üyelerini döndürür (giriş yapmadan çağrılabilir)
+    const { data: rows } = await sb.rpc('login_roster');
+    if (!rows) return;
     const emails = [...new Set(rows.map((r) => r.email).filter(Boolean))];
     dl.innerHTML = emails.map((e) => `<option value="${esc(e)}"></option>`).join('');
   } catch (e) { /* sessizce geç — bu sadece bir kolaylık özelliği */ }
@@ -1056,6 +1074,8 @@ function bindStaticEvents() {
     else if (act === 'newStaffPlan') openStaffPlanModal(null);
     else if (act === 'editStaffPlan') openStaffPlanModal(btn.getAttribute('data-id'));
     else if (act === 'deleteStaffPlan') deleteStaffPlan(btn.getAttribute('data-id'));
+    else if (act === 'toggleStaffActive') toggleStaffActive(btn.getAttribute('data-id'));
+    else if (act === 'exportStaffPlan') exportStaffPlanExcel();
     else if (act === 'addStaffMonth') addStaffMonthRow('', '');
     else if (act === 'removeStaffMonth') btn.closest('.sp-month-row').remove();
     else if (act === 'newPartEntry') openPartModal(null);
@@ -1068,6 +1088,7 @@ function bindStaticEvents() {
   ['click', 'keydown', 'scroll'].forEach((ev) => document.addEventListener(ev, resetIdle, { passive: true }));
 
   $('authForm').addEventListener('submit', onAuthSubmit);
+  $('authForgot').addEventListener('click', onForgotPassword);
   $('joinForm').addEventListener('submit', onJoinSubmit);
   $('reqForm').addEventListener('submit', onReqSubmit);
   $('entryForm').addEventListener('submit', onEntrySubmit);
@@ -1140,6 +1161,10 @@ async function onAuthSubmit(e) {
     }
   } catch (err) { showMsg('authMsg', friendlyError(err), 'error'); }
   finally { btn.disabled = false; }
+}
+
+async function onForgotPassword() {
+  showMsg('authMsg', 'Şifrenizi ana sitedeki girişte "Şifremi unuttum" ile (ekip koduyla) sıfırlayabilirsiniz; aynı şifre burada da geçerlidir.', 'warn');
 }
 
 async function doLogout() {
@@ -1725,39 +1750,92 @@ function allStaffMonthKeys() {
   allStaffPlan.forEach((p) => Object.keys(p.monthly_amounts || {}).forEach((k) => set.add(k)));
   return Array.from(set).sort();
 }
-function renderStaffPlan() {
-  const months = allStaffMonthKeys();
-  const headerRow = $('staffPlanHeaderRow');
-  headerRow.innerHTML = `
+function staffIsActive(p) { return p.active !== false; }
+function staffHeaderHTML(months) {
+  return `
     <th class="p-3 sticky left-0 bg-slate-900/90 z-10">${esc(L('th_person'))}</th>
     <th class="p-3">${esc(L('sp_source'))}</th>
     <th class="p-3">${esc(L('sp_note'))}</th>
     ${months.map((m) => `<th class="p-3 text-right whitespace-nowrap">${esc(monthKeyLabel(m))}</th>`).join('')}
     <th class="p-3 text-right">${esc(L('sp_total'))}</th>
-    <th class="p-3 text-right">${esc(L('th_actions'))}</th>
-  `;
-
-  const body = $('staffPlanBody');
-  if (!allStaffPlan.length) {
-    body.innerHTML = `<tr><td colspan="${4 + months.length}" class="p-6 text-center text-slate-500">${esc(L('sp_empty'))}</td></tr>`;
-    return;
-  }
-  body.innerHTML = allStaffPlan.map((p) => {
-    const amounts = p.monthly_amounts || {};
-    const total = months.reduce((s, m) => s + num(amounts[m]), 0) + num(p.lump_sum_amount);
-    return `
-      <tr class="hover:bg-slate-900/40">
+    <th class="p-3 text-center">Durum</th>
+    <th class="p-3 text-right">${esc(L('th_actions'))}</th>`;
+}
+function staffRowHTML(p, months, archived) {
+  const amounts = p.monthly_amounts || {};
+  const total = months.reduce((s, m) => s + num(amounts[m]), 0) + num(p.lump_sum_amount);
+  const on = staffIsActive(p);
+  return `
+      <tr class="hover:bg-slate-900/40 ${archived ? 'opacity-50' : ''}">
         <td class="p-3 font-semibold text-slate-100 sticky left-0 bg-slate-950/90">${esc(p.person_name)}</td>
         <td class="p-3 text-slate-300">${esc(p.payment_source || '—')}</td>
         <td class="p-3 text-slate-400 max-w-[200px] truncate" title="${esc(p.note || '')}">${esc(p.note || '—')}</td>
         ${months.map((m) => `<td class="p-3 text-right font-mono text-[11px] ${amounts[m] ? 'text-slate-200' : 'text-slate-600'}">${amounts[m] ? money(amounts[m]) : '—'}</td>`).join('')}
         <td class="p-3 text-right font-mono font-bold">${money(total)}</td>
+        <td class="p-3 text-center"><button data-act="toggleStaffActive" data-id="${p.id}" title="${on ? 'Arşive taşımak için OFF yap' : 'Tekrar aktif et'}" class="px-2 py-0.5 rounded-full border text-[10px] font-bold ${on ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300' : 'bg-slate-800 border-slate-600 text-slate-400'}">${on ? 'ON' : 'OFF'}</button></td>
         <td class="p-3 text-right whitespace-nowrap">
           <button data-act="editStaffPlan" data-id="${p.id}" class="text-slate-400 hover:text-slate-100 px-1" title="${esc(L('btn_edit'))}">✏️</button>
           <button data-act="deleteStaffPlan" data-id="${p.id}" class="text-slate-400 hover:text-red-400 px-1" title="${esc(L('btn_delete'))}">🗑️</button>
         </td>
       </tr>`;
-  }).join('');
+}
+function renderStaffPlan() {
+  const months = allStaffMonthKeys();
+  $('staffPlanHeaderRow').innerHTML = staffHeaderHTML(months);
+  $('staffArchiveHeaderRow').innerHTML = staffHeaderHTML(months);
+  const act = allStaffPlan.filter(staffIsActive), arch = allStaffPlan.filter((p) => !staffIsActive(p));
+  const body = $('staffPlanBody');
+  body.innerHTML = act.length
+    ? act.map((p) => staffRowHTML(p, months, false)).join('')
+    : `<tr><td colspan="${6 + months.length}" class="p-6 text-center text-slate-500">${esc(L('sp_empty'))}</td></tr>`;
+  $('staffArchiveWrap').classList.toggle('hidden', !arch.length);
+  $('staffArchiveCount').textContent = arch.length ? `(${arch.length})` : '';
+  $('staffArchiveBody').innerHTML = arch.map((p) => staffRowHTML(p, months, true)).join('');
+}
+async function toggleStaffActive(id) {
+  const p = allStaffPlan.find((x) => x.id === id);
+  if (!p) return;
+  const turnOn = !staffIsActive(p);
+  const today = new Date().toISOString().slice(0, 10);
+  const log = Array.isArray(p.status_log) ? p.status_log.slice() : [];
+  log.push({ event: turnOn ? 'on' : 'off', date: today });
+  const payload = { active: turnOn, status_log: log };
+  if (turnOn) {
+    // tekrar ON: listenin en üstüne çık. Ara verilen aylar boş kalır, dönülen aydan itibaren ödeme girilir.
+    const minOrder = allStaffPlan.reduce((m, x) => Math.min(m, num(x.sort_order)), 0);
+    payload.sort_order = minOrder - 1;
+  }
+  try {
+    const { error } = await sb.from('finance_staff_plan').update(payload).eq('id', id);
+    if (error) throw error;
+    toast(turnOn ? 'Aktif edildi' : 'Arşive taşındı');
+    await loadAdminData();
+  } catch (err) { toast(friendlyError(err), 'error'); }
+}
+function exportStaffPlanExcel() {
+  const months = allStaffMonthKeys();
+  const head = ['Ad Soyad', 'Ödeme Kaynağı', 'Not', 'Durum'].concat(months.map(monthKeyLabel), ['Toplu Ödeme (₺)', 'Toplam (₺)']);
+  const rowsOf = (list) => list.map((p) => {
+    const a = p.monthly_amounts || {};
+    const total = months.reduce((s, m) => s + num(a[m]), 0) + num(p.lump_sum_amount);
+    return [p.person_name, p.payment_source || '', p.note || '', staffIsActive(p) ? 'ON' : 'OFF (Arşiv)']
+      .concat(months.map((m) => (a[m] ? num(a[m]) : '')), [p.lump_sum_amount != null ? num(p.lump_sum_amount) : '', total]);
+  });
+  const act = allStaffPlan.filter(staffIsActive), arch = allStaffPlan.filter((p) => !staffIsActive(p));
+  const logRows = [['Ad Soyad', 'Olay', 'Tarih']];
+  allStaffPlan.forEach((p) => (Array.isArray(p.status_log) ? p.status_log : []).forEach((l) => logRows.push([p.person_name, l.event === 'on' ? 'ON' : 'OFF', l.date])));
+  const name = 'Personel_Odeme_Plani_' + new Date().toISOString().slice(0, 10);
+  if (window.XLSX) {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([head].concat(rowsOf(act), arch.length ? [[]] : [], rowsOf(arch)));
+    ws['!cols'] = head.map((h, i) => ({ wch: i === 0 ? 28 : i < 3 ? 22 : 13 }));
+    XLSX.utils.book_append_sheet(wb, ws, 'Ödeme Planı');
+    if (logRows.length > 1) XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(logRows), 'Durum Geçmişi');
+    XLSX.writeFile(wb, name + '.xlsx');
+  } else {
+    const csv = [head].concat(rowsOf(act), rowsOf(arch)).map((r) => r.map((c) => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(';')).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })); a.download = name + '.csv'; a.click();
+  }
 }
 function addStaffMonthRow(key, value) {
   const box = $('spMonthRows');
