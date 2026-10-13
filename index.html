@@ -109,6 +109,20 @@
 </head>
 <body class="min-h-screen flex bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
 
+<div id="chgPwModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+  <div class="glass p-6 rounded-2xl w-full max-w-sm border border-slate-700 shadow-2xl space-y-3">
+    <h3 class="text-sm font-bold text-slate-100">Şifre Değiştir</h3>
+    <input type="password" id="chgPwOld" placeholder="Mevcut şifre" autocomplete="current-password" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
+    <input type="password" id="chgPwNew" placeholder="Yeni şifre (en az 6 karakter)" autocomplete="new-password" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
+    <input type="password" id="chgPwNew2" placeholder="Yeni şifre (tekrar)" autocomplete="new-password" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
+    <p id="chgPwMsg" class="text-xs"></p>
+    <div class="flex justify-end space-x-3 pt-2 border-t border-slate-800">
+      <button onclick="document.getElementById('chgPwModal').classList.add('hidden')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg">Kapat</button>
+      <button onclick="changePassword()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg">Değiştir</button>
+    </div>
+  </div>
+</div>
+
 <div id="statusModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
   <div class="glass p-6 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl">
     <h3 id="statusModalTitle" class="text-sm font-bold text-slate-100 mb-4">Durum Değiştir</h3>
@@ -188,7 +202,8 @@
       </div>
       <p id="authMsg" class="hidden text-xs rounded-lg px-3 py-2"></p>
       <button type="submit" id="authSubmitBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-lg shadow-lg shadow-indigo-600/30 transition duration-200 mt-2">Sisteme Giriş Yap</button>
-      <button type="button" id="authForgotBtn" onclick="handleForgotPassword()" class="w-full text-center text-xs text-indigo-400 hover:text-slate-100">Şifremi unuttum</button>
+      <button type="button" id="authForgotBtn" onclick="setAuthMode('reset')" class="w-full text-center text-xs text-indigo-400 hover:text-slate-100">Şifremi unuttum (mailsiz sıfırla)</button>
+      <button type="button" id="authBackBtn" onclick="setAuthMode('login')" class="hidden w-full text-center text-xs text-slate-400 hover:text-slate-100">← Girişe dön</button>
     </form>
   </div>
 </div>
@@ -251,7 +266,8 @@
           <div id="currentUserDisplay" class="text-xs font-semibold text-slate-100 truncate">...</div>
           <div id="currentEmailDisplay" class="text-[10px] text-slate-400 truncate">...</div>
         </div>
-        <button onclick="logout()" id="logoutIconBtn" data-i18n-title="sidebar_logout_short" title="Çıkış Yap" class="p-1.5 text-slate-500 hover:text-red-500 bg-slate-900 rounded-lg hover:bg-slate-700 transition shrink-0">
+        <button onclick="openChangePassword()" title="Şifre değiştir" class="p-1.5 text-slate-400 hover:text-slate-100 shrink-0"><i data-lucide="key-round" class="w-4 h-4"></i></button>
+      <button onclick="logout()" id="logoutIconBtn" data-i18n-title="sidebar_logout_short" title="Çıkış Yap" class="p-1.5 text-slate-500 hover:text-red-500 bg-slate-900 rounded-lg hover:bg-slate-700 transition shrink-0">
           <i data-lucide="log-out" class="w-4 h-4"></i>
         </button>
       </div>
@@ -2613,17 +2629,19 @@ function showAuthMsg(msg, isErr) {
 
 function setAuthMode(mode) {
   authMode = mode;
-  const login = mode === 'login', signup = mode === 'signup', rec = mode === 'recovery';
+  const login = mode === 'login', signup = mode === 'signup', rec = mode === 'recovery', reset = mode === 'reset';
   document.getElementById('authTabs').classList.toggle('hidden', rec);
   document.getElementById('authNameRow').classList.toggle('hidden', rec);
   document.getElementById('userName').required = !rec;
   document.getElementById('authPw2Row').classList.toggle('hidden', login);
-  document.getElementById('authCodeRow').classList.toggle('hidden', !signup);
+  document.getElementById('authCodeRow').classList.toggle('hidden', !(signup || reset));
   document.getElementById('authForgotBtn').classList.toggle('hidden', !login);
   document.getElementById('authPwLabel').innerText = login ? 'Şifre' : 'Yeni Şifre (en az 6 karakter)';
+  document.getElementById('authBackBtn').classList.toggle('hidden', !reset);
   document.getElementById('authPassword').autocomplete = login ? 'current-password' : 'new-password';
-  document.getElementById('authSubmitBtn').innerText = login ? 'Sisteme Giriş Yap' : (signup ? 'Hesap Oluştur ve Giriş Yap' : 'Yeni Şifreyi Kaydet');
+  document.getElementById('authSubmitBtn').innerText = login ? 'Sisteme Giriş Yap' : (signup ? 'Hesap Oluştur ve Giriş Yap' : (reset ? 'Şifreyi Sıfırla ve Giriş Yap' : 'Yeni Şifreyi Kaydet'));
   const on = 'bg-indigo-600 text-white', off = 'text-slate-300 hover:bg-slate-800';
+  document.getElementById('authTabs').classList.toggle('hidden', rec || reset);
   document.getElementById('authTabLogin').className = 'flex-1 py-2 transition ' + (login ? on : off);
   document.getElementById('authTabSignup').className = 'flex-1 py-2 transition ' + (signup ? on : off);
   showAuthMsg('');
@@ -2722,6 +2740,20 @@ async function handleLogin(e) {
     }
     const person = loginRoster.find(p => p.id === document.getElementById('userName').value);
     if (!person) throw new Error('Lütfen adınızı seçin.');
+    if (authMode === 'reset') {
+      if (pw.length < 6) throw new Error('Şifre en az 6 karakter olmalı.');
+      if (pw !== document.getElementById('authPassword2').value) throw new Error('Şifreler aynı değil.');
+      const code = document.getElementById('authInviteCode').value.trim();
+      if (!code) throw new Error('Ekip kodunu girin.');
+      const { data, error } = await supabaseClient.functions.invoke('reset-password', { body: { person_id: person.id, code, new_password: pw } });
+      if (error) throw new Error((data && data.error) || 'Şifre sıfırlanamadı. Sıfırlama fonksiyonunun kurulu olduğundan emin olun.');
+      if (data && data.ok === false) throw new Error(data.error);
+      const r = await supabaseClient.auth.signInWithPassword({ email: person.email.trim().toLowerCase(), password: pw });
+      if (r.error) throw r.error;
+      document.getElementById('authPassword').value = ''; document.getElementById('authInviteCode').value = '';
+      await enterApp(person.email);
+      return;
+    }
     const email = person.email.trim().toLowerCase();
     if (authMode === 'signup') {
       if (pw.length < 6) throw new Error('Şifre en az 6 karakter olmalı.');
@@ -2748,12 +2780,24 @@ async function handleLogin(e) {
   }
 }
 
-async function handleForgotPassword() {
-  const person = loginRoster.find(p => p.id === document.getElementById('userName').value);
-  if (!person) { showAuthMsg('Önce yukarıdan adınızı seçin.', true); return; }
-  const { error } = await supabaseClient.auth.resetPasswordForEmail(person.email.trim().toLowerCase(), { redirectTo: location.origin + location.pathname });
-  if (error) { showAuthMsg(authErrText(error), true); return; }
-  showAuthMsg('Şifre sıfırlama bağlantısı ' + person.email + ' adresine gönderildi. Maildeki bağlantıya tıklayınca yeni şifre belirleyebilirsiniz.', false);
+function openChangePassword() {
+  ['chgPwOld', 'chgPwNew', 'chgPwNew2'].forEach(i => { document.getElementById(i).value = ''; });
+  document.getElementById('chgPwMsg').innerText = '';
+  document.getElementById('chgPwModal').classList.remove('hidden');
+}
+
+async function changePassword() {
+  const msg = document.getElementById('chgPwMsg');
+  const setMsg = (t, ok) => { msg.innerText = t; msg.className = 'text-xs ' + (ok ? 'text-emerald-400' : 'text-red-400'); };
+  const o = document.getElementById('chgPwOld').value, n = document.getElementById('chgPwNew').value, n2 = document.getElementById('chgPwNew2').value;
+  if (n.length < 6) return setMsg('Yeni şifre en az 6 karakter olmalı.');
+  if (n !== n2) return setMsg('Yeni şifreler aynı değil.');
+  const chk = await supabaseClient.auth.signInWithPassword({ email: currentUser.email.trim().toLowerCase(), password: o });
+  if (chk.error) return setMsg('Mevcut şifre hatalı.');
+  const { error } = await supabaseClient.auth.updateUser({ password: n });
+  if (error) return setMsg(error.message);
+  setMsg('Şifre değiştirildi.', true);
+  setTimeout(() => document.getElementById('chgPwModal').classList.add('hidden'), 1200);
 }
 
 async function logout() {

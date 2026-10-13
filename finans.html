@@ -1014,7 +1014,7 @@ async function init() {
 
   sb.auth.onAuthStateChange((event, s) => {
     session = s;
-    if (event === 'PASSWORD_RECOVERY') setTimeout(() => { openModal('pwdModal'); showMsg('pwdMsg', 'Yeni şifrenizi belirleyin.', 'warn'); }, 400);
+    if (event === 'PASSWORD_RECOVERY') {}
     if (event === 'SIGNED_OUT') { resetIdle(false); showAuthView(); }
   });
 
@@ -1164,13 +1164,7 @@ async function onAuthSubmit(e) {
 }
 
 async function onForgotPassword() {
-  const email = $('authEmail').value.trim().toLowerCase();
-  if (!email) return showMsg('authMsg', 'Önce e-posta adresinizi yazın (veya listeden seçin).', 'error');
-  try {
-    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
-    if (error) throw error;
-    showMsg('authMsg', 'Şifre sıfırlama bağlantısı gönderildi (adres kayıtlıysa). Maildeki bağlantıya tıklayarak yeni şifre belirleyin.', 'warn');
-  } catch (err) { showMsg('authMsg', friendlyError(err), 'error'); }
+  showMsg('authMsg', 'Şifrenizi ana sitedeki girişte "Şifremi unuttum" ile (ekip koduyla) sıfırlayabilirsiniz; aynı şifre burada da geçerlidir.', 'warn');
 }
 
 async function doLogout() {
