@@ -1975,6 +1975,7 @@ async function loadPendingMeetingActionItems() {
 // Tek tek onaylarken 30 sn bekleyip biriken maddeleri kişi+toplantı bazında birleştirir.
 let notifyQueue = [], notifyTimer = null;
 function queueMeetingNotify(item, personId) {
+  if (item.week_date < MEETING_NOTIFY_FROM) return; // eski toplantı: mail yok
   notifyQueue.push({ week_date: item.week_date, personId, text: item.raw_text });
   clearTimeout(notifyTimer);
   notifyTimer = setTimeout(flushMeetingNotify, 30000);
@@ -2795,7 +2796,12 @@ async function handleLogin(e) {
       const code = document.getElementById('authInviteCode').value.trim();
       if (!code) throw new Error('Ekip kodunu girin.');
       const { data, error } = await supabaseClient.functions.invoke('reset-password', { body: { person_id: person.id, code, new_password: pw } });
-      if (error) throw new Error((data && data.error) || 'Şifre sıfırlanamadı. Sıfırlama fonksiyonunun kurulu olduğundan emin olun.');
+      if (error) {
+        let detail = '';
+        try { const j = await error.context.json(); detail = j.error || j.message || ''; } catch (e) {}
+        if (/not found|NOT_FOUND/i.test(detail) || (error.context && error.context.status === 404 && !detail)) detail = 'reset-password fonksiyonu Supabase\'e kurulmamış (supabase functions deploy reset-password --no-verify-jwt).';
+        throw new Error(detail || (data && data.error) || 'Şifre sıfırlanamadı: ' + error.message);
+      }
       if (data && data.ok === false) throw new Error(data.error);
       const r = await supabaseClient.auth.signInWithPassword({ email: person.email.trim().toLowerCase(), password: pw });
       if (r.error) throw r.error;
@@ -3870,7 +3876,7 @@ async function generateAIExecutiveReport() {
       if (recs.length || acts.length) {
         const recRows = recs.map(r => `<tr><td style="white-space:nowrap">${E(formatMeetingDate(r.week_date))}</td><td>${E(trackLabel(r.track_id))}</td><td>${E(r.action_text || '-')}${r.notes_link ? `<br><span class="muted">Not: ${E(r.notes_link)}</span>` : ''}${r.recording_link ? `<br><span class="muted">Kayıt: ${E(r.recording_link)}</span>` : ''}</td></tr>`).join('');
         const actRows = acts.map(a => { const p = registeredPeople.find(x => x.id === a.confirmed_person_id); return `<tr><td style="white-space:nowrap">${E(formatMeetingDate(a.week_date))}</td><td>${E(p ? p.name : '-')}</td><td>${E(a.raw_text)}</td></tr>`; }).join('');
-        meetingHTML = `<h2>${personRows ? 6 : 5}. Toplantı Notları</h2>` +
+        meetingHTML = `<h2>${personRows ? 4 : 3}. Toplantı Notları</h2>` +
           (recRows ? `<table><thead><tr><th style="width:16%">Tarih</th><th style="width:26%">Görüşme</th><th>Notlar / Aksiyonlar</th></tr></thead><tbody>${recRows}</tbody></table>` : '') +
           (actRows ? `<div style="font-size:11px;font-weight:700;margin:10px 0 2px">Toplantılardan atanan görevler</div><table><thead><tr><th style="width:16%">Tarih</th><th style="width:24%">Sorumlu</th><th>Görev</th></tr></thead><tbody>${actRows}</tbody></table>` : '');
       }
@@ -3900,16 +3906,10 @@ async function generateAIExecutiveReport() {
     </div>
     <p style="font-size:11px;margin:0">Rapor dönemi içinde ${filteredTasks.length} görev incelenmiştir; ${doneTasks} görev tamamlanmış, ${filteredTasks.length - doneTasks} görev devam etmekte veya planlanmaktadır. Genel ilerleme ortalaması %${avg}'dir. Haftalık to-do kayıtlarının ${todoDone}/${todoTotal} kadarı tamamlanmış${todoLate ? `, ${todoLate} madde bitiş tarihini geçmiştir` : ''}.</p>
 
-    <h2>2. Modül Bazlı İlerleme</h2>
-    <table><thead><tr><th>Modül</th><th style="width:10%">Görev</th><th style="width:12%">Tamamlanan</th><th style="width:28%">Ortalama ilerleme</th></tr></thead><tbody>${moduleRows || '<tr><td colspan="4" class="muted">Eşleşen görev yok.</td></tr>'}</tbody></table>
-
-    <h2>3. Zaman Çizelgesi</h2>
-    <table><thead><tr><th>Görev</th><th style="width:22%">Dönem</th><th style="width:24%">Ekip</th><th style="width:15%">İlerleme</th></tr></thead><tbody>${timelineRows || '<tr><td colspan="4" class="muted">Eşleşen görev yok.</td></tr>'}</tbody></table>
-
-    <h2>4. Görev Detayları ve Haftalık Takip</h2>
+    <h2>2. Görev Detayları ve Haftalık Takip</h2>
     ${taskBlocks || '<p class="muted">Eşleşen görev yok.</p>'}
 
-    ${personRows ? `<h2>5. Kişi Bazlı İş Yükü (Haftalık To-Do)</h2>
+    ${personRows ? `<h2>3. Kişi Bazlı İş Yükü (Haftalık To-Do)</h2>
     <table><thead><tr><th>Kişi</th><th>Rol</th><th style="width:9%">Toplam</th><th style="width:11%">Tamamlanan</th><th style="width:9%">Açık</th><th style="width:10%">Gecikmiş</th></tr></thead><tbody>${personRows}</tbody></table>` : ''}
 
     ${meetingHTML}
@@ -3924,20 +3924,40 @@ async function generateAIExecutiveReport() {
 function printAIReport() { window.print(); }
 
 async function downloadAIReportPDF() {
-  const el = document.getElementById('aiReportContainer');
+  const src = document.getElementById('aiReportContainer');
   if (!window.html2pdf) { alert('PDF aracı yüklenemedi. "Yazdır" düğmesiyle "PDF olarak kaydet" seçeneğini kullanın.'); return; }
   const btn = document.getElementById('reportPdfBtn');
   const old = btn.innerText; btn.innerText = 'Hazırlanıyor...'; btn.disabled = true;
+  // Modal kaydırmalı/sabit konumlu olduğu için doğrudan çevirince sayfa boş çıkıyor:
+  // raporu görünür bir A4 genişliğinde kopyaya alıp onu PDF'e çeviriyoruz.
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:absolute;left:0;top:0;width:794px;background:#fff;z-index:-1;';
+  const clone = src.cloneNode(true);
+  clone.removeAttribute('id');
+  clone.style.cssText = 'display:block;width:794px;background:#fff;color:#1C2433;font-family:Georgia,"Times New Roman",serif;border:0;padding:0;';
+  holder.appendChild(clone);
+  document.body.appendChild(holder);
+  const modal = document.getElementById('aiReportModal');
+  const prevScroll = window.scrollY;
+  window.scrollTo(0, 0);
   try {
+    await new Promise(r => setTimeout(r, 150));
+    // Çok yüksek canvas bazı tarayıcılarda (Safari/iOS, Firefox) boş çıkar: alan ve yüksekliği sınırla.
+    const h = Math.max(holder.offsetHeight, 1);
+    const scale = Math.max(0.8, Math.min(2, Math.sqrt(12e6 / (794 * h)), 15000 / h));
     await html2pdf().set({
-      margin: [10, 10, 12, 10],
+      margin: [10, 8, 12, 8],
       filename: 'DEMIG_Rapor_' + new Date().toISOString().slice(0, 10) + '.pdf',
-      image: { type: 'jpeg', quality: 0.96 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 794 },
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale, useCORS: true, backgroundColor: '#ffffff', width: 794, windowWidth: 794, scrollX: 0, scrollY: 0 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['css', 'legacy'], avoid: ['.task', 'tr', '.kpi', 'h2'] }
-    }).from(el).save();
-  } finally { btn.innerText = old; btn.disabled = false; }
+    }).from(clone).save();
+  } catch (e) {
+    console.error(e); alert('PDF oluşturulamadı: ' + e.message + '\n"Yazdır" düğmesinden "PDF olarak kaydet" seçeneğini kullanabilirsiniz.');
+  } finally {
+    holder.remove(); window.scrollTo(0, prevScroll); btn.innerText = old; btn.disabled = false;
+  }
 }
 
 function closeAIReportModal() {
@@ -3970,20 +3990,20 @@ function switchTab(tab) {
 // =====================================================================
 // TOPLANTI TAKVİMİ (RESEARCH GROUP MEETING SCHEDULE & RECORDS)
 // =====================================================================
-const MEETING_WEEKS = [
-  { date: '2025-10-14', type: 'sub' },
-  { date: '2025-10-21', type: 'full' },
-  { date: '2025-10-28', type: 'sub' },
-  { date: '2025-11-04', type: 'full' },
-  { date: '2025-11-11', type: 'sub' },
-  { date: '2025-11-18', type: 'full' },
-  { date: '2025-11-25', type: 'sub' },
-  { date: '2025-12-02', type: 'full' },
-  { date: '2025-12-09', type: 'sub' },
-  { date: '2025-12-16', type: 'full' },
-  { date: '2025-12-23', type: 'sub' },
-  { date: '2025-12-30', type: 'full' }
-];
+// Haftalık toplantı takvimi: her Çarşamba, "sub" ve "full" haftalar sırayla (ilk hafta sub).
+// Başlangıç tarihini değiştirmek için sadece MEETING_START'ı düzenleyin (YYYY-MM-DD).
+const MEETING_START = '2026-10-14';
+const MEETING_NOTIFY_FROM = '2026-10-14'; // bu tarihten önceki (eski) toplantılar için onayda mail gitmez
+const MEETING_WEEK_COUNT = 52;
+// Geçmiş toplantılar (Google Doc notlarındaki gerçek tarihler; düzensiz günlerde yapıldı)
+const MEETING_PAST_DATES = ['2026-04-15', '2026-04-29', '2026-05-05', '2026-05-06', '2026-05-07', '2026-06-03', '2026-06-05', '2026-06-09', '2026-06-10', '2026-06-24', '2026-07-01', '2026-07-08', '2026-07-10', '2026-07-15', '2026-07-22', '2026-08-05', '2026-08-19', '2026-09-09', '2026-09-16', '2026-09-24', '2026-10-12'];
+const MEETING_WEEKS = MEETING_PAST_DATES.map(date => ({ date, type: 'full' })).concat(
+  Array.from({ length: MEETING_WEEK_COUNT }, (_, i) => {
+    const d = new Date(MEETING_START + 'T12:00:00Z');
+    d.setUTCDate(d.getUTCDate() + 7 * i);
+    return { date: d.toISOString().slice(0, 10), type: i % 2 === 0 ? 'sub' : 'full' };
+  })
+);
 let meetingRecords = {}; // { 'WEEKDATE__TRACKID': { recording_link, notes_link, action_text } }
 
 // Her hafta tipi için ayrı ayrı takip edilen "görüşme parçaları" (tracks).
