@@ -52,6 +52,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
   body { font-family: 'Inter', sans-serif; background-color: #F8F9FB; color: #1C2433; }
@@ -68,15 +70,98 @@
      bazen uygulanmayabiliyor; tam ekran modallarin her zaman gercekten sabit kalmasini garanti eder. */
   #authModal, #loadingScreen, #sidebarBackdrop, #aiReportModal, #taskModal, #weeklyTodoModal,
   #tourWelcomeModal, #tourLayer { position: fixed !important; }
+  /* ---- Rapor (A4 kağıt görünümü) ---- */
+  #aiReportContainer.rpt { background:#fff !important; color:#1C2433 !important; border:1px solid #C3C9D2; padding:0 !important; font-family: Georgia, 'Times New Roman', serif; }
+  .rpt .rpt-page { padding: 14mm 14mm 10mm; }
+  .rpt h1 { font-size:20px; font-weight:700; color:#1E3A66; margin:0 0 2px; }
+  .rpt h2 { font-size:13px; font-weight:700; color:#1E3A66; text-transform:uppercase; letter-spacing:.06em; border-bottom:2px solid #1E3A66; padding-bottom:3px; margin:18px 0 8px; break-after:avoid; }
+  .rpt h3 { font-size:12px; font-weight:700; color:#1C2433; margin:0; }
+  .rpt p, .rpt td, .rpt th, .rpt li, .rpt div, .rpt span { color:#1C2433; }
+  .rpt .muted { color:#5B6577 !important; }
+  .rpt table { width:100%; border-collapse:collapse; font-size:10.5px; margin-top:4px; }
+  .rpt th { background:#1E3A66; color:#fff !important; text-align:left; padding:5px 6px; font-weight:600; font-size:10px; }
+  .rpt td { padding:4px 6px; border-bottom:1px solid #D5DAE1; vertical-align:top; }
+  .rpt tr { break-inside:avoid; page-break-inside:avoid; }
+  .rpt thead { display: table-header-group; }
+  .rpt .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:10px 0; }
+  .rpt .kpi { border:1px solid #C3C9D2; border-radius:6px; padding:8px; text-align:center; background:#F4F6F9; break-inside:avoid; }
+  .rpt .kpi b { display:block; font-size:18px; color:#1E3A66 !important; }
+  .rpt .kpi span { font-size:9.5px; color:#5B6577 !important; }
+  .rpt .task { border:1px solid #C3C9D2; border-radius:6px; padding:9px 10px; margin:0 0 10px; break-inside:avoid-page; page-break-inside:avoid; }
+  .rpt .task-head { display:flex; justify-content:space-between; gap:8px; align-items:baseline; margin-bottom:4px; }
+  .rpt .tag { display:inline-block; background:#E3E8F0; color:#1E3A66 !important; border-radius:3px; padding:0 5px; font-size:9.5px; font-weight:700; margin-right:4px; }
+  .rpt .bar { height:6px; background:#E3E6EA; border-radius:3px; overflow:hidden; margin:3px 0 6px; }
+  .rpt .bar > i { display:block; height:100%; background:#1E3A66; }
+  .rpt .b-done { color:#0F7B4D !important; font-weight:700; } .rpt .b-late { color:#B42318 !important; font-weight:700; } .rpt .b-prog { color:#1E3A66 !important; font-weight:700; }
+  .rpt .sign { display:flex; justify-content:space-between; margin-top:24px; font-size:10px; }
+  @page { size: A4; margin: 10mm; }
   @media print {
-    body * { visibility: hidden; }
-    #aiReportModal, #aiReportModal * { visibility: visible; }
-    #aiReportModal { position: absolute; left: 0; top: 0; width: 100%; background: white !important; color: black !important; }
-    .no-print { display: none !important; }
+    html, body { background:#fff !important; height:auto !important; overflow:visible !important; display:block !important; }
+    body > *:not(#aiReportModal) { display:none !important; }
+    #aiReportModal { position:static !important; display:block !important; background:#fff !important; padding:0 !important; overflow:visible !important; backdrop-filter:none !important; }
+    #aiReportModal > div { max-height:none !important; overflow:visible !important; box-shadow:none !important; border:0 !important; padding:0 !important; background:#fff !important; max-width:none !important; }
+    #aiReportContainer.rpt { border:0 !important; }
+    .rpt .rpt-page { padding:0 !important; }
+    .no-print { display:none !important; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   }
 </style>
 </head>
 <body class="min-h-screen flex bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+
+<div id="chgPwModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+  <div class="glass p-6 rounded-2xl w-full max-w-sm border border-slate-700 shadow-2xl space-y-3">
+    <h3 class="text-sm font-bold text-slate-100">Şifre Değiştir</h3>
+    <input type="password" id="chgPwOld" placeholder="Mevcut şifre" autocomplete="current-password" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
+    <input type="password" id="chgPwNew" placeholder="Yeni şifre (en az 6 karakter)" autocomplete="new-password" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
+    <input type="password" id="chgPwNew2" placeholder="Yeni şifre (tekrar)" autocomplete="new-password" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
+    <p id="chgPwMsg" class="text-xs"></p>
+    <div class="flex justify-end space-x-3 pt-2 border-t border-slate-800">
+      <button onclick="document.getElementById('chgPwModal').classList.add('hidden')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg">Kapat</button>
+      <button onclick="changePassword()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg">Değiştir</button>
+    </div>
+  </div>
+</div>
+
+<div id="statusModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+  <div class="glass p-6 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl">
+    <h3 id="statusModalTitle" class="text-sm font-bold text-slate-100 mb-4">Durum Değiştir</h3>
+    <input type="hidden" id="statusPersonId"><input type="hidden" id="statusTarget">
+    <div id="statusReasonRow" class="mb-3">
+      <label class="block text-xs font-medium text-slate-300 mb-1">Neden OFF?</label>
+      <select id="statusReason" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
+        <option value="pause">Çalışmaya ara verdi</option>
+        <option value="left">Projeden ayrıldı</option>
+        <option value="graduated">Mezun oldu</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="block text-xs font-medium text-slate-300 mb-1">Tarih</label>
+      <input type="date" id="statusDate" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
+    </div>
+    <div class="mb-4">
+      <label class="block text-xs font-medium text-slate-300 mb-1">Not (isteğe bağlı)</label>
+      <input type="text" id="statusNote" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100">
+    </div>
+    <div class="flex justify-end space-x-3 pt-3 border-t border-slate-800">
+      <button onclick="closeStatusModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg">İptal</button>
+      <button onclick="confirmStatusChange()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<div id="historyModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+  <div class="glass p-6 rounded-2xl w-full max-w-3xl border border-slate-700 shadow-2xl max-h-[90vh] flex flex-col">
+    <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+      <h3 class="text-sm font-bold text-slate-100">Ekip Durum Geçmişi (Başlangıç / Ara / Ayrılış / Mezuniyet)</h3>
+      <div class="flex items-center gap-2">
+        <button onclick="exportPeopleExcel()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Excel'e Aktar</button>
+        <button onclick="document.getElementById('historyModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+    </div>
+    <div class="overflow-y-auto"><table class="w-full text-left text-[11px] text-slate-300"><thead class="text-slate-400 uppercase text-[10px] sticky top-0 bg-slate-900"><tr><th class="p-1.5">Tarih</th><th class="p-1.5">Kişi</th><th class="p-1.5">Grup</th><th class="p-1.5">Olay</th><th class="p-1.5">Not</th><th class="p-1.5">Kaydeden</th></tr></thead><tbody id="historyBody"></tbody></table></div>
+  </div>
+</div>
 
 <div id="authModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
   <div class="glass p-8 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl relative">
@@ -87,27 +172,38 @@
     <div class="text-center mb-6">
       <img id="loginLogoImg" src="" alt="DEMIG Logo" class="h-16 w-auto mx-auto mb-3">
       <h2 class="text-2xl font-bold tracking-tight text-slate-100">Demig Project</h2>
-      <p class="text-xs text-slate-400 mt-1" data-i18n="login_subtitle">Sisteme kayıtlı ad-soyad veya e-posta ile giriş yapın</p>
+      <p class="text-xs text-slate-400 mt-1">Kişisel şifrenizle giriş yapın. Herkes yalnızca kendi hesabına girebilir.</p>
+    </div>
+    <div id="authTabs" class="flex mb-4 bg-slate-900 border border-slate-700 rounded-lg overflow-hidden text-xs font-semibold">
+      <button type="button" id="authTabLogin" onclick="setAuthMode('login')" class="flex-1 py-2 transition">Giriş Yap</button>
+      <button type="button" id="authTabSignup" onclick="setAuthMode('signup')" class="flex-1 py-2 transition">İlk Kez Giriş / Şifre Belirle</button>
     </div>
     <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
-      <div>
+      <div id="authNameRow">
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="login_name_label">Ad Soyad</label>
         <select id="userName" required onchange="onLoginPersonSelected()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
           <option value="" data-i18n="login_name_placeholder_opt">Adınızı seçin...</option>
         </select>
-        <p class="text-[10px] text-slate-500 mt-1" data-i18n="login_name_hint">Listede göremiyorsanız Proje Ekibi sayfasından eklenmenizi isteyin.</p>
+        <p class="text-[10px] text-slate-500 mt-1">Yalnızca yetkili ve aktif proje ekibi üyeleri listelenir.</p>
       </div>
-      <div>
-        <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="login_email_label">E-Posta Adresi</label>
-        <input type="email" id="userEmail" required readonly placeholder="—" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-300 cursor-not-allowed">
+      <input type="hidden" id="userEmail"><input type="hidden" id="userDept">
+      <div id="authPwRow">
+        <label class="block text-xs font-medium text-slate-300 mb-1" id="authPwLabel">Şifre</label>
+        <input type="password" id="authPassword" autocomplete="current-password" minlength="6" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
       </div>
-      <div>
-        <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="login_dept_label">Departman / Rol</label>
-        <input type="text" id="userDept" readonly placeholder="—" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-300 cursor-not-allowed">
+      <div id="authPw2Row" class="hidden">
+        <label class="block text-xs font-medium text-slate-300 mb-1">Şifre (tekrar)</label>
+        <input type="password" id="authPassword2" autocomplete="new-password" minlength="6" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
       </div>
-      <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-lg shadow-lg shadow-indigo-600/30 transition duration-200 mt-2" data-i18n="login_submit">
-        Sisteme Giriş Yap
-      </button>
+      <div id="authCodeRow" class="hidden">
+        <label class="block text-xs font-medium text-slate-300 mb-1">Ekip Kodu</label>
+        <input type="password" id="authInviteCode" autocomplete="off" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition">
+        <p class="text-[10px] text-slate-500 mt-1">Ekip kodunu proje yöneticisinden alın.</p>
+      </div>
+      <p id="authMsg" class="hidden text-xs rounded-lg px-3 py-2"></p>
+      <button type="submit" id="authSubmitBtn" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-lg shadow-lg shadow-indigo-600/30 transition duration-200 mt-2">Sisteme Giriş Yap</button>
+      <button type="button" id="authForgotBtn" onclick="setAuthMode('reset')" class="w-full text-center text-xs text-indigo-400 hover:text-slate-100">Şifremi unuttum (mailsiz sıfırla)</button>
+      <button type="button" id="authBackBtn" onclick="setAuthMode('login')" class="hidden w-full text-center text-xs text-slate-400 hover:text-slate-100">← Girişe dön</button>
     </form>
   </div>
 </div>
@@ -119,7 +215,7 @@
 </div>
 
 <div id="app" class="hidden w-full flex min-h-screen">
-  <aside id="sidebarAside" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between shrink-0 fixed inset-y-0 left-0 z-40 -translate-x-full transition-transform duration-200 md:static md:translate-x-0">
+  <aside id="sidebarAside" class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 fixed inset-y-0 left-0 z-40 -translate-x-full transition-transform duration-200 md:sticky md:top-0 md:h-screen md:self-start md:translate-x-0">
     <div class="flex-1 overflow-y-auto">
       <div class="p-5 border-b border-slate-800 flex items-center space-x-3">
         <img id="sidebarLogoImg" src="" alt="DEMIG Logo" class="h-10 w-auto shrink-0">
@@ -137,9 +233,6 @@
       <nav class="p-3 space-y-1">
         <button onclick="switchTab('diagrams')" id="tab-diagrams" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 bg-indigo-600 text-white transition">
           <i data-lucide="bar-chart-2" class="w-4 h-4"></i><span data-i18n="nav_diagrams">Diyagram & Grafikler</span>
-        </button>
-        <button onclick="switchTab('roadmap')" id="tab-roadmap" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
-          <i data-lucide="git-merge" class="w-4 h-4"></i><span data-i18n="nav_roadmap">İlerleme Haritası</span>
         </button>
         <button onclick="switchTab('tasks')" id="tab-tasks" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
           <i data-lucide="check-square" class="w-4 h-4"></i><span data-i18n="nav_tasks">Görev Takibi & Veri Girişi</span>
@@ -168,6 +261,17 @@
         </button>
       </nav>
 
+      <div class="mx-3 mb-1 mt-1 p-2.5 rounded-xl bg-slate-800/70 border border-slate-700 flex items-center justify-between gap-2">
+        <div class="min-w-0">
+          <div id="currentUserDisplay" class="text-xs font-semibold text-slate-100 truncate">...</div>
+          <div id="currentEmailDisplay" class="text-[10px] text-slate-400 truncate">...</div>
+        </div>
+        <button onclick="openChangePassword()" title="Şifre değiştir" class="p-1.5 text-slate-400 hover:text-slate-100 shrink-0"><i data-lucide="key-round" class="w-4 h-4"></i></button>
+      <button onclick="logout()" id="logoutIconBtn" data-i18n-title="sidebar_logout_short" title="Çıkış Yap" class="p-1.5 text-slate-500 hover:text-red-500 bg-slate-900 rounded-lg hover:bg-slate-700 transition shrink-0">
+          <i data-lucide="log-out" class="w-4 h-4"></i>
+        </button>
+      </div>
+
       <div class="px-3 pb-3 pt-2 border-t border-slate-800 mt-2">
         <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center space-x-1.5">
           <i data-lucide="list-checks" class="w-3 h-3"></i><span data-i18n="sidebar_my_todos">Haftalık To-Do'larım</span>
@@ -177,21 +281,6 @@
         <div id="sidebarTodoList" class="space-y-1.5 max-h-56 overflow-y-auto pr-1"></div>
       </div>
 
-      <div class="p-3 border-t border-slate-800">
-        <button onclick="logout()" class="w-full px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-red-600/20 hover:text-red-300 transition">
-          <i data-lucide="log-out" class="w-4 h-4"></i><span data-i18n="sidebar_logout">Sistem Çıkışı Yap</span>
-        </button>
-      </div>
-    </div>
-
-    <div class="p-4 border-t border-slate-800 flex items-center justify-between">
-      <div class="truncate">
-        <div id="currentUserDisplay" class="text-xs font-semibold text-slate-200 truncate">...</div>
-        <div id="currentEmailDisplay" class="text-[10px] text-slate-400 truncate">...</div>
-      </div>
-      <button onclick="logout()" id="logoutIconBtn" data-i18n-title="sidebar_logout_short" title="Çıkış Yap" class="p-1.5 text-slate-400 hover:text-slate-100 bg-slate-800 rounded-lg hover:bg-slate-700 transition shrink-0 ml-2">
-        <i data-lucide="log-out" class="w-4 h-4"></i>
-      </button>
     </div>
   </aside>
 
@@ -217,6 +306,48 @@
         <div class="flex items-center space-x-3 bg-slate-900/90 px-4 py-2 rounded-xl border border-slate-800">
           <span class="text-xs font-semibold text-slate-300" data-i18n="diagrams_avg_progress">Ortalama İlerleme:</span>
           <span class="text-xl font-bold text-emerald-400" id="overallDiagramPct">%0</span>
+        </div>
+      </div>
+
+      <div class="glass p-5 rounded-2xl border border-slate-800 shadow-xl">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2"><i data-lucide="list-checks" class="w-4 h-4 text-indigo-400"></i><span data-i18n="weekly_overview_title">Haftalık To-Do İlerleme Takibi</span></h3>
+            <p id="weeklyOverviewSummary" class="text-[11px] text-slate-400 mt-0.5"></p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="woFilterPerson" onchange="renderWeeklyOverviewTable()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-100"></select>
+            <select id="woFilterTask" onchange="renderWeeklyOverviewTable()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-100 max-w-[180px]"></select>
+            <select id="woFilterStatus" onchange="renderWeeklyOverviewTable()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-100">
+              <option value="">Tüm Durumlar</option><option value="Başlamadı">Başlamadı</option><option value="Devam Ediyor">Devam Ediyor</option><option value="Tamamlandı">Tamamlandı</option>
+            </select>
+            <button onclick="openWeeklyTodoModal(null)" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg flex items-center space-x-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Haftalık Görev Ekle</span></button>
+          </div>
+        </div>
+        <div class="overflow-x-auto max-h-[28rem] overflow-y-auto">
+          <table class="w-full text-left text-[11px] text-slate-300">
+            <thead class="text-slate-400 uppercase text-[10px] sticky top-0 bg-slate-900 z-10">
+              <tr>
+                <th class="p-1.5" data-i18n="th_person">Kişi</th>
+                <th class="p-1.5" data-i18n="th_task">Görev</th>
+                <th class="p-1.5">To-Do</th>
+                <th class="p-1.5" data-i18n="th_priority">Öncelik</th>
+                <th class="p-1.5" data-i18n="th_status">Durum</th>
+                <th class="p-1.5" data-i18n="th_date">Tarih</th>
+                <th class="p-1.5 text-right"></th>
+              </tr>
+            </thead>
+            <tbody id="weeklyOverviewBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-6">
+        <div class="glass p-5 rounded-2xl border border-slate-800">
+          <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4" data-i18n="progress_chart_title">Aşama Bazlı Tamamlanma Yüzdeleri (%)</h3>
+          <div class="h-64 flex justify-center">
+            <canvas id="progressChart"></canvas>
+          </div>
         </div>
       </div>
 
@@ -261,51 +392,6 @@
           </table>
         </div>
       </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="glass p-5 rounded-2xl border border-slate-800">
-          <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4" data-i18n="weekly_overview_title">Haftalık To-Do İlerleme Takibi</h3>
-          <div class="overflow-x-auto max-h-72 overflow-y-auto">
-            <table class="w-full text-left text-[11px] text-slate-300">
-              <thead class="text-slate-400 uppercase text-[10px] sticky top-0 bg-slate-900/90">
-                <tr>
-                  <th class="p-1.5" data-i18n="th_person">Kişi</th>
-                  <th class="p-1.5" data-i18n="th_task">Görev</th>
-                  <th class="p-1.5">To-Do</th>
-                  <th class="p-1.5" data-i18n="th_priority">Öncelik</th>
-                  <th class="p-1.5" data-i18n="th_status">Durum</th>
-                  <th class="p-1.5" data-i18n="th_date">Tarih</th>
-                </tr>
-              </thead>
-              <tbody id="weeklyOverviewBody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="glass p-5 rounded-2xl border border-slate-800">
-          <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4" data-i18n="progress_chart_title">Aşama Bazlı Tamamlanma Yüzdeleri (%)</h3>
-          <div class="h-64 flex justify-center">
-            <canvas id="progressChart"></canvas>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="view-roadmap" class="hidden space-y-6">
-      <div class="glass p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-4 border border-indigo-500/20 shadow-xl">
-        <div>
-          <h2 class="text-xl font-bold text-slate-100 flex items-center space-x-2">
-            <i data-lucide="git-merge" class="w-5 h-5 text-indigo-400"></i><span data-i18n="roadmap_title">demigproject İlerleme Haritası</span>
-          </h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="roadmap_subtitle">Kartların üzerine tıklayarak başlıkları, notları veya durumları anında güncelleyebilir, haftalık to-do ekleyebilirsiniz.</p>
-        </div>
-        <button onclick="openTaskModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-2 transition shadow-lg shadow-indigo-600/30">
-          <i data-lucide="plus" class="w-4 h-4"></i><span data-i18n="roadmap_add_btn">Yeni Adım / Görev Ekle</span>
-        </button>
-      </div>
-      <div class="glass p-6 rounded-2xl relative overflow-hidden shadow-xl">
-        <div id="roadmapDiagram" class="space-y-8 relative before:absolute before:inset-0 before:left-8 before:w-1 before:bg-gradient-to-b before:from-emerald-500 before:via-indigo-500 before:to-slate-700 before:z-0"></div>
-      </div>
     </section>
 
     <section id="view-tasks" class="hidden space-y-6">
@@ -339,29 +425,52 @@
     </section>
 
     <section id="view-people" class="hidden space-y-6">
-      <div class="glass p-6 rounded-2xl shadow-xl flex items-center justify-between">
+      <div class="glass p-6 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <h2 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
-            <i data-lucide="users" class="w-5 h-5 text-indigo-400"></i><span data-i18n="people_title">Proje Ekibi ve Rol Tanımları</span>
+            <i data-lucide="users" class="w-5 h-5 text-indigo-400"></i><span>Proje Ekibi ve Rol Tanımları</span>
           </h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="people_subtitle">Tüm kayıtlı araştırmacılar, danışmanlar ve 12 kişilik Sabancı PURE etiketleme ekibi. E-posta alanına tıklayıp kişinin gerçekte kullandığı adresi girebilirsiniz — haftalık görev ve hatırlatma mailleri buraya gider.</p>
+          <p class="text-xs text-slate-400 mt-1">Her kişinin yanındaki ON/OFF düğmesi çalışma durumunu belirler. OFF olan kişilere görev atanamaz, sohbette mesaj gönderilemez ve sisteme giriş yapamaz. Durum değişiklikleri tarihleriyle kaydedilir.</p>
+        </div>
+        <div class="flex gap-2 shrink-0">
+          <button onclick="openStatusHistory()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-semibold rounded-lg border border-slate-700 flex items-center space-x-1"><i data-lucide="history" class="w-4 h-4"></i><span>Durum Geçmişi</span></button>
+          <button onclick="exportPeopleExcel()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg flex items-center space-x-1"><i data-lucide="download" class="w-4 h-4"></i><span>Excel'e Aktar</span></button>
         </div>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="seniorTeamContainer"></div>
+
+      <div>
+        <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Ana Proje Ekibi</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="seniorTeamContainer"></div>
+      </div>
+
+      <div class="glass p-5 rounded-2xl border border-amber-500/30 shadow-xl">
+        <h3 class="text-sm font-bold text-slate-100 mb-1 flex items-center space-x-2"><span class="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-lg text-[10px] border border-amber-500/30">Hizmet Alımı</span><span>Hukuk & Yazılım Desteği</span></h3>
+        <p class="text-[11px] text-slate-400 mb-3">Dışarıdan hizmet alınan danışman ve geliştiriciler.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="serviceTeamContainer"></div>
+      </div>
+
       <div class="glass p-6 rounded-2xl border border-indigo-500/30 shadow-xl">
         <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
           <div>
             <h3 class="text-base font-bold text-slate-100 flex items-center space-x-2">
-              <span class="px-2.5 py-1 bg-indigo-500/20 text-indigo-300 rounded-lg text-xs border border-indigo-500/30" data-i18n="people_pure_badge">12 Üyeli Ekip</span>
-              <span data-i18n="people_pure_title">PURE & Galata Öğrenci Anotatör Ekibi</span>
+              <span class="px-2.5 py-1 bg-indigo-500/20 text-indigo-300 rounded-lg text-xs border border-indigo-500/30" id="annotatorCountBadge">Ekip</span>
+              <span>Hizmet Alımı – Etiketleme (Anotatör) Ekibi</span>
             </h3>
-            <p class="text-xs text-slate-400 mt-0.5" data-i18n="people_pure_subtitle">3 Aşama Etiketleme ve Hakemleme (Dual Annotation & Adjudication) Sorumluları</p>
+            <p class="text-xs text-slate-400 mt-0.5">PURE & Galata öğrencileri · 3 Aşama Etiketleme ve Hakemleme (Dual Annotation & Adjudication)</p>
           </div>
           <button onclick="togglePureList()" id="togglePureBtn" class="text-xs text-indigo-400 hover:text-slate-100 flex items-center space-x-1 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700">
-            <span data-i18n="people_toggle_list">Listeyi Daralt/Genişlet</span><i data-lucide="chevron-down" class="w-4 h-4"></i>
+            <span>Listeyi Daralt/Genişlet</span><i data-lucide="chevron-down" class="w-4 h-4"></i>
           </button>
         </div>
         <div id="pureTeamGrid" class="grid grid-cols-1 md:grid-cols-3 gap-3"></div>
+      </div>
+
+      <div class="glass p-5 rounded-2xl border border-slate-700 shadow-xl">
+        <div class="flex items-center justify-between cursor-pointer" onclick="document.getElementById('graduatedContainer').classList.toggle('hidden')">
+          <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2"><i data-lucide="graduation-cap" class="w-4 h-4 text-indigo-400"></i><span>Mezun / Graduated</span><span id="graduatedCountBadge" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">0</span></h3>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400"></i>
+        </div>
+        <div id="graduatedContainer" class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3"></div>
       </div>
     </section>
 
@@ -385,9 +494,16 @@
             </div>
             <div>
               <label class="block text-[11px] font-semibold text-slate-300 mb-1" data-i18n="report_task_filter">Görev / Aşama Filtresi</label>
-              <select id="reportTaskFilter" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100">
-                <option value="ALL" data-i18n="report_all_tasks">Tüm Görevler ve Aşamalar</option>
-              </select>
+              <details id="reportPickerDetails" class="relative">
+                <summary id="reportPickerSummary" class="w-full cursor-pointer bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 list-none flex justify-between items-center"><span>Tüm görevler</span><span>▾</span></summary>
+                <div class="absolute z-30 mt-1 w-full min-w-[280px] bg-slate-900 border border-slate-700 rounded-lg shadow-xl p-2">
+                  <div class="flex gap-2 mb-2 text-[10px]">
+                    <button type="button" onclick="reportPickAll(true)" class="px-2 py-1 bg-slate-800 border border-slate-700 rounded text-slate-200">Tümünü seç</button>
+                    <button type="button" onclick="reportPickAll(false)" class="px-2 py-1 bg-slate-800 border border-slate-700 rounded text-slate-200">Temizle</button>
+                  </div>
+                  <div id="reportTaskFilter" class="max-h-64 overflow-y-auto space-y-0.5 text-[11px]"></div>
+                </div>
+              </details>
             </div>
             <div>
               <button onclick="generateAIExecutiveReport()" class="w-full py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold text-xs rounded-lg shadow-lg flex items-center justify-center space-x-2 transition">
@@ -553,11 +669,26 @@
         </div>
       </div>
 
+      <div class="glass p-5 rounded-2xl shadow-xl border border-slate-700">
+        <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2 mb-1"><i data-lucide="clipboard-paste" class="w-4 h-4 text-indigo-400"></i><span>Drive'daki Zoom AI To-Do Listesini İçe Aktar</span></h3>
+        <p class="text-[11px] text-slate-400 mb-3">Drive'daki (Zoom kayıtlarından AI ile çıkarılan) to-do dosyasının içeriğini buraya yapıştırın veya .txt/.csv/.md olarak yükleyin. Her satır bir madde olur; "Ad: görev", "görev - Ad" ya da "@Ad" biçimindeki isimler otomatik eşleştirilir. Maddeler aşağıdaki "Onay Bekliyor" panelinde çıkar; oradan doğrudan kişiye atarsınız.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+          <select id="driveImportWeekSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
+          <input type="file" id="driveImportFile" accept=".txt,.csv,.md,.tsv" onchange="handleDriveImportFile(event)" class="w-full text-[11px] text-slate-400 file:mr-2 file:px-2.5 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200 file:text-[11px] file:font-semibold">
+        </div>
+        <textarea id="driveImportText" rows="4" placeholder="- Selim: Reward model testlerini tamamla&#10;- Anket taslağını gözden geçir (Ayşenur)&#10;..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 focus:outline-none focus:border-indigo-500"></textarea>
+        <div class="flex items-center gap-2 mt-2">
+          <button onclick="importDriveTodos()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Maddeleri İçe Aktar</button>
+          <span id="driveImportStatus" class="text-[11px] text-slate-400"></span>
+        </div>
+      </div>
+
       <div id="meetingPendingActionsWrap" class="hidden glass p-5 rounded-2xl shadow-xl border border-amber-500/30">
         <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2 mb-1">
           <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i><span data-i18n="meetings_pending_title">Toplantıdan Çıkarılan Aksiyonlar — Onay Bekliyor</span>
         </h3>
         <p class="text-[11px] text-slate-400 mb-3" data-i18n="meetings_pending_subtitle">Zoom kaydından AI ile çıkarıldı. Sorumlu kişiyi seçip onaylarsanız, o kişinin sol bardaki haftalık to-do listesine eklenir.</p>
+        <div class="mb-2"><button onclick="confirmAllSuggestedActions()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold rounded-lg">Önerilen kişiyle eşleşenlerin hepsini onayla</button></div>
         <div id="meetingPendingActionsContainer" class="space-y-2"></div>
       </div>
 
@@ -607,8 +738,11 @@
         </div>
       </div>
       <div class="flex items-center space-x-3">
-        <button onclick="window.print()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg text-xs font-semibold flex items-center space-x-1.5 border border-slate-700">
-          <i data-lucide="printer" class="w-3.5 h-3.5"></i><span data-i18n="ai_report_print">Yazdır / PDF İndir</span>
+        <button onclick="printAIReport()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-lg text-xs font-semibold flex items-center space-x-1.5 border border-slate-700">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i><span>Yazdır</span>
+        </button>
+        <button onclick="downloadAIReportPDF()" id="reportPdfBtn" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold flex items-center space-x-1.5">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i><span>PDF İndir</span>
         </button>
         <button onclick="closeAIReportModal()" class="text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-6 h-6"></i></button>
       </div>
@@ -809,6 +943,10 @@
     </div>
     <form id="weeklyTodoForm" onsubmit="saveWeeklyTodo(event)" class="space-y-4">
       <input type="hidden" id="weeklyTodoId">
+      <div id="weeklyTodoTaskRow" class="hidden">
+        <label class="block text-xs font-medium text-slate-300 mb-1">Görev / Adım</label>
+        <select id="weeklyTodoTaskSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100"></select>
+      </div>
       <div>
         <label class="block text-xs font-medium text-slate-300 mb-1" data-i18n="subtask_assignee_label">Sorumlu Kişi(ler)</label>
         <div id="weeklyTodoAssignee" class="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-900 p-3 rounded-lg border border-slate-800 max-h-36 overflow-y-auto text-xs"></div>
@@ -1480,8 +1618,6 @@ const TOUR_STEPS = [
       if (!body) return null;
       return Array.from(body.querySelectorAll('tr')).find(tr => !tr.querySelector('td[colspan]')) || null;
     } },
-  { tab: 'roadmap', placement: 'bottom', titleKey: 'tour_s4_title', descKey: 'tour_s4_desc',
-    target: () => document.querySelector('#view-roadmap button[onclick="openTaskModal()"]') },
   { tab: 'tasks', placement: 'bottom', titleKey: 'tour_s5_title', descKey: 'tour_s5_desc',
     target: () => document.querySelector('#view-tasks button[onclick="openTaskModal()"]') },
   { tab: 'people', placement: 'bottom', titleKey: 'tour_s6_title', descKey: 'tour_s6_desc',
@@ -1523,7 +1659,7 @@ function dismissTourWelcome() {
 }
 
 function getActiveTab() {
-  const tabs = ['diagrams', 'roadmap', 'tasks', 'people', 'dashboard', 'attendance', 'chat'];
+  const tabs = ['diagrams', 'tasks', 'people', 'dashboard', 'attendance', 'chat'];
   return tabs.find(t => { const v = $id('view-' + t); return v && !v.classList.contains('hidden'); }) || 'diagrams';
 }
 
@@ -1710,6 +1846,7 @@ let seedPeople = [
   { id: "u11", name: "Sena Yağmur Gökdal", role: "Galata Research Intern", dept: "Yıldız Technical University — Statistics (Senior)", email: "senayagmurgokdal@gmail.com", isPure: true },
   { id: "u12", name: "Fatma Pelin Göçer", role: "Boğaziçi / Project Assistant", dept: "Boğaziçi University — Department of Political Science and International Relations", email: "fatma.gocer@std.bogazici.edu.tr", isPure: true }
 ];
+seedPeople.forEach(p => { p.canLogin = ['p1','p2','p3','p4','p5','p6','p8','p9','p11'].includes(p.id); p.active = true; });
 
 // Çalışma zamanı listesi: localStorage'da düzenlenmiş kayıt varsa onu kullan, yoksa seed listeye düş
 // =====================================================================
@@ -1758,11 +1895,23 @@ function taskFromRow(row) {
 }
 
 function personToRow(p) {
-  return { id: p.id, name: p.name, role: p.role, dept: p.dept || null, email: p.email, is_pure: !!p.isPure };
+  return { id: p.id, name: p.name, role: p.role, dept: p.dept || null, email: p.email, is_pure: !!p.isPure,
+    active: p.active !== false, grp: personGroup(p), can_login: !!p.canLogin,
+    start_date: p.startDate || null, end_date: p.endDate || null, end_reason: p.endReason || null };
 }
 
 function personFromRow(row) {
-  return { id: row.id, name: row.name, role: row.role, dept: row.dept, email: row.email, isPure: row.is_pure };
+  return { id: row.id, name: row.name, role: row.role, dept: row.dept, email: row.email, isPure: row.is_pure,
+    active: row.active !== false, grp: row.grp || null, canLogin: !!row.can_login,
+    startDate: row.start_date || '', endDate: row.end_date || '', endReason: row.end_reason || '' };
+}
+
+// Grup: 'main' (ana proje ekibi) | 'service' (hizmet alımı: hukuk & yazılım) | 'annotator' (hizmet alımı: etiketleme ekibi)
+function personGroup(p) {
+  if (p.grp) return p.grp;
+  if (p.isPure) return 'annotator';
+  if (p.id === 'p10' || p.id === 'p12') return 'service';
+  return 'main';
 }
 
 async function loadDataFromBackend() {
@@ -1822,11 +1971,55 @@ async function loadPendingMeetingActionItems() {
   meetingActionItemsPending = data || [];
 }
 
+// Aynı kişiye aynı toplantıdan birden fazla iş atanırsa TEK mail gider.
+// Tek tek onaylarken 30 sn bekleyip biriken maddeleri kişi+toplantı bazında birleştirir.
+let notifyQueue = [], notifyTimer = null;
+function queueMeetingNotify(item, personId) {
+  notifyQueue.push({ week_date: item.week_date, personId, text: item.raw_text });
+  clearTimeout(notifyTimer);
+  notifyTimer = setTimeout(flushMeetingNotify, 30000);
+}
+function showMiniToast(msg) {
+  const d = document.createElement('div');
+  d.className = 'fixed bottom-4 right-4 z-[70] bg-slate-900 border border-slate-700 text-slate-100 text-xs px-4 py-2.5 rounded-lg shadow-xl max-w-sm';
+  d.innerText = msg; document.body.appendChild(d);
+  setTimeout(() => d.remove(), 6000);
+}
+async function flushMeetingNotify() {
+  clearTimeout(notifyTimer); notifyTimer = null;
+  const q = notifyQueue; notifyQueue = [];
+  if (!q.length) return;
+  if (!emailjsReady) { showMiniToast('E-posta yapılandırılmadığı için bildirim maili gönderilmedi.'); return; }
+  const groups = {};
+  q.forEach(x => { (groups[x.personId + '|' + x.week_date] = groups[x.personId + '|' + x.week_date] || []).push(x); });
+  let ok = 0, fail = 0;
+  for (const key of Object.keys(groups)) {
+    const list = groups[key];
+    const p = registeredPeople.find(x => x.id === list[0].personId);
+    if (!p || !p.email) { fail++; continue; }
+    const body = list.length === 1 ? list[0].text : list.map((x, i) => `${i + 1}) ${x.text}`).join('   ');
+    try {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email: p.email, to_name: p.name,
+        task_name: 'Haftalık To-Do',
+        todo_text: body, start_date: list[0].week_date, end_date: '-', priority: '-', status: 'Atandı', link: '',
+        subject_type: translate('email_subject_new'),
+        sender_name: currentUser ? currentUser.name : 'demigproject Sistemi',
+        reply_to: currentUser && currentUser.email ? currentUser.email : ''
+      });
+      ok++;
+    } catch (e) { console.error(e); fail++; }
+  }
+  showMiniToast(`${ok} kişiye toplantı görev maili gönderildi` + (fail ? `, ${fail} gönderilemedi` : '') + '.');
+}
+
 async function confirmMeetingActionItem(id, personId) {
   if (!supabaseClient || !personId) return;
+  const srcItem = meetingActionItemsPending.find(i => String(i.id) === String(id));
   const { error } = await supabaseClient.from('meeting_action_items')
     .update({ status: 'confirmed', confirmed_person_id: personId }).eq('id', id);
   if (error) { console.error('Aksiyon onaylanamadı:', error); return; }
+  if (srcItem) queueMeetingNotify(srcItem, personId);
   await loadPendingMeetingActionItems();
   await loadConfirmedMeetingActionItems();
   renderPendingActionItemsPanel();
@@ -1848,7 +2041,7 @@ async function renderPendingActionItemsPanel() {
   await loadPendingMeetingActionItems();
   if (!meetingActionItemsPending.length) { wrap.classList.add('hidden'); container.innerHTML = ''; return; }
   wrap.classList.remove('hidden');
-  const peopleOpts = registeredPeople.filter(p => !p.isPure)
+  const peopleOpts = registeredPeople.filter(isAssignable)
     .map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
   container.innerHTML = meetingActionItemsPending.map(item => `
     <div class="bg-slate-900/60 border border-slate-700 rounded-lg p-3 flex flex-col md:flex-row md:items-center gap-2">
@@ -1874,6 +2067,73 @@ async function renderPendingActionItemsPanel() {
   }
 }
 
+
+// ---------------------------------------------------------------------
+// Drive'daki Zoom AI to-do listesini içe aktarma
+// ---------------------------------------------------------------------
+function handleDriveImportFile(ev) {
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { document.getElementById('driveImportText').value = String(r.result || ''); };
+  r.readAsText(f);
+}
+
+function parseDriveTodoLines(raw) {
+  const people = registeredPeople.filter(isAssignable);
+  const norm = x => x.toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9 ]/gi, ' ').replace(/\s+/g, ' ').trim();
+  const findPerson = txt => {
+    let t = norm(txt);
+    if (!t) return null;
+    if (t === 'galata') t = 'ahmet utku akbıyık';  // Zoom'da Ahmet Utku Akbıyık "Galata" olarak geçiyor
+    return people.find(p => norm(p.name) === t)
+      || people.find(p => norm(p.name).split(' ')[0] === t.split(' ')[0] && t.length >= 3)
+      || people.find(p => t.includes(norm(p.name).split(' ')[0]) && t.length <= norm(p.name).length + 6);
+  };
+  const out = [];
+  raw.split(/\r?\n/).forEach(line => {
+    let t = line.replace(/^\s*(?:[-*•–]|\d+[.)]|\[[ xX]?\]|☐|☑)\s*/g, '').replace(/^\s*(?:\[[ xX]?\]|☐|☑)\s*/, '').trim();
+    if (!t || t.length < 4 || /^#+\s/.test(t) || /^(to-?do|action items?|aksiyon)/i.test(t)) return;
+    let who = null, text = t;
+    let m = t.match(/^@?([^:–—\-]{2,40}?)\s*[:–—]\s+(.+)$/);           // "Ad: görev"
+    if (m && findPerson(m[1])) { who = findPerson(m[1]); text = m[2]; }
+    if (!who) { m = t.match(/^(.+?)\s*[\(\[]\s*@?([^)\]]{2,40})[\)\]]\s*$/); if (m && findPerson(m[2])) { who = findPerson(m[2]); text = m[1]; } }  // "görev (Ad)"
+    if (!who) { m = t.match(/^(.+?)\s+[–—-]\s+@?([^–—-]{2,40})$/); if (m && findPerson(m[2])) { who = findPerson(m[2]); text = m[1]; } }  // "görev - Ad"
+    if (!who) { m = t.match(/@([A-Za-zÇĞİÖŞÜçğıöşü]+(?: [A-Za-zÇĞİÖŞÜçğıöşü]+)?)/); if (m && findPerson(m[1])) { who = findPerson(m[1]); text = t.replace(m[0], '').trim(); } }
+    out.push({ text: text.trim(), person: who });
+  });
+  return out;
+}
+
+async function importDriveTodos() {
+  const st = document.getElementById('driveImportStatus');
+  const week = document.getElementById('driveImportWeekSelect').value;
+  const raw = document.getElementById('driveImportText').value;
+  const items = parseDriveTodoLines(raw);
+  if (!items.length) { st.textContent = 'İçe aktarılacak madde bulunamadı.'; return; }
+  if (!supabaseClient) { st.textContent = 'Sunucu bağlantısı yok.'; return; }
+  const rows = items.map(i => ({ week_date: week, raw_text: i.text, suggested_person_id: i.person ? i.person.id : null, suggested_person_name: i.person ? i.person.name : null, status: 'pending', source: 'drive_import' }));
+  const { error } = await supabaseClient.from('meeting_action_items').insert(rows);
+  if (error) { console.error(error); st.textContent = 'Kaydedilemedi: ' + error.message; return; }
+  st.textContent = `${rows.length} madde eklendi (${rows.filter(r => r.suggested_person_id).length} tanesi kişiyle eşleşti). Aşağıdaki panelden onaylayıp atayın.`;
+  document.getElementById('driveImportText').value = '';
+  document.getElementById('driveImportFile').value = '';
+  await renderPendingActionItemsPanel();
+  const w = document.getElementById('meetingPendingActionsWrap'); if (w) w.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+async function confirmAllSuggestedActions() {
+  const items = meetingActionItemsPending.filter(i => i.suggested_person_id);
+  if (!items.length) return;
+  for (const i of items) {
+    const { error } = await supabaseClient.from('meeting_action_items').update({ status: 'confirmed', confirmed_person_id: i.suggested_person_id }).eq('id', i.id);
+    if (!error) queueMeetingNotify(i, i.suggested_person_id);
+  }
+  flushMeetingNotify();
+  await loadPendingMeetingActionItems(); await loadConfirmedMeetingActionItems();
+  renderPendingActionItemsPanel(); renderSidebarTodos();
+}
+
 // ---------------------------------------------------------------------
 // Manuel Transkript Yükleme (Zoom'dan indirip siteye yapıştırma/yükleme)
 // ---------------------------------------------------------------------
@@ -1883,6 +2143,8 @@ function populateMeetingUploadWeekSelect() {
   const cur = sel.value;
   sel.innerHTML = MEETING_WEEKS.map(w => `<option value="${w.date}">${formatMeetingDate(w.date)}</option>`).join('');
   if (cur && MEETING_WEEKS.some(w => w.date === cur)) sel.value = cur;
+  const dsel = document.getElementById('driveImportWeekSelect');
+  if (dsel) { const dc = dsel.value; dsel.innerHTML = sel.innerHTML; if (dc) dsel.value = dc; }
   populateMeetingUploadTrackSelect();
 }
 
@@ -2035,7 +2297,7 @@ function populateChatPersonList() {
   if (!list) return;
   const myEmail = currentUser ? (currentUser.email || '').trim().toLowerCase() : '';
   list.innerHTML = registeredPeople
-    .filter(p => !p.isPure && (p.email || '').trim().toLowerCase() !== myEmail)
+    .filter(p => isChatable(p) && (p.email || '').trim().toLowerCase() !== myEmail)
     .map(p => `
       <button onclick='selectChatTarget(${JSON.stringify(p.id)})' id="chatTargetBtn-${p.id}" class="w-full text-left px-3.5 py-2.5 text-xs font-medium flex items-center space-x-2 border-b border-slate-800/40 transition truncate">
         <i data-lucide="user" class="w-3.5 h-3.5 shrink-0"></i><span class="truncate">${p.name}</span>
@@ -2057,7 +2319,7 @@ function highlightChatTargetButton() {
   const feedbackBtn = document.getElementById('chatTargetBtn-feedback');
   if (feedbackBtn) feedbackBtn.className = currentChatTarget === 'FEEDBACK' ? activeFeedbackCls : inactiveFeedbackCls;
 
-  registeredPeople.filter(p => !p.isPure).forEach(p => {
+  registeredPeople.filter(isChatable).forEach(p => {
     const btn = document.getElementById('chatTargetBtn-' + p.id);
     if (btn) btn.className = (currentChatTarget && currentChatTarget !== 'FEEDBACK' && currentChatTarget.id === p.id) ? activeCls : inactiveCls;
   });
@@ -2313,6 +2575,9 @@ function savePersonEmail(id) {
   if (!input) return;
   const val = input.value.trim();
   if (!val) { alert(translate('alert_email_empty')); return; }
+  const p = registeredPeople.find(x => x.id === id);
+  if (p && p.canLogin && p.email.trim().toLowerCase() !== val.toLowerCase() &&
+      !confirm('Bu kişinin giriş hesabı bu e-postaya bağlı. Değiştirirseniz yeni adresle yeniden "İlk Kez Giriş" yapması gerekir. Devam edilsin mi?')) return;
   updatePersonEmail(id, val);
 }
 
@@ -2366,7 +2631,8 @@ const EMAILJS_PUBLIC_KEY = "Ub7uu7-GaHrGxcBsu";
 let emailjsReady = false;
 
 let tasks = [];
-let currentUser = JSON.parse(localStorage.getItem('demigproject_user')) || null;
+let currentUser = null;
+try { localStorage.removeItem('demigproject_user'); } catch (e) {}
 let progressChartObj = null;
 let expandedTasks = {};
 let expandedGantt = {};
@@ -2380,63 +2646,82 @@ let currentWeeklyTodoTaskIdx = null;
 
 const monthNames = ["Ekim '25", "Kasım '25", "Aralık '25", "Ocak '26", "Şubat '26", "Mart '26", "Nisan '26", "Mayıs '26", "Haziran '26", "Temmuz '26", "Ağustos '26", "Eylül '26"];
 
+let loginRoster = [];
+let authMode = 'login';
+let appStarted = false;
+
 document.addEventListener("DOMContentLoaded", async () => {
   initExternalLibraries();
   lucide.createIcons();
   applyStaticI18n();
-  populateLoginPersonSelect();
-  if (currentUser) {
-    document.getElementById('authModal').classList.add('hidden');
-    document.getElementById('loadingScreen').classList.remove('hidden');
-    updateUserBadge();
-    const slowTimer1 = setTimeout(() => document.getElementById('loadingSlowHint').classList.remove('hidden'), 6000);
-    await loadDataFromBackend();
-    clearTimeout(slowTimer1);
-    document.getElementById('loadingSlowHint').classList.add('hidden');
-    populateTaskFilterOptions();
-    renderAll();
-    document.getElementById('loadingScreen').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-    startChatPolling();
-    startUnreadPolling();
-    maybeShowTourWelcome();
+  if (!supabaseClient) { showAuthMsg('Sunucu bağlantısı kurulamadı. Sayfayı yenileyin.', true); return; }
+  supabaseClient.auth.onAuthStateChange((event) => {
+    if (event === 'PASSWORD_RECOVERY') showRecoveryForm();
+  });
+  await populateLoginPersonSelect();
+  setAuthMode('login');
+  const { data } = await supabaseClient.auth.getSession();
+  if (data && data.session && !isRecoveryUrl()) {
+    await enterApp(data.session.user.email);
   }
 });
 
-function populateLoginPersonSelect() {
-  const sel = document.getElementById('userName');
-  if (!sel) return;
-  const sorted = [...seedPeople].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
-  sel.innerHTML = `<option value="" data-i18n="login_name_placeholder_opt">${translate('login_name_placeholder_opt')}</option>` +
-    sorted.map(p => `<option value="${p.id}">${escHtmlLogin(p.name)}</option>`).join('');
+function isRecoveryUrl() { return /type=recovery/.test(location.hash || ''); }
+
+function showAuthMsg(msg, isErr) {
+  const el = document.getElementById('authMsg');
+  if (!el) return;
+  if (!msg) { el.classList.add('hidden'); return; }
+  el.className = 'text-xs rounded-lg px-3 py-2 ' + (isErr ? 'bg-red-900/40 text-red-200 border border-red-700' : 'bg-emerald-900/40 text-emerald-200 border border-emerald-700');
+  el.innerText = msg;
 }
 
-function escHtmlLogin(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function setAuthMode(mode) {
+  authMode = mode;
+  const login = mode === 'login', signup = mode === 'signup', rec = mode === 'recovery', reset = mode === 'reset';
+  document.getElementById('authTabs').classList.toggle('hidden', rec);
+  document.getElementById('authNameRow').classList.toggle('hidden', rec);
+  document.getElementById('userName').required = !rec;
+  document.getElementById('authPw2Row').classList.toggle('hidden', login);
+  document.getElementById('authCodeRow').classList.toggle('hidden', !(signup || reset));
+  document.getElementById('authForgotBtn').classList.toggle('hidden', !login);
+  document.getElementById('authPwLabel').innerText = login ? 'Şifre' : 'Yeni Şifre (en az 6 karakter)';
+  document.getElementById('authBackBtn').classList.toggle('hidden', !reset);
+  document.getElementById('authPassword').autocomplete = login ? 'current-password' : 'new-password';
+  document.getElementById('authSubmitBtn').innerText = login ? 'Sisteme Giriş Yap' : (signup ? 'Hesap Oluştur ve Giriş Yap' : (reset ? 'Şifreyi Sıfırla ve Giriş Yap' : 'Yeni Şifreyi Kaydet'));
+  const on = 'bg-indigo-600 text-white', off = 'text-slate-300 hover:bg-slate-800';
+  document.getElementById('authTabs').classList.toggle('hidden', rec || reset);
+  document.getElementById('authTabLogin').className = 'flex-1 py-2 transition ' + (login ? on : off);
+  document.getElementById('authTabSignup').className = 'flex-1 py-2 transition ' + (signup ? on : off);
+  showAuthMsg('');
 }
 
-function onLoginPersonSelected() {
-  const sel = document.getElementById('userName');
-  const person = seedPeople.find(p => p.id === sel.value);
-  document.getElementById('userEmail').value = person ? person.email : '';
-  document.getElementById('userDept').value = person ? person.role : '';
+function showRecoveryForm() {
+  document.getElementById('authModal').classList.remove('hidden');
+  setAuthMode('recovery');
+  showAuthMsg('Yeni şifrenizi belirleyin.', false);
 }
 
-async function handleLogin(e) {
-  e.preventDefault();
-  const selectedId = document.getElementById('userName').value;
-  const person = seedPeople.find(p => p.id === selectedId);
-  currentUser = person
-    ? { name: person.name, email: person.email, dept: person.role }
-    : { name: document.getElementById('userName').value, email: document.getElementById('userEmail').value, dept: document.getElementById('userDept').value };
-  localStorage.setItem('demigproject_user', JSON.stringify(currentUser));
+async function enterApp(email) {
+  if (appStarted) return;
   document.getElementById('authModal').classList.add('hidden');
   document.getElementById('loadingScreen').classList.remove('hidden');
-  updateUserBadge();
-  const slowTimer2 = setTimeout(() => document.getElementById('loadingSlowHint').classList.remove('hidden'), 6000);
+  const slowTimer = setTimeout(() => document.getElementById('loadingSlowHint').classList.remove('hidden'), 6000);
   await loadDataFromBackend();
-  clearTimeout(slowTimer2);
+  clearTimeout(slowTimer);
   document.getElementById('loadingSlowHint').classList.add('hidden');
+  const me = registeredPeople.find(p => p.email && p.email.trim().toLowerCase() === (email || '').trim().toLowerCase());
+  if (!me || me.active === false || !me.canLogin) {
+    await supabaseClient.auth.signOut();
+    document.getElementById('loadingScreen').classList.add('hidden');
+    document.getElementById('authModal').classList.remove('hidden');
+    showAuthMsg(me && me.active === false ? 'Hesabınız pasif durumda. Giriş yapılamaz.' : 'Bu hesabın sisteme giriş yetkisi yok.', true);
+    return;
+  }
+  appStarted = true;
+  loadStatusLog();
+  currentUser = { name: me.name, email: me.email, dept: me.role };
+  updateUserBadge();
   await recordLogin();
   populateTaskFilterOptions();
   renderAll();
@@ -2447,8 +2732,125 @@ async function handleLogin(e) {
   maybeShowTourWelcome();
 }
 
-function logout() {
-  localStorage.removeItem('demigproject_user');
+async function populateLoginPersonSelect() {
+  const sel = document.getElementById('userName');
+  if (!sel) return;
+  let roster = [];
+  try {
+    const { data, error } = await supabaseClient.rpc('login_roster');
+    if (!error && Array.isArray(data)) roster = data;
+  } catch (e) {}
+  if (!roster.length) {
+    // RPC henüz kurulmadıysa: ana ekipten giriş yetkili 9 kişi
+    const ids = ['p1','p2','p3','p4','p5','p6','p8','p9','p11'];
+    roster = seedPeople.filter(p => ids.includes(p.id));
+  }
+  loginRoster = roster.slice().sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+  sel.innerHTML = `<option value="">${translate('login_name_placeholder_opt')}</option>` +
+    loginRoster.map(p => `<option value="${p.id}">${escHtmlLogin(p.name)}</option>`).join('');
+}
+
+function escHtmlLogin(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function onLoginPersonSelected() {
+  const person = loginRoster.find(p => p.id === document.getElementById('userName').value);
+  document.getElementById('userEmail').value = person ? person.email : '';
+  document.getElementById('userDept').value = person ? person.role : '';
+}
+
+function authErrText(err) {
+  const m = (err && err.message) || String(err);
+  if (/Invalid login credentials/i.test(m)) return 'E-posta veya şifre hatalı. İlk kez giriyorsanız "İlk Kez Giriş" sekmesinden şifre belirleyin.';
+  if (/already registered|already been registered/i.test(m)) return 'Bu kişi için hesap zaten var. "Giriş Yap" sekmesini kullanın veya "Şifremi unuttum"a basın.';
+  if (/Ekip kodu/i.test(m)) return 'Ekip kodu hatalı.';
+  if (/Database error saving new user/i.test(m)) return 'Hesap açılamadı: ekip kodu hatalı ya da hesabınız aktif değil.';
+  if (/rate limit/i.test(m)) return 'Çok fazla deneme yapıldı, biraz sonra tekrar deneyin.';
+  return m;
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  showAuthMsg('');
+  const pw = document.getElementById('authPassword').value;
+  const btn = document.getElementById('authSubmitBtn');
+  btn.disabled = true;
+  try {
+    if (authMode === 'recovery') {
+      if (pw.length < 6) throw new Error('Şifre en az 6 karakter olmalı.');
+      if (pw !== document.getElementById('authPassword2').value) throw new Error('Şifreler aynı değil.');
+      const { error } = await supabaseClient.auth.updateUser({ password: pw });
+      if (error) throw error;
+      history.replaceState(null, '', location.pathname);
+      const { data } = await supabaseClient.auth.getSession();
+      await enterApp(data.session.user.email);
+      return;
+    }
+    const person = loginRoster.find(p => p.id === document.getElementById('userName').value);
+    if (!person) throw new Error('Lütfen adınızı seçin.');
+    if (authMode === 'reset') {
+      if (pw.length < 6) throw new Error('Şifre en az 6 karakter olmalı.');
+      if (pw !== document.getElementById('authPassword2').value) throw new Error('Şifreler aynı değil.');
+      const code = document.getElementById('authInviteCode').value.trim();
+      if (!code) throw new Error('Ekip kodunu girin.');
+      const { data, error } = await supabaseClient.functions.invoke('reset-password', { body: { person_id: person.id, code, new_password: pw } });
+      if (error) throw new Error((data && data.error) || 'Şifre sıfırlanamadı. Sıfırlama fonksiyonunun kurulu olduğundan emin olun.');
+      if (data && data.ok === false) throw new Error(data.error);
+      const r = await supabaseClient.auth.signInWithPassword({ email: person.email.trim().toLowerCase(), password: pw });
+      if (r.error) throw r.error;
+      document.getElementById('authPassword').value = ''; document.getElementById('authInviteCode').value = '';
+      await enterApp(person.email);
+      return;
+    }
+    const email = person.email.trim().toLowerCase();
+    if (authMode === 'signup') {
+      if (pw.length < 6) throw new Error('Şifre en az 6 karakter olmalı.');
+      if (pw !== document.getElementById('authPassword2').value) throw new Error('Şifreler aynı değil.');
+      const code = document.getElementById('authInviteCode').value.trim();
+      if (!code) throw new Error('Ekip kodunu girin.');
+      const { data, error } = await supabaseClient.auth.signUp({ email, password: pw, options: { data: { invite_code: code } } });
+      if (error) throw error;
+      if (!data.session) {
+        const r = await supabaseClient.auth.signInWithPassword({ email, password: pw });
+        if (r.error) throw new Error('Hesap oluşturuldu ancak oturum açılamadı. Supabase\'de "Confirm email" seçeneğinin kapalı olması gerekir.');
+      }
+    } else {
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password: pw });
+      if (error) throw error;
+    }
+    document.getElementById('authPassword').value = '';
+    document.getElementById('authInviteCode').value = '';
+    await enterApp(email);
+  } catch (err) {
+    showAuthMsg(authErrText(err), true);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function openChangePassword() {
+  ['chgPwOld', 'chgPwNew', 'chgPwNew2'].forEach(i => { document.getElementById(i).value = ''; });
+  document.getElementById('chgPwMsg').innerText = '';
+  document.getElementById('chgPwModal').classList.remove('hidden');
+}
+
+async function changePassword() {
+  const msg = document.getElementById('chgPwMsg');
+  const setMsg = (t, ok) => { msg.innerText = t; msg.className = 'text-xs ' + (ok ? 'text-emerald-400' : 'text-red-400'); };
+  const o = document.getElementById('chgPwOld').value, n = document.getElementById('chgPwNew').value, n2 = document.getElementById('chgPwNew2').value;
+  if (n.length < 6) return setMsg('Yeni şifre en az 6 karakter olmalı.');
+  if (n !== n2) return setMsg('Yeni şifreler aynı değil.');
+  const chk = await supabaseClient.auth.signInWithPassword({ email: currentUser.email.trim().toLowerCase(), password: o });
+  if (chk.error) return setMsg('Mevcut şifre hatalı.');
+  const { error } = await supabaseClient.auth.updateUser({ password: n });
+  if (error) return setMsg(error.message);
+  setMsg('Şifre değiştirildi.', true);
+  setTimeout(() => document.getElementById('chgPwModal').classList.add('hidden'), 1200);
+}
+
+async function logout() {
+  try { await supabaseClient.auth.signOut(); } catch (e) {}
   location.reload();
 }
 
@@ -2459,15 +2861,29 @@ function updateUserBadge() {
 }
 
 function populateTaskFilterOptions() {
-  const select = document.getElementById('reportTaskFilter');
-  if (!select) return;
-  select.innerHTML = `<option value="ALL">${translate('report_all_tasks')}</option>`;
-  tasks.forEach(t => {
-    const opt = document.createElement('option');
-    opt.value = t.id;
-    opt.innerText = `${t.id} - ${t.name}`;
-    select.appendChild(opt);
-  });
+  const box = document.getElementById('reportTaskFilter');
+  if (!box) return;
+  const prev = new Set(Array.from(box.querySelectorAll('.report-task-cb:checked')).map(c => c.value));
+  const first = box.children.length === 0;
+  const byModule = {};
+  tasks.forEach(t => { (byModule[t.module] = byModule[t.module] || []).push(t); });
+  box.innerHTML = Object.keys(byModule).map(m => `
+    <div class="pt-1 text-[10px] font-bold text-indigo-300 uppercase">${escapeHtml(m)}</div>` +
+    byModule[m].map(t => `<label class="flex items-center gap-1.5 text-slate-200 cursor-pointer"><input type="checkbox" class="report-task-cb rounded bg-slate-800 border-slate-700" value="${escapeHtml(t.id)}" ${first || prev.has(t.id) ? 'checked' : ''} onchange="updateReportPickerLabel()"><span class="truncate">${escapeHtml(t.name)}</span></label>`).join('')
+  ).join('');
+  updateReportPickerLabel();
+}
+
+function reportPickAll(v) {
+  document.querySelectorAll('.report-task-cb').forEach(c => { c.checked = v; });
+  updateReportPickerLabel();
+}
+
+function updateReportPickerLabel() {
+  const all = document.querySelectorAll('.report-task-cb');
+  const n = document.querySelectorAll('.report-task-cb:checked').length;
+  const el = document.getElementById('reportPickerSummary');
+  if (el) el.firstElementChild.innerText = n === all.length ? `Tüm görevler (${n})` : `${n} / ${all.length} görev seçili`;
 }
 
 function renderAll() {
@@ -2475,7 +2891,6 @@ function renderAll() {
   renderDiagrams();
   renderExcelGanttMatrix();
   renderWeeklyOverviewTable();
-  renderRoadmap();
   renderTasksTable();
   renderPeople();
   renderDashboardSummary();
@@ -2677,7 +3092,7 @@ function toggleTasksRow(idx) {
 
 function populateWeeklyTodoAssigneeSelect() {
   const box = document.getElementById('weeklyTodoAssignee');
-  box.innerHTML = registeredPeople.filter(p => !p.isPure).map(p => `
+  box.innerHTML = registeredPeople.filter(isAssignable).map(p => `
     <label class="flex items-center space-x-1.5 cursor-pointer text-slate-300 hover:text-slate-100">
       <input type="checkbox" value="${p.id}" class="weekly-todo-person-checkbox rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
       <span class="truncate">@${p.name}</span>
@@ -2686,11 +3101,19 @@ function populateWeeklyTodoAssigneeSelect() {
 }
 
 function openWeeklyTodoModal(taskIdx, todoId) {
+  const global = taskIdx === null || taskIdx === undefined;
+  if (global) taskIdx = 0;
   currentWeeklyTodoTaskIdx = taskIdx;
+  const row = document.getElementById('weeklyTodoTaskRow');
+  row.classList.toggle('hidden', !global);
+  if (global) {
+    const sel = document.getElementById('weeklyTodoTaskSelect');
+    sel.innerHTML = tasks.map((t, i) => `<option value="${i}">${escapeHtml(t.name)}</option>`).join('');
+  }
   document.getElementById('weeklyTodoForm').reset();
   document.getElementById('weeklyTodoId').value = '';
   populateWeeklyTodoAssigneeSelect();
-  document.getElementById('weeklyTodoModalTitle').innerText = translate('weekly_modal_add_prefix') + ' ' + tasks[taskIdx].name;
+  document.getElementById('weeklyTodoModalTitle').innerText = global ? 'Haftalık Görev Ekle' : translate('weekly_modal_add_prefix') + ' ' + tasks[taskIdx].name;
 
   if (todoId) {
     const w = tasks[taskIdx].weeklyTodos.find(x => x.id === todoId);
@@ -2717,6 +3140,9 @@ function closeWeeklyTodoModal() {
 
 async function saveWeeklyTodo(e) {
   e.preventDefault();
+  if (!document.getElementById('weeklyTodoTaskRow').classList.contains('hidden')) {
+    currentWeeklyTodoTaskIdx = parseInt(document.getElementById('weeklyTodoTaskSelect').value, 10) || 0;
+  }
   const taskIdx = currentWeeklyTodoTaskIdx;
   ensureWeeklyTodos(tasks[taskIdx]);
   const id = document.getElementById('weeklyTodoId').value;
@@ -2753,36 +3179,75 @@ async function saveWeeklyTodo(e) {
   }
 }
 
+function escapeHtml(v) { return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
 function renderWeeklyOverviewTable() {
   const tbody = document.getElementById('weeklyOverviewBody');
   if (!tbody) return;
-  tbody.innerHTML = '';
+  // filtre seçeneklerini (seçimi koruyarak) doldur
+  const fp = document.getElementById('woFilterPerson'), ft = document.getElementById('woFilterTask');
+  const prevP = fp.value, prevT = ft.value;
+  fp.innerHTML = '<option value="">Tüm Kişiler</option><option value="__none">Atanmamış</option>' +
+    registeredPeople.filter(p => p.active !== false).map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  ft.innerHTML = '<option value="">Tüm Görevler</option>' + tasks.map((t, i) => `<option value="${i}">${escapeHtml(t.name)}</option>`).join('');
+  fp.value = [...fp.options].some(o => o.value === prevP) ? prevP : '';
+  ft.value = [...ft.options].some(o => o.value === prevT) ? prevT : '';
+  const fs = document.getElementById('woFilterStatus').value;
+
   let rows = [];
-  tasks.forEach(t => {
+  tasks.forEach((t, ti) => {
     ensureWeeklyTodos(t);
-    t.weeklyTodos.forEach(w => {
-      const ppl = (w.assigneeIds || []).map(id => registeredPeople.find(x => x.id === id)).filter(Boolean);
-      rows.push({ person: ppl.length ? ppl.map(p => p.name).join(', ') : translate('not_assigned'), task: t.name, text: w.text, priority: w.priority, status: w.status, start: w.startDate, end: w.endDate });
-    });
+    t.weeklyTodos.forEach(w => rows.push({ ti, w, t }));
   });
-  rows.sort((a, b) => priorityWeight(b.priority) - priorityWeight(a.priority));
+  const total = rows.length, doneAll = rows.filter(r => r.w.status === 'Tamamlandı').length;
+  rows = rows.filter(r => {
+    const ids = r.w.assigneeIds || [];
+    if (fp.value === '__none' && ids.length) return false;
+    if (fp.value && fp.value !== '__none' && !ids.includes(fp.value)) return false;
+    if (ft.value !== '' && String(r.ti) !== ft.value) return false;
+    if (fs && r.w.status !== fs) return false;
+    return true;
+  });
+  rows.sort((a, b) => (a.w.status === 'Tamamlandı') - (b.w.status === 'Tamamlandı') || priorityWeight(b.w.priority) - priorityWeight(a.w.priority));
+  const sum = document.getElementById('weeklyOverviewSummary');
+  if (sum) sum.innerText = `${total} görev maddesi · ${doneAll} tamamlandı · ${total - doneAll} açık` + (rows.length !== total ? ` · filtrede ${rows.length}` : '');
+
+  tbody.innerHTML = '';
   if (rows.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" class="p-3 text-center text-slate-400">${translate('weekly_todo_empty')}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="p-3 text-center text-slate-400">${translate('weekly_todo_empty')}</td></tr>`;
     return;
   }
-  rows.forEach(r => {
+  rows.forEach(({ ti, w, t }) => {
+    const ppl = (w.assigneeIds || []).map(id => registeredPeople.find(x => x.id === id)).filter(Boolean);
+    let personCell;
+    if (ppl.length === 0) personCell = `<span class="text-slate-400">${translate('not_assigned')}</span>`;
+    else if (ppl.length === 1) personCell = `<span class="font-semibold text-indigo-300 whitespace-nowrap">${escapeHtml(ppl[0].name)}</span>`;
+    else personCell = `<details class="relative"><summary class="cursor-pointer font-semibold text-indigo-300 whitespace-nowrap list-none">${escapeHtml(ppl[0].name)} <span class="text-[9px] bg-slate-800 border border-slate-700 rounded px-1">+${ppl.length - 1} ▾</span></summary><div class="mt-1 p-2 rounded-lg bg-slate-900 border border-slate-700 space-y-0.5 absolute z-20 min-w-[140px] shadow-xl">${ppl.map(p => `<div class="text-slate-200 whitespace-nowrap">${escapeHtml(p.name)}</div>`).join('')}</div></details>`;
+    const done = w.status === 'Tamamlandı';
     const tr = document.createElement('tr');
-    tr.className = "border-b border-slate-800/50";
+    tr.className = "border-b border-slate-800/50 " + (done ? 'opacity-60' : '');
     tr.innerHTML = `
-      <td class="p-1.5 font-semibold text-indigo-300 whitespace-nowrap">${r.person}</td>
-      <td class="p-1.5 text-slate-300 truncate max-w-[120px]" title="${r.task}">${r.task}</td>
-      <td class="p-1.5 text-slate-400 truncate max-w-[160px]" title="${r.text}">${r.text || '-'}</td>
-      <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold border whitespace-nowrap ${priorityBadgeClass(r.priority)}">${r.priority}</span></td>
-      <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold border whitespace-nowrap ${statusBadgeClass(r.status)}">${r.status}</span></td>
-      <td class="p-1.5 font-mono text-[10px] text-slate-400 whitespace-nowrap">${r.start || '?'} → ${r.end || '?'}</td>
+      <td class="p-1.5">${personCell}</td>
+      <td class="p-1.5 text-slate-300 truncate max-w-[160px]" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</td>
+      <td class="p-1.5 text-slate-300 max-w-[320px]" title="${escapeHtml(w.text || '')}"><div class="line-clamp-2 ${done ? 'line-through' : ''}">${escapeHtml(w.text) || '-'}</div></td>
+      <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold border whitespace-nowrap ${priorityBadgeClass(w.priority)}">${w.priority}</span></td>
+      <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold border whitespace-nowrap ${statusBadgeClass(w.status)}">${w.status}</span></td>
+      <td class="p-1.5 font-mono text-[10px] text-slate-400 whitespace-nowrap">${w.startDate || '?'} → ${w.endDate || '?'}</td>
+      <td class="p-1.5 text-right whitespace-nowrap">
+        <button onclick="quickToggleWeeklyTodo(${ti}, '${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300" title="${done ? 'Geri al (Devam Ediyor)' : 'Tamamlandı işaretle'}">${done ? '↩ Geri al' : '✓ Bitti'}</button>
+        <button onclick="openWeeklyTodoModal(${ti}, '${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">Düzenle</button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
+}
+
+async function quickToggleWeeklyTodo(ti, id) {
+  const w = (tasks[ti].weeklyTodos || []).find(x => x.id === id);
+  if (!w) return;
+  w.status = w.status === 'Tamamlandı' ? 'Devam Ediyor' : 'Tamamlandı';
+  await persistTask(tasks[ti]);
+  renderAll();
 }
 
 function getCurrentPersonId() {
@@ -2873,7 +3338,7 @@ function populateSidebarPersonFilter() {
   allOpt.value = 'all';
   allOpt.innerText = translate('sidebar_filter_all');
   sel.appendChild(allOpt);
-  registeredPeople.filter(p => !p.isPure).forEach(p => {
+  registeredPeople.filter(isAssignable).forEach(p => {
     const opt = document.createElement('option');
     opt.value = p.id;
     opt.innerText = p.name;
@@ -2984,13 +3449,14 @@ function renderExcelGanttMatrix() {
       }
       let cellContent = '';
       if (val === 100) {
-        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-emerald-500 text-slate-950 rounded font-bold flex items-center justify-center text-[10px] shadow" title="${translate('legend_completed')}">✓ %100</div>`;
+        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" oncontextmenu="event.preventDefault();toggleMonthState(${tIdx}, ${m}, -1)" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-emerald-500 text-slate-950 rounded font-bold flex items-center justify-center text-[10px] shadow" title="${translate('legend_completed')}">✓ %100</div>`;
       } else if (val > 0) {
-        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-indigo-600 text-white rounded font-bold flex items-center justify-center text-[10px] shadow" title="${translate('active_period')}">%${val}</div>`;
+        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" oncontextmenu="event.preventDefault();toggleMonthState(${tIdx}, ${m}, -1)" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-indigo-600 text-white rounded font-bold flex items-center justify-center text-[10px] shadow" title="${translate('active_period')}">%${val}</div>`;
       } else {
-        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" class="cursor-pointer hover:bg-slate-800 transition w-full h-7 bg-slate-900/40 text-slate-300 rounded border border-slate-800/80 flex items-center justify-center text-[10px]" title="${translate('inactive_period')}">-</div>`;
+        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" oncontextmenu="event.preventDefault();toggleMonthState(${tIdx}, ${m}, -1)" class="cursor-pointer hover:bg-slate-800 transition w-full h-7 bg-slate-900/40 text-slate-300 rounded border border-slate-800/80 flex items-center justify-center text-[10px]" title="${translate('inactive_period')}">-</div>`;
       }
-      monthCells += `<td class="p-1 text-center w-16 h-8">${cellContent}</td>`;
+      const undoBtn = val > 0 ? `<button onclick="toggleMonthState(${tIdx}, ${m}, -1)" title="−5% geri al" class="absolute -top-1 -right-1 w-3.5 h-3.5 leading-none rounded-full bg-slate-700 text-white text-[10px] hidden group-hover:flex items-center justify-center">−</button>` : '';
+      monthCells += `<td class="p-1 text-center w-16 h-8"><div class="relative group">${cellContent}${undoBtn}</div></td>`;
     }
 
     tr.innerHTML = `
@@ -3018,7 +3484,7 @@ function renderExcelGanttMatrix() {
   });
 }
 
-async function toggleMonthState(tIdx, monthIdx) {
+async function toggleMonthState(tIdx, monthIdx, delta = 1) {
   let t = tasks[tIdx];
   if (!t.monthProgress) {
     t.monthProgress = new Array(12).fill(0);
@@ -3029,60 +3495,11 @@ async function toggleMonthState(tIdx, monthIdx) {
     }
   }
   let cur = t.monthProgress[monthIdx] || 0;
-  let next = cur + 5;
-  if (next > 100) next = 0;
+  // delta: +5 (tıkla) / -5 (sağ tık veya − butonu); 100'den sonra tıklama 0'a sarar
+  let next = delta < 0 ? Math.max(0, cur - 5) : (cur >= 100 ? 0 : Math.min(100, cur + 5));
   t.monthProgress[monthIdx] = next;
   await persistTask(t);
   renderAll();
-}
-
-function renderRoadmap() {
-  const container = document.getElementById('roadmapDiagram');
-  container.innerHTML = '';
-
-  tasks.forEach((t, index) => {
-    const isDone = t.status === 'Tamamlandı';
-    const taggedNames = t.taggedIds.map(id => {
-      const p = registeredPeople.find(x => x.id === id);
-      return p ? `@${p.name}` : '';
-    }).filter(Boolean).join(', ');
-
-    const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1;
-    const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
-    const periodStr = `${translatedMonthName(sIdx)} - ${translatedMonthName(eIdx)}`;
-
-    const card = document.createElement('div');
-    card.className = "relative z-10 ml-12 group";
-    card.innerHTML = `
-      <div class="absolute -left-12 top-1.5 w-7 h-7 rounded-full ${isDone ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-indigo-600 text-white'} border-4 border-slate-950 flex items-center justify-center text-xs shadow-lg">
-        ${isDone ? '✓' : '➔'}
-      </div>
-      <div class="glass-card p-4 rounded-2xl border border-slate-800 hover:border-indigo-500/40 transition">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-          <div class="flex items-center space-x-2">
-            <span class="px-2 py-0.5 text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">${t.module}</span>
-            <span class="text-[11px] text-slate-400 font-mono font-bold">${t.id}</span>
-            <span class="text-[10px] bg-slate-900 px-2 py-0.5 rounded text-amber-300 border border-slate-700 font-sans">🕒 ${translate('planned_period')}: <strong>${periodStr}</strong></span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <select onchange="updateTaskInline(${index}, 'status', this.value)" class="text-[11px] font-bold bg-slate-900 border ${isDone ? 'text-emerald-400 border-emerald-500/30' : 'text-indigo-400 border-indigo-500/30'} px-2 py-0.5 rounded-full">
-              <option value="Tamamlandı" ${t.status === 'Tamamlandı' ? 'selected' : ''}>${translate('status_completed')}</option>
-              <option value="Devam Ediyor" ${t.status === 'Devam Ediyor' ? 'selected' : ''}>${translate('status_in_progress')}</option>
-              <option value="Planlandı" ${t.status === 'Planlandı' ? 'selected' : ''}>${translate('status_planned')}</option>
-            </select>
-            <button onclick="editTask('${t.id}')" class="p-1 text-slate-400 hover:text-slate-100 bg-slate-800 rounded hover:bg-slate-700 transition" title="${translate('edit')}">
-              <i data-lucide="edit-2" class="w-3.5 h-3.5"></i>
-            </button>
-          </div>
-        </div>
-        <input type="text" value="${t.name}" onchange="updateTaskInline(${index}, 'name', this.value)" class="text-sm font-bold text-slate-100 mb-1.5 bg-transparent border-b border-transparent hover:border-indigo-500 focus:border-indigo-500 editable-input px-1 py-0.5 rounded w-full">
-        <div class="text-[11px] text-indigo-300 font-medium mb-2">${taggedNames || translate('no_responsible')}</div>
-        <textarea onchange="updateTaskInline(${index}, 'notes', this.value)" rows="2" class="text-xs text-slate-300 italic bg-slate-900/80 p-2.5 rounded-xl border border-slate-800 hover:border-slate-700 editable-input w-full">${t.notes}</textarea>
-        ${weeklyTodoSummaryHTML(t, index)}
-      </div>
-    `;
-    container.appendChild(card);
-  });
 }
 
 function weeklyTodoSummaryHTML(t, index) {
@@ -3201,41 +3618,160 @@ async function updateTaskInline(idx, key, val) {
   renderAll();
 }
 
-function renderPeople() {
-  const seniorContainer = document.getElementById('seniorTeamContainer');
-  const pureGrid = document.getElementById('pureTeamGrid');
-  seniorContainer.innerHTML = '';
-  pureGrid.innerHTML = '';
-  registeredPeople.filter(p => !p.isPure).forEach(p => {
-    const card = document.createElement('div');
-    card.className = "glass p-4 rounded-2xl border border-slate-800 space-y-2";
-    card.innerHTML = `
+const GROUP_LABELS = { main: 'Ana Proje Ekibi', service: 'Hizmet Alımı – Hukuk & Yazılım', annotator: 'Hizmet Alımı – Etiketleme (Anotatör) Ekibi' };
+const EVENT_LABELS = { start: 'Başladı', resume: 'Tekrar başladı (ON)', pause: 'Ara verdi (OFF)', left: 'Projeden ayrıldı (OFF)', graduated: 'Mezun oldu (OFF)' };
+let peopleStatusLog = [];
+
+function isActivePerson(p) { return p.active !== false; }
+function isAssignable(p) { return !p.isPure && isActivePerson(p) && personGroup(p) !== 'annotator'; }
+function isChatable(p) { return isActivePerson(p) && !!p.canLogin; }
+
+async function loadStatusLog() {
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient.from('people_status_log').select('*').order('event_date', { ascending: true }).order('id', { ascending: true });
+  if (!error && data) peopleStatusLog = data;
+}
+
+function toggleSwitchHTML(p) {
+  const on = isActivePerson(p);
+  return `<button onclick="requestStatusChange('${p.id}')" title="${on ? 'Aktif — kapatmak için tıkla' : 'Pasif — açmak için tıkla'}" class="shrink-0 flex items-center gap-1.5 px-1.5 py-1 rounded-full border text-[10px] font-bold ${on ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300' : 'bg-slate-800 border-slate-600 text-slate-400'}">
+      <span class="relative inline-block w-7 h-3.5 rounded-full ${on ? 'bg-emerald-500' : 'bg-slate-600'}"><span class="absolute top-0.5 ${on ? 'left-[14px]' : 'left-0.5'} w-2.5 h-2.5 rounded-full bg-white transition-all"></span></span>${on ? 'ON' : 'OFF'}</button>`;
+}
+
+function personStatusLine(p) {
+  if (isActivePerson(p)) return p.startDate ? `<span class="text-[10px] text-slate-500">Başlangıç: ${p.startDate}</span>` : '';
+  const lab = { pause: 'Ara verdi', left: 'Ayrıldı', graduated: 'Mezun' }[p.endReason] || 'Pasif';
+  return `<span class="text-[10px] text-amber-400">${lab}${p.endDate ? ' · ' + p.endDate : ''}</span>`;
+}
+
+function personCardHTML(p, big) {
+  const off = !isActivePerson(p);
+  const sub = big ? p.role : (p.dept || p.role);
+  return `
+    <div class="${big ? 'glass p-4 rounded-2xl border border-slate-800' : 'bg-slate-900/80 p-3 rounded-xl border border-slate-800'} space-y-1.5 ${off ? 'opacity-50' : ''}">
       <div class="flex items-start justify-between gap-2">
-        <div>
-          <h3 class="text-sm font-bold text-slate-100">${p.name}</h3>
-          <span class="text-xs text-indigo-400 font-semibold">${p.role}</span>
+        <div class="min-w-0">
+          <h3 class="${big ? 'text-sm' : 'text-xs'} font-bold text-slate-100">${escapeHtml(p.name)}${p.canLogin ? ' <span class="text-[9px] font-semibold text-indigo-300 border border-indigo-500/40 rounded px-1 align-middle">giriş yetkili</span>' : ''}</h3>
+          <div class="text-[10px] ${big ? 'text-indigo-400 font-semibold text-xs' : 'text-indigo-300'} mt-0.5">${escapeHtml(sub)}</div>
+          ${personStatusLine(p)}
         </div>
-        <div class="flex items-center gap-1 shrink-0">
-          <input type="email" id="personEmail-${p.id}" value="${p.email}" title="${translate('email_tooltip_long')}" class="text-[10px] text-slate-300 bg-slate-800/80 px-2 py-1 rounded border border-slate-700 font-mono w-40 text-right focus:outline-none focus:border-indigo-500 focus:text-slate-100">
-          <button onclick="savePersonEmail('${p.id}')" title="${translate('btn_save')}" class="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shrink-0"><i data-lucide="check" class="w-3.5 h-3.5"></i></button>
-        </div>
+        ${toggleSwitchHTML(p)}
       </div>
-    `;
-    seniorContainer.appendChild(card);
-  });
-  registeredPeople.filter(p => p.isPure).forEach(p => {
-    const item = document.createElement('div');
-    item.className = "bg-slate-900/80 p-3 rounded-xl border border-slate-800 hover:border-indigo-500/40 transition";
-    item.innerHTML = `
-      <div class="font-bold text-slate-100 text-xs">${p.name}</div>
-      <div class="text-[10px] text-indigo-300 mt-0.5">${p.dept}</div>
-      <div class="flex items-center gap-1 mt-1">
-        <input type="email" id="personEmail-${p.id}" value="${p.email}" title="${translate('email_tooltip_short')}" class="text-[10px] text-slate-400 bg-slate-900/90 px-1.5 py-1 rounded border border-slate-800 font-mono flex-1 min-w-0 focus:outline-none focus:border-indigo-500 focus:text-slate-100">
-        <button onclick="savePersonEmail('${p.id}')" title="${translate('btn_save')}" class="p-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded shrink-0"><i data-lucide="check" class="w-3 h-3"></i></button>
+      <div class="flex items-center gap-1">
+        <input type="email" id="personEmail-${p.id}" value="${escapeHtml(p.email)}" title="${translate('email_tooltip_long')}" class="text-[10px] text-slate-300 bg-slate-800/80 px-2 py-1 rounded border border-slate-700 font-mono flex-1 min-w-0 focus:outline-none focus:border-indigo-500 focus:text-slate-100">
+        <button onclick="savePersonEmail('${p.id}')" title="${translate('btn_save')}" class="p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shrink-0"><i data-lucide="check" class="w-3.5 h-3.5"></i></button>
       </div>
-    `;
-    pureGrid.appendChild(item);
+    </div>`;
+}
+
+function renderPeople() {
+  const isGrad = p => !isActivePerson(p) && p.endReason === 'graduated';
+  const fill = (id, list, big) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    list = list.slice().sort((a, b) => (isActivePerson(b) - isActivePerson(a)));
+    el.innerHTML = list.map(p => personCardHTML(p, big)).join('') || '<div class="text-xs text-slate-500">Kayıt yok</div>';
+  };
+  const byGrp = g => registeredPeople.filter(p => personGroup(p) === g && !isGrad(p));
+  fill('seniorTeamContainer', byGrp('main'), true);
+  fill('serviceTeamContainer', byGrp('service'), true);
+  fill('pureTeamGrid', byGrp('annotator'), false);
+  const grads = registeredPeople.filter(isGrad);
+  fill('graduatedContainer', grads, false);
+  const gb = document.getElementById('graduatedCountBadge'); if (gb) gb.innerText = grads.length;
+  const ab = document.getElementById('annotatorCountBadge');
+  if (ab) { const l = byGrp('annotator'); ab.innerText = `${l.filter(isActivePerson).length}/${l.length} aktif`; }
+  lucide.createIcons();
+}
+
+function requestStatusChange(id) {
+  const p = registeredPeople.find(x => x.id === id);
+  if (!p) return;
+  const turningOn = !isActivePerson(p);
+  document.getElementById('statusPersonId').value = id;
+  document.getElementById('statusTarget').value = turningOn ? 'on' : 'off';
+  document.getElementById('statusReasonRow').classList.toggle('hidden', turningOn);
+  document.getElementById('statusModalTitle').innerText = `${p.name}: ${turningOn ? 'ON yap (tekrar aktif)' : 'OFF yap (pasifleştir)'}`;
+  document.getElementById('statusDate').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('statusNote').value = '';
+  document.getElementById('statusModal').classList.remove('hidden');
+}
+function closeStatusModal() { document.getElementById('statusModal').classList.add('hidden'); }
+
+async function confirmStatusChange() {
+  const id = document.getElementById('statusPersonId').value;
+  const p = registeredPeople.find(x => x.id === id);
+  if (!p) return;
+  const on = document.getElementById('statusTarget').value === 'on';
+  const date = document.getElementById('statusDate').value || new Date().toISOString().slice(0, 10);
+  const note = document.getElementById('statusNote').value.trim();
+  let ev;
+  if (on) {
+    const hadStart = peopleStatusLog.some(l => l.person_id === id && l.event === 'start') || !!p.startDate;
+    ev = hadStart ? 'resume' : 'start';
+    p.active = true; p.endDate = ''; p.endReason = '';
+    if (!p.startDate) p.startDate = date;
+  } else {
+    ev = document.getElementById('statusReason').value;
+    p.active = false; p.endDate = date; p.endReason = ev;
+  }
+  const row = { person_id: id, event: ev, event_date: date, note: note || null, created_by: currentUser ? currentUser.name : null };
+  peopleStatusLog.push(row);
+  if (supabaseClient) {
+    await persistPerson(p);
+    const { error } = await supabaseClient.from('people_status_log').insert(row);
+    if (error) console.error('Durum günlüğü yazılamadı:', error);
+  } else { savePeople(); }
+  closeStatusModal();
+  renderAll();
+}
+
+function buildHistoryRows() {
+  const rows = peopleStatusLog.slice();
+  // günlüğü olmayan ama başlangıç tarihi bilinen kişiler için
+  registeredPeople.forEach(p => {
+    if (p.startDate && !rows.some(l => l.person_id === p.id && (l.event === 'start'))) rows.push({ person_id: p.id, event: 'start', event_date: p.startDate, note: null, created_by: null });
   });
+  rows.sort((a, b) => String(a.event_date).localeCompare(String(b.event_date)));
+  return rows.map(l => {
+    const p = registeredPeople.find(x => x.id === l.person_id) || { name: l.person_id };
+    return { date: l.event_date, name: p.name, group: GROUP_LABELS[personGroup(p)] || '', event: EVENT_LABELS[l.event] || l.event, note: l.note || '', by: l.created_by || '' };
+  });
+}
+
+async function openStatusHistory() {
+  await loadStatusLog();
+  const rows = buildHistoryRows();
+  document.getElementById('historyBody').innerHTML = rows.map(r => `<tr class="border-b border-slate-800/50"><td class="p-1.5 font-mono whitespace-nowrap">${r.date}</td><td class="p-1.5 font-semibold text-slate-100">${escapeHtml(r.name)}</td><td class="p-1.5 text-slate-400">${escapeHtml(r.group)}</td><td class="p-1.5">${r.event}</td><td class="p-1.5 text-slate-400">${escapeHtml(r.note)}</td><td class="p-1.5 text-slate-500">${escapeHtml(r.by)}</td></tr>`).join('') || '<tr><td colspan="6" class="p-3 text-center text-slate-500">Henüz kayıtlı değişiklik yok.</td></tr>';
+  document.getElementById('historyModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+// Ortak Excel indirme yardımcısı (SheetJS; yüklenemezse CSV)
+function downloadSheets(filename, sheets) {
+  if (window.XLSX) {
+    const wb = XLSX.utils.book_new();
+    sheets.forEach(sh => {
+      const ws = XLSX.utils.aoa_to_sheet(sh.rows);
+      ws['!cols'] = sh.rows[0].map((_, ci) => ({ wch: Math.min(48, Math.max(10, ...sh.rows.map(r => String(r[ci] == null ? '' : r[ci]).length + 2))) }));
+      XLSX.utils.book_append_sheet(wb, ws, sh.name.slice(0, 31));
+    });
+    XLSX.writeFile(wb, filename + '.xlsx');
+  } else {
+    const csv = sheets[0].rows.map(r => r.map(c => '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"').join(';')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = filename + '.csv'; a.click();
+  }
+}
+
+async function exportPeopleExcel() {
+  await loadStatusLog();
+  const statusTxt = p => isActivePerson(p) ? 'ON (Aktif)' : ({ pause: 'OFF – Ara verdi', left: 'OFF – Ayrıldı', graduated: 'Mezun' }[p.endReason] || 'OFF');
+  const people = [['Ad Soyad', 'Grup', 'Rol', 'E-posta', 'Durum', 'Başlangıç', 'Son Durum Tarihi']]
+    .concat(registeredPeople.map(p => [p.name, GROUP_LABELS[personGroup(p)], p.role, p.email, statusTxt(p), p.startDate || '', p.endDate || '']));
+  const hist = [['Tarih', 'Kişi', 'Grup', 'Olay', 'Not', 'Kaydeden']].concat(buildHistoryRows().map(r => [r.date, r.name, r.group, r.event, r.note, r.by]));
+  downloadSheets('DEMIG_Ekip_Durumu_' + new Date().toISOString().slice(0, 10), [{ name: 'Ekip', rows: people }, { name: 'Durum Geçmişi', rows: hist }]);
 }
 
 function togglePureList() {
@@ -3258,121 +3794,150 @@ function renderDashboardSummary() {
   });
 }
 
-function generateAIExecutiveReport() {
+async function generateAIExecutiveReport() {
   const startDate = document.getElementById('reportStartDate').value || '2025-11-01';
   const endDate = document.getElementById('reportEndDate').value || '2026-08-31';
-  const selectedTaskId = document.getElementById('reportTaskFilter').value;
+  const picked = new Set(Array.from(document.querySelectorAll('.report-task-cb:checked')).map(c => c.value));
+  if (picked.size === 0) { alert('Rapor için en az bir görev seçin.'); return; }
+  const allCount = document.querySelectorAll('.report-task-cb').length;
+  const E = escapeHtml;
+  const today = new Date().toISOString().slice(0, 10);
+  const filteredTasks = tasks.filter(t => picked.has(t.id) && t.startDate <= endDate && t.endDate >= startDate);
 
-  document.getElementById('reportCutoffLabel').innerText = `${translate('report_period_prefix')} ${startDate} ➔ ${endDate} | ${translate('report_filter_prefix')} ${selectedTaskId === 'ALL' ? translate('report_all_tasks_short') : selectedTaskId}`;
+  document.getElementById('reportCutoffLabel').innerText = `${startDate} ➔ ${endDate} | ${picked.size === allCount ? 'Tüm görevler' : picked.size + ' görev seçili'}`;
 
-  let filteredTasks = tasks.filter(t => t.startDate <= endDate && t.endDate >= startDate);
-  if (selectedTaskId !== 'ALL') {
-    filteredTasks = filteredTasks.filter(t => t.id === selectedTaskId);
-  }
+  const doneTasks = filteredTasks.filter(t => t.status === 'Tamamlandı').length;
+  const avg = filteredTasks.length ? Math.round(filteredTasks.reduce((a, t) => a + (t.progress || 0), 0) / filteredTasks.length) : 0;
+  let todoTotal = 0, todoDone = 0, todoLate = 0;
+  const perPerson = {};
+  filteredTasks.forEach(t => { ensureWeeklyTodos(t); t.weeklyTodos.forEach(w => {
+    todoTotal++;
+    const done = w.status === 'Tamamlandı';
+    const late = !done && w.endDate && w.endDate < today;
+    if (done) todoDone++; if (late) todoLate++;
+    (w.assigneeIds || []).forEach(id => {
+      const p = registeredPeople.find(x => x.id === id); if (!p) return;
+      const r = perPerson[p.name] = perPerson[p.name] || { role: p.role, total: 0, done: 0, late: 0 };
+      r.total++; if (done) r.done++; if (late) r.late++;
+    });
+  }); });
 
-  const container = document.getElementById('aiReportContainer');
+  const stCls = st => st === 'Tamamlandı' ? 'b-done' : 'b-prog';
+  // modül özeti
+  const mods = {};
+  filteredTasks.forEach(t => { const m = mods[t.module] = mods[t.module] || { n: 0, sum: 0, done: 0 }; m.n++; m.sum += t.progress || 0; if (t.status === 'Tamamlandı') m.done++; });
+  const moduleRows = Object.keys(mods).map(k => `<tr><td>${E(k)}</td><td>${mods[k].n}</td><td>${mods[k].done}</td><td><b>%${Math.round(mods[k].sum / mods[k].n)}</b><div class="bar"><i style="width:${Math.round(mods[k].sum / mods[k].n)}%"></i></div></td></tr>`).join('');
 
-  let timelineRowsHTML = filteredTasks.map(t => {
-    const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1;
-    const eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
-    const periodStr = `${translatedMonthName(sIdx)} - ${translatedMonthName(eIdx)}`;
-    return `
-      <tr class="border-b border-slate-800/60">
-        <td class="p-2 font-bold text-slate-100">${t.id} - ${t.name}</td>
-        <td class="p-2 text-center text-amber-300 font-semibold">${periodStr}</td>
-        <td class="p-2 text-center font-bold ${t.status === 'Tamamlandı' ? 'text-emerald-400' : 'text-indigo-400'}">%${t.progress} (${statusLabel(t.status)})</td>
-      </tr>
-    `;
+  const timelineRows = filteredTasks.map(t => {
+    const sIdx = t.startMonthIdx !== undefined ? t.startMonthIdx : 1, eIdx = t.endMonthIdx !== undefined ? t.endMonthIdx : 8;
+    const team = (t.taggedIds || []).map(id => registeredPeople.find(x => x.id === id)).filter(Boolean).map(p => p.name).join(', ');
+    return `<tr><td><span class="tag">${E(t.id)}</span>${E(t.name)}</td><td>${E(translatedMonthName(sIdx))} – ${E(translatedMonthName(eIdx))}<br><span class="muted">${E(t.startDate || '')} → ${E(t.endDate || '')}</span></td><td>${E(team) || '-'}</td><td class="${stCls(t.status)}">%${t.progress} · ${E(statusLabel(t.status))}</td></tr>`;
   }).join('');
 
-  let collaborationHTML = filteredTasks.map(t => {
-    const teamMembers = t.taggedIds.map(id => {
-      const p = registeredPeople.find(x => x.id === id);
-      return p ? `<span class="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 text-[10px] font-semibold">@${p.name} (${p.role})</span>` : '';
-    }).filter(Boolean).join(' ');
-
-    ensureWeeklyTodos(t);
-    const weeklyRowsHTML = t.weeklyTodos.map(w => {
-      const ppl = (w.assigneeIds || []).map(id => registeredPeople.find(x => x.id === id)).filter(Boolean);
-      const personLabel2 = ppl.length ? ppl.map(p => '@' + p.name).join(', ') : translate('not_assigned');
-      return `
-        <div class="flex items-center flex-wrap gap-2 text-[11px] text-slate-300 py-0.5">
-          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border ${priorityBadgeClass(w.priority)}">${priorityLabel(w.priority)}</span>
-          <span class="px-1.5 py-0.5 rounded text-[9px] font-bold border ${statusBadgeClass(w.status)}">${statusLabel(w.status)}</span>
-          <span class="text-indigo-300 font-semibold">${personLabel2}</span>
-          <span class="text-[10px] text-slate-400 font-mono">${w.startDate || '?'} → ${w.endDate || '?'}</span>
-          <span>${w.text}</span>
-        </div>
-      `;
+  const taskBlocks = filteredTasks.map(t => {
+    const team = (t.taggedIds || []).map(id => registeredPeople.find(x => x.id === id)).filter(Boolean).map(p => `${E(p.name)} <span class="muted">(${E(p.role)})</span>`).join('; ');
+    const wrows = (t.weeklyTodos || []).map(w => {
+      const ppl = (w.assigneeIds || []).map(id => registeredPeople.find(x => x.id === id)).filter(Boolean).map(p => p.name).join(', ');
+      const late = w.status !== 'Tamamlandı' && w.endDate && w.endDate < today;
+      return `<tr><td>${E(ppl) || '-'}</td><td>${E(w.text) || '-'}${w.link ? `<br><span class="muted">${E(w.link)}</span>` : ''}</td><td>${E(priorityLabel(w.priority))}</td><td class="${w.status === 'Tamamlandı' ? 'b-done' : (late ? 'b-late' : 'b-prog')}">${E(statusLabel(w.status))}${late ? ' (gecikmiş)' : ''}</td><td style="white-space:nowrap">${E(w.startDate || '?')} → ${E(w.endDate || '?')}</td></tr>`;
     }).join('');
-
-    return `
-      <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-2">
-        <div class="flex items-center justify-between">
-          <h5 class="text-xs font-bold text-slate-100 flex items-center space-x-2">
-            <span class="px-2 py-0.5 bg-indigo-600/30 text-indigo-400 rounded">${t.id}</span>
-            <span>${t.name}</span>
-          </h5>
-          <span class="text-[10px] font-mono text-emerald-400 font-bold">%${t.progress} ${translate('status_completed')}</span>
-        </div>
-        <div class="text-[11px] text-slate-300">
-          <strong class="text-slate-200">${translate('report_team_members')}</strong>
-          <div class="flex flex-wrap gap-1 mt-1">${teamMembers || `<span class="text-slate-400">${translate('report_no_team')}</span>`}</div>
-        </div>
-        <div class="text-[11px] text-slate-300 bg-slate-900/90 p-2.5 rounded-lg border border-slate-800/60">
-          <strong class="text-amber-300">${translate('report_key_outputs')}</strong> ${t.notes}
-        </div>
-        <div class="text-[11px] text-slate-300 bg-slate-900/90 p-2.5 rounded-lg border border-slate-800/60">
-          <strong class="text-indigo-300">${translate('report_weekly_tracking')}</strong>
-          <div class="mt-1 space-y-0.5">${weeklyRowsHTML || `<span class="text-slate-400 italic">${translate('report_no_weekly')}</span>`}</div>
-        </div>
-      </div>
-    `;
+    return `<div class="task">
+      <div class="task-head"><h3><span class="tag">${E(t.id)}</span>${E(t.name)}</h3><b class="${stCls(t.status)}">%${t.progress} · ${E(statusLabel(t.status))}</b></div>
+      <div class="bar"><i style="width:${t.progress || 0}%"></i></div>
+      <div class="muted" style="font-size:10px">Modül: ${E(t.module)} · Dönem: ${E(t.startDate || '?')} → ${E(t.endDate || '?')}</div>
+      <div style="font-size:10.5px;margin-top:4px"><b>Ekip:</b> ${team || '-'}</div>
+      ${t.notes ? `<div style="font-size:10.5px;margin-top:3px"><b>Kilit çıktılar / notlar:</b> ${E(t.notes)}</div>` : ''}
+      ${t.link ? `<div style="font-size:10px;margin-top:3px" class="muted">Bağlantı: ${E(t.link)}</div>` : ''}
+      ${wrows ? `<table><thead><tr><th style="width:18%">Sorumlu</th><th>Haftalık görev</th><th style="width:9%">Öncelik</th><th style="width:15%">Durum</th><th style="width:19%">Tarih</th></tr></thead><tbody>${wrows}</tbody></table>` : '<div class="muted" style="font-size:10px;margin-top:4px;font-style:italic">Bu görev için haftalık to-do girilmemiş.</div>'}
+    </div>`;
   }).join('');
 
-  container.innerHTML = `
-    <div class="border-b border-slate-800 pb-4 flex items-center space-x-4">
-      <img src="${DEMIG_LOGO_DATA_URI}" alt="DEMIG Logo" class="h-14 w-auto shrink-0">
-      <div>
-        <h2 class="text-xl font-bold text-slate-100 mb-1">${translate('report_org_title')}</h2>
-        <h3 class="text-sm font-semibold text-indigo-400">${translate('report_subtitle')}</h3>
-        <div class="text-[11px] text-slate-400 mt-2 flex justify-between">
-          <span><strong>${translate('logged_in_as')}</strong> ${currentUser ? currentUser.name : translate('system_admin')}</span>
-          <span><strong>${translate('filtered_period')}</strong> ${startDate} - ${endDate}</span>
-        </div>
-      </div>
-    </div>
-    <div class="space-y-3">
-      <h4 class="text-xs font-bold text-slate-100 uppercase tracking-wider border-l-4 border-indigo-500 pl-2 flex items-center space-x-2">
-        <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i><span>${translate('report_timeline_section')}</span>
-      </h4>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs text-slate-300 border border-slate-800 rounded-xl overflow-hidden">
-          <thead class="bg-slate-900 text-slate-400 uppercase text-[10px]">
-            <tr>
-              <th class="p-2 border-b border-slate-800">${translate('th_task_step')}</th>
-              <th class="p-2 text-center border-b border-slate-800">${translate('th_work_period')}</th>
-              <th class="p-2 text-center border-b border-slate-800">${translate('th_progress_status')}</th>
-            </tr>
-          </thead>
-          <tbody>${timelineRowsHTML || `<tr><td colspan="3" class="p-4 text-center text-slate-400">${translate('report_no_match')}</td></tr>`}</tbody>
-        </table>
-      </div>
-    </div>
-    <div class="space-y-3">
-      <h4 class="text-xs font-bold text-slate-100 uppercase tracking-wider border-l-4 border-emerald-500 pl-2 flex items-center space-x-2">
-        <i data-lucide="users" class="w-4 h-4 text-emerald-400"></i><span>${translate('report_collab_section')} (${filteredTasks.length} ${translate('report_collab_section_count')})</span>
-      </h4>
-      <div class="space-y-3">${collaborationHTML || `<p class="text-slate-400">${translate('report_no_collab')}</p>`}</div>
-    </div>
-    <div class="pt-4 border-t border-slate-800 flex justify-between text-[11px] text-slate-400">
-      <span>${translate('report_pi')}</span>
-      <span>${translate('report_footer')}</span>
-    </div>
-  `;
+  const personRows = Object.keys(perPerson).sort((a, b) => a.localeCompare(b, 'tr')).map(n => {
+    const r = perPerson[n]; return `<tr><td>${E(n)}</td><td class="muted">${E(r.role)}</td><td>${r.total}</td><td>${r.done}</td><td>${r.total - r.done}</td><td class="${r.late ? 'b-late' : ''}">${r.late}</td></tr>`;
+  }).join('');
 
+  // Toplantı notları (rapor dönemi içindeki kayıtlar + onaylanan aksiyonlar)
+  let meetingHTML = '';
+  try {
+    if (supabaseClient) {
+      const [recRes, actRes] = await Promise.all([
+        supabaseClient.from('meeting_records').select('*').gte('week_date', startDate).lte('week_date', endDate).order('week_date', { ascending: true }),
+        supabaseClient.from('meeting_action_items').select('*').eq('status', 'confirmed').gte('week_date', startDate).lte('week_date', endDate).order('week_date', { ascending: true })
+      ]);
+      const trackLabel = id => { for (const k of Object.keys(MEETING_TRACKS)) { const t = MEETING_TRACKS[k].find(x => x.id === id); if (t) return translate(t.labelKey); } return id; };
+      const recs = (recRes.data || []).filter(r => r.action_text || r.notes_link || r.recording_link);
+      const acts = actRes.data || [];
+      if (recs.length || acts.length) {
+        const recRows = recs.map(r => `<tr><td style="white-space:nowrap">${E(formatMeetingDate(r.week_date))}</td><td>${E(trackLabel(r.track_id))}</td><td>${E(r.action_text || '-')}${r.notes_link ? `<br><span class="muted">Not: ${E(r.notes_link)}</span>` : ''}${r.recording_link ? `<br><span class="muted">Kayıt: ${E(r.recording_link)}</span>` : ''}</td></tr>`).join('');
+        const actRows = acts.map(a => { const p = registeredPeople.find(x => x.id === a.confirmed_person_id); return `<tr><td style="white-space:nowrap">${E(formatMeetingDate(a.week_date))}</td><td>${E(p ? p.name : '-')}</td><td>${E(a.raw_text)}</td></tr>`; }).join('');
+        meetingHTML = `<h2>${personRows ? 6 : 5}. Toplantı Notları</h2>` +
+          (recRows ? `<table><thead><tr><th style="width:16%">Tarih</th><th style="width:26%">Görüşme</th><th>Notlar / Aksiyonlar</th></tr></thead><tbody>${recRows}</tbody></table>` : '') +
+          (actRows ? `<div style="font-size:11px;font-weight:700;margin:10px 0 2px">Toplantılardan atanan görevler</div><table><thead><tr><th style="width:16%">Tarih</th><th style="width:24%">Sorumlu</th><th>Görev</th></tr></thead><tbody>${actRows}</tbody></table>` : '');
+      }
+    }
+  } catch (e) { console.error('Toplantı notları rapora eklenemedi:', e); }
+
+  const now = new Date();
+  document.getElementById('aiReportContainer').innerHTML = `<div class="rpt-page">
+    <div style="display:flex;align-items:center;gap:14px;border-bottom:3px solid #1E3A66;padding-bottom:10px">
+      <img src="${DEMIG_LOGO_DATA_URI}" alt="DEMIG" style="height:52px;width:auto">
+      <div style="flex:1">
+        <h1>DEMIG Proje İlerleme Raporu</h1>
+        <div class="muted" style="font-size:11px">Sabancı Üniversitesi · DEMIG AI Development Workplan</div>
+      </div>
+    </div>
+    <table style="margin-top:8px"><tbody>
+      <tr><td style="width:22%"><b>Rapor dönemi</b></td><td>${E(startDate)} – ${E(endDate)}</td><td style="width:22%"><b>Hazırlayan</b></td><td>${E(currentUser ? currentUser.name : '-')}</td></tr>
+      <tr><td><b>Kapsam</b></td><td>${picked.size === allCount ? 'Tüm görevler' : filteredTasks.length + ' seçili görev'} (${filteredTasks.length} kayıt)</td><td><b>Oluşturulma</b></td><td>${now.toLocaleDateString('tr-TR')} ${now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</td></tr>
+    </tbody></table>
+
+    <h2>1. Yönetici Özeti</h2>
+    <div class="kpis">
+      <div class="kpi"><b>${filteredTasks.length}</b><span>Kapsanan görev</span></div>
+      <div class="kpi"><b>%${avg}</b><span>Ortalama ilerleme</span></div>
+      <div class="kpi"><b>${doneTasks}/${filteredTasks.length}</b><span>Tamamlanan görev</span></div>
+      <div class="kpi"><b>${todoDone}/${todoTotal}</b><span>Haftalık to-do tamamlanan${todoLate ? ` · ${todoLate} gecikmiş` : ''}</span></div>
+    </div>
+    <p style="font-size:11px;margin:0">Rapor dönemi içinde ${filteredTasks.length} görev incelenmiştir; ${doneTasks} görev tamamlanmış, ${filteredTasks.length - doneTasks} görev devam etmekte veya planlanmaktadır. Genel ilerleme ortalaması %${avg}'dir. Haftalık to-do kayıtlarının ${todoDone}/${todoTotal} kadarı tamamlanmış${todoLate ? `, ${todoLate} madde bitiş tarihini geçmiştir` : ''}.</p>
+
+    <h2>2. Modül Bazlı İlerleme</h2>
+    <table><thead><tr><th>Modül</th><th style="width:10%">Görev</th><th style="width:12%">Tamamlanan</th><th style="width:28%">Ortalama ilerleme</th></tr></thead><tbody>${moduleRows || '<tr><td colspan="4" class="muted">Eşleşen görev yok.</td></tr>'}</tbody></table>
+
+    <h2>3. Zaman Çizelgesi</h2>
+    <table><thead><tr><th>Görev</th><th style="width:22%">Dönem</th><th style="width:24%">Ekip</th><th style="width:15%">İlerleme</th></tr></thead><tbody>${timelineRows || '<tr><td colspan="4" class="muted">Eşleşen görev yok.</td></tr>'}</tbody></table>
+
+    <h2>4. Görev Detayları ve Haftalık Takip</h2>
+    ${taskBlocks || '<p class="muted">Eşleşen görev yok.</p>'}
+
+    ${personRows ? `<h2>5. Kişi Bazlı İş Yükü (Haftalık To-Do)</h2>
+    <table><thead><tr><th>Kişi</th><th>Rol</th><th style="width:9%">Toplam</th><th style="width:11%">Tamamlanan</th><th style="width:9%">Açık</th><th style="width:10%">Gecikmiş</th></tr></thead><tbody>${personRows}</tbody></table>` : ''}
+
+    ${meetingHTML}
+
+    <div class="sign"><span>Proje Yürütücüsü: M. Tahir Kılavuz (PI)</span><span class="muted">DEMIG · demigproject · ${now.getFullYear()}</span></div>
+  </div>`;
+  document.getElementById('aiReportContainer').className = 'rpt';
   document.getElementById('aiReportModal').classList.remove('hidden');
   lucide.createIcons();
+}
+
+function printAIReport() { window.print(); }
+
+async function downloadAIReportPDF() {
+  const el = document.getElementById('aiReportContainer');
+  if (!window.html2pdf) { alert('PDF aracı yüklenemedi. "Yazdır" düğmesiyle "PDF olarak kaydet" seçeneğini kullanın.'); return; }
+  const btn = document.getElementById('reportPdfBtn');
+  const old = btn.innerText; btn.innerText = 'Hazırlanıyor...'; btn.disabled = true;
+  try {
+    await html2pdf().set({
+      margin: [10, 10, 12, 10],
+      filename: 'DEMIG_Rapor_' + new Date().toISOString().slice(0, 10) + '.pdf',
+      image: { type: 'jpeg', quality: 0.96 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 794 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['.task', 'tr', '.kpi', 'h2'] }
+    }).from(el).save();
+  } finally { btn.innerText = old; btn.disabled = false; }
 }
 
 function closeAIReportModal() {
@@ -3390,7 +3955,7 @@ function closeSidebar() {
 }
 
 function switchTab(tab) {
-  ['diagrams', 'roadmap', 'tasks', 'people', 'dashboard', 'attendance', 'chat', 'meetings'].forEach(t => {
+  ['diagrams', 'tasks', 'people', 'dashboard', 'attendance', 'chat', 'meetings'].forEach(t => {
     document.getElementById('view-' + t).classList.add('hidden');
     document.getElementById('tab-' + t).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition";
   });
@@ -3712,8 +4277,8 @@ function populateModalAssignees() {
     return label;
   };
 
-  registeredPeople.filter(p => !p.isPure).forEach(p => seniorContainer.appendChild(makeLabel(p)));
-  registeredPeople.filter(p => p.isPure).forEach(p => pureContainer.appendChild(makeLabel(p)));
+  registeredPeople.filter(p => !p.isPure && isActivePerson(p)).forEach(p => seniorContainer.appendChild(makeLabel(p)));
+  registeredPeople.filter(p => p.isPure && isActivePerson(p)).forEach(p => pureContainer.appendChild(makeLabel(p)));
 }
 
 function toggleModalPureGroup() {
@@ -3821,7 +4386,7 @@ function populateSubtaskModalSelects() {
   });
 
   const assigneeBox = document.getElementById('subtaskAssignee');
-  assigneeBox.innerHTML = registeredPeople.filter(p => !p.isPure).map(p => `
+  assigneeBox.innerHTML = registeredPeople.filter(isAssignable).map(p => `
     <label class="flex items-center space-x-1.5 cursor-pointer text-slate-300 hover:text-slate-100">
       <input type="checkbox" value="${p.id}" class="subtask-person-checkbox rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
       <span class="truncate">@${p.name}</span>
