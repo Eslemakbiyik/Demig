@@ -5,7 +5,7 @@
 //
 // KURULUM:
 //   supabase functions deploy sync-drive-todos --no-verify-jwt
-//   supabase secrets set MEETING_NOTES_URL="<Google Doc linki>"   (dosya: "Bağlantıya sahip herkes görüntüleyebilir")
+//   (isteğe bağlı) supabase secrets set MEETING_NOTES_URL="<başka bir Google Doc linki>" — tanımlı değilse DEMIG Toplantı Notları dokümanı kullanılır
 //   ardından drive_sync_cron.sql dosyasını çalıştırın (zamanlama).
 //
 // Google Doc linki https://docs.google.com/document/d/<ID>/edit ise otomatik olarak
@@ -43,29 +43,34 @@ function parseDate(text: string, fallbackYear: number): string | null {
 type Item = { date: string; person: string; text: string };
 
 function parseHtml(html: string): Item[] {
+  // Doküman yapısı: <h2> "12 Ekim 2026 (Pazartesi): DEMIG Toplantı" → <h3> "Sonraki adımlar" → <h4> kişi → <li> madde
+  // ve bazı toplantılarda <h3> "Görevler" altında Kim | Görev | Son tarih | Dayanak tablosu.
   const items: Item[] = [];
   const year = new Date().getFullYear();
-  // gövdeyi "tablo" ve "diğer" parçalarına böl; tablodan önceki son tarih içeren metin o günün tarihidir
-  const parts = html.split(/(<table[\s\S]*?<\/table>)/gi);
-  let curDate: string | null = null;
-  for (const part of parts) {
-    if (/^<table/i.test(part)) {
-      if (!curDate) continue;
-      const rows = part.match(/<tr[\s\S]*?<\/tr>/gi) || [];
+  const body = html.replace(/^[\s\S]*?<body[^>]*>/i, "");
+  const tok = /<(h[1-6])[^>]*>([\s\S]*?)<\/\1>|<li[^>]*>([\s\S]*?)<\/li>|(<table[\s\S]*?<\/table>)/gi;
+  let date: string | null = null, section = "", person = "", m: RegExpExecArray | null;
+  const wanted = (sec: string) => /sonraki ad[ıi]mlar|g[öo]revler|yap[ıi]lacaklar|aksiyon/i.test(sec);
+  while ((m = tok.exec(body))) {
+    if (m[1]) {
+      const lvl = parseInt(m[1][1], 10), text = decode(m[2]);
+      if (lvl <= 2) { date = parseDate(text, year); section = ""; person = ""; }
+      else if (lvl === 3) { section = text; person = ""; }
+      else if (lvl === 4) person = text;
+    } else if (m[3] !== undefined) {
+      if (!date || !wanted(section) || !person) continue;
+      const t = decode(m[3]).replace(/^[-*•\s]+/, "").trim();
+      if (t.length > 3 && !/^\[?…\]?$/.test(t)) items.push({ date, person, text: t });
+    } else if (m[4]) {
+      if (!date || !wanted(section)) continue;
+      const rows = m[4].match(/<tr[\s\S]*?<\/tr>/gi) || [];
       rows.forEach((r, ri) => {
         const cells = (r.match(/<t[dh][\s\S]*?<\/t[dh]>/gi) || []).map(decode);
-        if (cells.length < 2) return;
-        if (ri === 0 && /kişi|isim|ad\b|name|sorumlu/i.test(cells[0])) return; // başlık satırı
-        const person = cells[0].trim();
-        const text = cells.slice(1).join(" ").trim();
-        if (!person || !text) return;
-        // hücredeki satırları ayrı madde say
-        text.split(/\n|•|;\s+(?=[A-ZÇĞİÖŞÜ])/).map((t) => t.replace(/^[-*\d.)\s]+/, "").trim()).filter((t) => t.length > 3)
-          .forEach((t) => items.push({ date: curDate!, person, text: t }));
+        if (cells.length < 2 || (ri === 0 && /^(kim|ki[şs]i|isim|sorumlu)/i.test(cells[0]))) return;
+        const who = cells[0].replace(/\(\?\)/g, "").trim(), task = cells[1].trim();
+        const due = cells[2] && cells[2] !== "—" ? ` (Son tarih: ${cells[2]})` : "";
+        if (who && task) items.push({ date: date!, person: who, text: task + due });
       });
-    } else {
-      const lines = decode(part).split("\n");
-      for (const ln of lines) { const d = parseDate(ln, year); if (d) curDate = d; }
     }
   }
   return items;
@@ -87,17 +92,21 @@ function parseCsv(csv: string): Item[] {
 
 Deno.serve(async (req) => {
   try {
-    const url = Deno.env.get("MEETING_NOTES_URL");
+    const url = Deno.env.get("MEETING_NOTES_URL") || "https://docs.google.com/document/d/1j7LOlgUqwCC1Of001aciPP8Z0eWIkLQa/edit";
     if (!url) return new Response(JSON.stringify({ ok: false, error: "MEETING_NOTES_URL tanımlı değil" }), { status: 500 });
     const res = await fetch(exportUrl(url));
     if (!res.ok) throw new Error(`Dosya indirilemedi: ${res.status} (paylaşım ayarı 'bağlantıya sahip herkes' olmalı)`);
     const body = await res.text();
-    const items = /^<|<html/i.test(body.trim()) ? parseHtml(body) : parseCsv(body);
+    const all = /^<|<html/i.test(body.trim()) ? parseHtml(body) : parseCsv(body);
+    // yalnızca son 10 günün toplantıları (eski toplantılar panele yığılmasın)
+    const minDate = new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10);
+    const items = all.filter((i) => i.date >= minDate);
 
-    const { data: people } = await sb.from("people").select("id, name, active").eq("active", true);
+    const { data: people } = await sb.from("people").select("id, name, active, grp").eq("active", true).neq("grp", "annotator");
     const find = (n: string) => {
       const t = norm(n); if (!t) return null;
       return (people || []).find((p: any) => norm(p.name) === t)
+        || (people || []).find((p: any) => norm(p.name).startsWith(t + " ") && t.includes(" "))
         || (people || []).find((p: any) => norm(p.name).split(" ")[0] === t.split(" ")[0])
         || (people || []).find((p: any) => t.includes(norm(p.name).split(" ")[0]));
     };
