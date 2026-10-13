@@ -3999,11 +3999,15 @@ function switchTab(tab) {
 // Başlangıç tarihini değiştirmek için sadece MEETING_START'ı düzenleyin (YYYY-MM-DD).
 const MEETING_START = '2026-10-13';
 const MEETING_WEEK_COUNT = 52;
-const MEETING_WEEKS = Array.from({ length: MEETING_WEEK_COUNT }, (_, i) => {
-  const d = new Date(MEETING_START + 'T12:00:00Z');
-  d.setUTCDate(d.getUTCDate() + 7 * i);
-  return { date: d.toISOString().slice(0, 10), type: i % 2 === 0 ? 'sub' : 'full' };
-});
+// Geçmiş toplantılar (Google Doc notlarındaki gerçek tarihler; düzensiz günlerde yapıldı)
+const MEETING_PAST_DATES = ['2026-04-15', '2026-04-29', '2026-05-05', '2026-05-06', '2026-05-07', '2026-06-03', '2026-06-05', '2026-06-09', '2026-06-10', '2026-06-24', '2026-07-01', '2026-07-08', '2026-07-10', '2026-07-15', '2026-07-22', '2026-08-05', '2026-08-19', '2026-09-09', '2026-09-16', '2026-09-24', '2026-10-12'];
+const MEETING_WEEKS = MEETING_PAST_DATES.map(date => ({ date, type: 'full' })).concat(
+  Array.from({ length: MEETING_WEEK_COUNT }, (_, i) => {
+    const d = new Date(MEETING_START + 'T12:00:00Z');
+    d.setUTCDate(d.getUTCDate() + 7 * i);
+    return { date: d.toISOString().slice(0, 10), type: i % 2 === 0 ? 'sub' : 'full' };
+  })
+);
 let meetingRecords = {}; // { 'WEEKDATE__TRACKID': { recording_link, notes_link, action_text } }
 
 // Her hafta tipi için ayrı ayrı takip edilen "görüşme parçaları" (tracks).
