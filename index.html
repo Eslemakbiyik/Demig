@@ -1997,11 +1997,11 @@ async function flushMeetingNotify() {
     const list = groups[key];
     const p = registeredPeople.find(x => x.id === list[0].personId);
     if (!p || !p.email) { fail++; continue; }
-    const body = list.length === 1 ? list[0].text : list.map((x, i) => `${i + 1}) ${x.text}`).join('\n');
+    const body = list.length === 1 ? list[0].text : list.map((x, i) => `${i + 1}) ${x.text}`).join('   ');
     try {
       await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
         to_email: p.email, to_name: p.name,
-        task_name: `Toplantı ${formatMeetingDate(list[0].week_date)} — ${list.length} görev`,
+        task_name: 'Haftalık To-Do',
         todo_text: body, start_date: list[0].week_date, end_date: '-', priority: '-', status: 'Atandı', link: '',
         subject_type: translate('email_subject_new'),
         sender_name: currentUser ? currentUser.name : 'demigproject Sistemi',
