@@ -3929,20 +3929,40 @@ async function generateAIExecutiveReport() {
 function printAIReport() { window.print(); }
 
 async function downloadAIReportPDF() {
-  const el = document.getElementById('aiReportContainer');
+  const src = document.getElementById('aiReportContainer');
   if (!window.html2pdf) { alert('PDF aracı yüklenemedi. "Yazdır" düğmesiyle "PDF olarak kaydet" seçeneğini kullanın.'); return; }
   const btn = document.getElementById('reportPdfBtn');
   const old = btn.innerText; btn.innerText = 'Hazırlanıyor...'; btn.disabled = true;
+  // Modal kaydırmalı/sabit konumlu olduğu için doğrudan çevirince sayfa boş çıkıyor:
+  // raporu görünür bir A4 genişliğinde kopyaya alıp onu PDF'e çeviriyoruz.
+  const holder = document.createElement('div');
+  holder.style.cssText = 'position:absolute;left:0;top:0;width:794px;background:#fff;z-index:-1;';
+  const clone = src.cloneNode(true);
+  clone.removeAttribute('id');
+  clone.style.cssText = 'display:block;width:794px;background:#fff;color:#1C2433;font-family:Georgia,"Times New Roman",serif;border:0;padding:0;';
+  holder.appendChild(clone);
+  document.body.appendChild(holder);
+  const modal = document.getElementById('aiReportModal');
+  const prevScroll = window.scrollY;
+  window.scrollTo(0, 0);
   try {
+    await new Promise(r => setTimeout(r, 150));
+    // Çok yüksek canvas bazı tarayıcılarda (Safari/iOS, Firefox) boş çıkar: alan ve yüksekliği sınırla.
+    const h = Math.max(holder.offsetHeight, 1);
+    const scale = Math.max(0.8, Math.min(2, Math.sqrt(12e6 / (794 * h)), 15000 / h));
     await html2pdf().set({
-      margin: [10, 10, 12, 10],
+      margin: [10, 8, 12, 8],
       filename: 'DEMIG_Rapor_' + new Date().toISOString().slice(0, 10) + '.pdf',
-      image: { type: 'jpeg', quality: 0.96 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 794 },
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: { scale, useCORS: true, backgroundColor: '#ffffff', width: 794, windowWidth: 794, scrollX: 0, scrollY: 0 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['css', 'legacy'], avoid: ['.task', 'tr', '.kpi', 'h2'] }
-    }).from(el).save();
-  } finally { btn.innerText = old; btn.disabled = false; }
+    }).from(clone).save();
+  } catch (e) {
+    console.error(e); alert('PDF oluşturulamadı: ' + e.message + '\n"Yazdır" düğmesinden "PDF olarak kaydet" seçeneğini kullanabilirsiniz.');
+  } finally {
+    holder.remove(); window.scrollTo(0, prevScroll); btn.innerText = old; btn.disabled = false;
+  }
 }
 
 function closeAIReportModal() {
@@ -3975,20 +3995,15 @@ function switchTab(tab) {
 // =====================================================================
 // TOPLANTI TAKVİMİ (RESEARCH GROUP MEETING SCHEDULE & RECORDS)
 // =====================================================================
-const MEETING_WEEKS = [
-  { date: '2025-10-14', type: 'sub' },
-  { date: '2025-10-21', type: 'full' },
-  { date: '2025-10-28', type: 'sub' },
-  { date: '2025-11-04', type: 'full' },
-  { date: '2025-11-11', type: 'sub' },
-  { date: '2025-11-18', type: 'full' },
-  { date: '2025-11-25', type: 'sub' },
-  { date: '2025-12-02', type: 'full' },
-  { date: '2025-12-09', type: 'sub' },
-  { date: '2025-12-16', type: 'full' },
-  { date: '2025-12-23', type: 'sub' },
-  { date: '2025-12-30', type: 'full' }
-];
+// Haftalık toplantı takvimi: her Salı, "sub" ve "full" haftalar sırayla (ilk hafta sub).
+// Başlangıç tarihini değiştirmek için sadece MEETING_START'ı düzenleyin (YYYY-MM-DD).
+const MEETING_START = '2026-10-13';
+const MEETING_WEEK_COUNT = 52;
+const MEETING_WEEKS = Array.from({ length: MEETING_WEEK_COUNT }, (_, i) => {
+  const d = new Date(MEETING_START + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + 7 * i);
+  return { date: d.toISOString().slice(0, 10), type: i % 2 === 0 ? 'sub' : 'full' };
+});
 let meetingRecords = {}; // { 'WEEKDATE__TRACKID': { recording_link, notes_link, action_text } }
 
 // Her hafta tipi için ayrı ayrı takip edilen "görüşme parçaları" (tracks).
