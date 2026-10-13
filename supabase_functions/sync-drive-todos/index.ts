@@ -104,7 +104,8 @@ Deno.serve(async (req) => {
 
     const { data: people } = await sb.from("people").select("id, name, active, grp").eq("active", true).neq("grp", "annotator");
     const find = (n: string) => {
-      const t = norm(n); if (!t) return null;
+      let t = norm(n); if (!t) return null;
+      if (t === "galata") t = "ahmet utku akbıyık"; // Zoom'da Ahmet Utku Akbıyık "Galata" olarak geçiyor
       return (people || []).find((p: any) => norm(p.name) === t)
         || (people || []).find((p: any) => norm(p.name).startsWith(t + " ") && t.includes(" "))
         || (people || []).find((p: any) => norm(p.name).split(" ")[0] === t.split(" ")[0])

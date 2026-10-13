@@ -1971,11 +1971,55 @@ async function loadPendingMeetingActionItems() {
   meetingActionItemsPending = data || [];
 }
 
+// Aynı kişiye aynı toplantıdan birden fazla iş atanırsa TEK mail gider.
+// Tek tek onaylarken 30 sn bekleyip biriken maddeleri kişi+toplantı bazında birleştirir.
+let notifyQueue = [], notifyTimer = null;
+function queueMeetingNotify(item, personId) {
+  notifyQueue.push({ week_date: item.week_date, personId, text: item.raw_text });
+  clearTimeout(notifyTimer);
+  notifyTimer = setTimeout(flushMeetingNotify, 30000);
+}
+function showMiniToast(msg) {
+  const d = document.createElement('div');
+  d.className = 'fixed bottom-4 right-4 z-[70] bg-slate-900 border border-slate-700 text-slate-100 text-xs px-4 py-2.5 rounded-lg shadow-xl max-w-sm';
+  d.innerText = msg; document.body.appendChild(d);
+  setTimeout(() => d.remove(), 6000);
+}
+async function flushMeetingNotify() {
+  clearTimeout(notifyTimer); notifyTimer = null;
+  const q = notifyQueue; notifyQueue = [];
+  if (!q.length) return;
+  if (!emailjsReady) { showMiniToast('E-posta yapılandırılmadığı için bildirim maili gönderilmedi.'); return; }
+  const groups = {};
+  q.forEach(x => { (groups[x.personId + '|' + x.week_date] = groups[x.personId + '|' + x.week_date] || []).push(x); });
+  let ok = 0, fail = 0;
+  for (const key of Object.keys(groups)) {
+    const list = groups[key];
+    const p = registeredPeople.find(x => x.id === list[0].personId);
+    if (!p || !p.email) { fail++; continue; }
+    const body = list.length === 1 ? list[0].text : list.map((x, i) => `${i + 1}) ${x.text}`).join('\n');
+    try {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email: p.email, to_name: p.name,
+        task_name: `Toplantı ${formatMeetingDate(list[0].week_date)} — ${list.length} görev`,
+        todo_text: body, start_date: list[0].week_date, end_date: '-', priority: '-', status: 'Atandı', link: '',
+        subject_type: translate('email_subject_new'),
+        sender_name: currentUser ? currentUser.name : 'demigproject Sistemi',
+        reply_to: currentUser && currentUser.email ? currentUser.email : ''
+      });
+      ok++;
+    } catch (e) { console.error(e); fail++; }
+  }
+  showMiniToast(`${ok} kişiye toplantı görev maili gönderildi` + (fail ? `, ${fail} gönderilemedi` : '') + '.');
+}
+
 async function confirmMeetingActionItem(id, personId) {
   if (!supabaseClient || !personId) return;
+  const srcItem = meetingActionItemsPending.find(i => String(i.id) === String(id));
   const { error } = await supabaseClient.from('meeting_action_items')
     .update({ status: 'confirmed', confirmed_person_id: personId }).eq('id', id);
   if (error) { console.error('Aksiyon onaylanamadı:', error); return; }
+  if (srcItem) queueMeetingNotify(srcItem, personId);
   await loadPendingMeetingActionItems();
   await loadConfirmedMeetingActionItems();
   renderPendingActionItemsPanel();
@@ -2039,8 +2083,9 @@ function parseDriveTodoLines(raw) {
   const people = registeredPeople.filter(isAssignable);
   const norm = x => x.toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9 ]/gi, ' ').replace(/\s+/g, ' ').trim();
   const findPerson = txt => {
-    const t = norm(txt);
+    let t = norm(txt);
     if (!t) return null;
+    if (t === 'galata') t = 'ahmet utku akbıyık';  // Zoom'da Ahmet Utku Akbıyık "Galata" olarak geçiyor
     return people.find(p => norm(p.name) === t)
       || people.find(p => norm(p.name).split(' ')[0] === t.split(' ')[0] && t.length >= 3)
       || people.find(p => t.includes(norm(p.name).split(' ')[0]) && t.length <= norm(p.name).length + 6);
@@ -2080,7 +2125,11 @@ async function importDriveTodos() {
 async function confirmAllSuggestedActions() {
   const items = meetingActionItemsPending.filter(i => i.suggested_person_id);
   if (!items.length) return;
-  for (const i of items) await supabaseClient.from('meeting_action_items').update({ status: 'confirmed', confirmed_person_id: i.suggested_person_id }).eq('id', i.id);
+  for (const i of items) {
+    const { error } = await supabaseClient.from('meeting_action_items').update({ status: 'confirmed', confirmed_person_id: i.suggested_person_id }).eq('id', i.id);
+    if (!error) queueMeetingNotify(i, i.suggested_person_id);
+  }
+  flushMeetingNotify();
   await loadPendingMeetingActionItems(); await loadConfirmedMeetingActionItems();
   renderPendingActionItemsPanel(); renderSidebarTodos();
 }
@@ -3745,7 +3794,7 @@ function renderDashboardSummary() {
   });
 }
 
-function generateAIExecutiveReport() {
+async function generateAIExecutiveReport() {
   const startDate = document.getElementById('reportStartDate').value || '2025-11-01';
   const endDate = document.getElementById('reportEndDate').value || '2026-08-31';
   const picked = new Set(Array.from(document.querySelectorAll('.report-task-cb:checked')).map(c => c.value));
@@ -3807,6 +3856,27 @@ function generateAIExecutiveReport() {
     const r = perPerson[n]; return `<tr><td>${E(n)}</td><td class="muted">${E(r.role)}</td><td>${r.total}</td><td>${r.done}</td><td>${r.total - r.done}</td><td class="${r.late ? 'b-late' : ''}">${r.late}</td></tr>`;
   }).join('');
 
+  // Toplantı notları (rapor dönemi içindeki kayıtlar + onaylanan aksiyonlar)
+  let meetingHTML = '';
+  try {
+    if (supabaseClient) {
+      const [recRes, actRes] = await Promise.all([
+        supabaseClient.from('meeting_records').select('*').gte('week_date', startDate).lte('week_date', endDate).order('week_date', { ascending: true }),
+        supabaseClient.from('meeting_action_items').select('*').eq('status', 'confirmed').gte('week_date', startDate).lte('week_date', endDate).order('week_date', { ascending: true })
+      ]);
+      const trackLabel = id => { for (const k of Object.keys(MEETING_TRACKS)) { const t = MEETING_TRACKS[k].find(x => x.id === id); if (t) return translate(t.labelKey); } return id; };
+      const recs = (recRes.data || []).filter(r => r.action_text || r.notes_link || r.recording_link);
+      const acts = actRes.data || [];
+      if (recs.length || acts.length) {
+        const recRows = recs.map(r => `<tr><td style="white-space:nowrap">${E(formatMeetingDate(r.week_date))}</td><td>${E(trackLabel(r.track_id))}</td><td>${E(r.action_text || '-')}${r.notes_link ? `<br><span class="muted">Not: ${E(r.notes_link)}</span>` : ''}${r.recording_link ? `<br><span class="muted">Kayıt: ${E(r.recording_link)}</span>` : ''}</td></tr>`).join('');
+        const actRows = acts.map(a => { const p = registeredPeople.find(x => x.id === a.confirmed_person_id); return `<tr><td style="white-space:nowrap">${E(formatMeetingDate(a.week_date))}</td><td>${E(p ? p.name : '-')}</td><td>${E(a.raw_text)}</td></tr>`; }).join('');
+        meetingHTML = `<h2>${personRows ? 6 : 5}. Toplantı Notları</h2>` +
+          (recRows ? `<table><thead><tr><th style="width:16%">Tarih</th><th style="width:26%">Görüşme</th><th>Notlar / Aksiyonlar</th></tr></thead><tbody>${recRows}</tbody></table>` : '') +
+          (actRows ? `<div style="font-size:11px;font-weight:700;margin:10px 0 2px">Toplantılardan atanan görevler</div><table><thead><tr><th style="width:16%">Tarih</th><th style="width:24%">Sorumlu</th><th>Görev</th></tr></thead><tbody>${actRows}</tbody></table>` : '');
+      }
+    }
+  } catch (e) { console.error('Toplantı notları rapora eklenemedi:', e); }
+
   const now = new Date();
   document.getElementById('aiReportContainer').innerHTML = `<div class="rpt-page">
     <div style="display:flex;align-items:center;gap:14px;border-bottom:3px solid #1E3A66;padding-bottom:10px">
@@ -3841,6 +3911,8 @@ function generateAIExecutiveReport() {
 
     ${personRows ? `<h2>5. Kişi Bazlı İş Yükü (Haftalık To-Do)</h2>
     <table><thead><tr><th>Kişi</th><th>Rol</th><th style="width:9%">Toplam</th><th style="width:11%">Tamamlanan</th><th style="width:9%">Açık</th><th style="width:10%">Gecikmiş</th></tr></thead><tbody>${personRows}</tbody></table>` : ''}
+
+    ${meetingHTML}
 
     <div class="sign"><span>Proje Yürütücüsü: M. Tahir Kılavuz (PI)</span><span class="muted">DEMIG · demigproject · ${now.getFullYear()}</span></div>
   </div>`;
