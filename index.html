@@ -3776,13 +3776,13 @@ function renderExcelGanttMatrix() {
       }
       const tone = val === 100 ? 'bg-emerald-500 text-slate-950 shadow' : (val > 0 ? 'bg-indigo-600 text-white shadow' : 'bg-slate-900/40 text-slate-300 border border-slate-800/80');
       const lbl = val === 100 ? '✓ %100' : (val > 0 ? '%' + val : '–');
-      const stepBtn = 'w-5 h-full flex items-center justify-center text-[11px] font-bold leading-none hover:bg-black/25 transition';
-      const cellContent = `<div class="w-full h-7 rounded overflow-hidden flex items-stretch ${tone}" title="Soldaki − ilerlemeyi 5 puan azaltır, sağdaki + 5 puan artırır">
-        <button onclick="toggleMonthState(${tIdx}, ${m}, -1)" class="${stepBtn}" ${val > 0 ? '' : 'disabled style="opacity:.3;cursor:default"'}>−</button>
-        <div class="flex-1 flex items-center justify-center text-[10px] font-bold select-none">${lbl}</div>
-        <button onclick="toggleMonthState(${tIdx}, ${m}, 1)" class="${stepBtn}">+</button>
+      const stepBtn = 'absolute top-1/2 -translate-y-1/2 w-[18px] h-[18px] rounded-full bg-black/25 hover:bg-black/50 text-[11px] font-bold leading-none flex items-center justify-center transition opacity-50 group-hover:opacity-100';
+      const cellContent = `<div class="group relative w-full h-7 rounded-md flex items-center justify-center ${tone}" title="Kenardaki − ve + ilerlemeyi 5 puan azaltır / artırır">
+        ${val > 0 ? `<button onclick="toggleMonthState(${tIdx}, ${m}, -1)" class="${stepBtn} left-1" title="−5">−</button>` : ''}
+        <span class="text-[10px] font-bold select-none">${lbl}</span>
+        <button onclick="toggleMonthState(${tIdx}, ${m}, 1)" class="${stepBtn} right-1" title="+5">+</button>
       </div>`;
-      monthCells += `<td class="p-1 text-center w-20 h-8">${cellContent}</td>`;
+      monthCells += `<td class="p-1 text-center w-24 h-8">${cellContent}</td>`;
     }
 
     tr.innerHTML = `
