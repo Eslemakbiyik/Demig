@@ -672,6 +672,11 @@
         </summary>
         <div class="px-5 pb-5">
           <p class="text-[11px] text-slate-400 mb-3" data-i18n="meetings_pending_subtitle">Sorumlu kişiyi seçip onaylarsanız, o kişinin sol bardaki to-do listesine ve ilgili toplantı kartına eklenir.</p>
+          <div class="flex items-center gap-2 flex-wrap mb-2 text-[11px] text-slate-300">
+            <label class="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Aktarılacak Görev / Adım</label>
+            <select class="target-task-select bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-100 max-w-[260px]" onchange="setPendingTargetTask(this.value)"></select>
+            <span class="text-[10px] text-slate-500">Onaylanan görev bu görev altında haftalık to-do olarak açılır; sonra "Düzenle" ile tüm alanları değiştirebilirsiniz.</span>
+          </div>
           <div class="mb-2"><button onclick="confirmAllSuggestedActions()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold rounded-lg">Önerilen kişiyle eşleşenlerin hepsini onayla</button></div>
           <div id="meetingPendingActionsContainer" class="space-y-2 max-h-[28rem] overflow-y-auto pr-1"></div>
         </div>
@@ -2016,16 +2021,8 @@ async function flushMeetingNotify() {
 
 async function confirmMeetingActionItem(id, personId) {
   if (!supabaseClient || !personId) return;
-  const srcItem = meetingActionItemsPending.find(i => String(i.id) === String(id));
-  const { error } = await supabaseClient.from('meeting_action_items')
-    .update({ status: 'confirmed', confirmed_person_id: personId }).eq('id', id);
-  if (error) { console.error('Aksiyon onaylanamadı:', error); return; }
-  if (srcItem) queueMeetingNotify(srcItem, personId);
-  await loadPendingMeetingActionItems();
-  await loadConfirmedMeetingActionItems();
-  renderPendingActionItemsPanel();
-  renderSidebarTodos();
-  refreshMeetingTodoViews();
+  const item = meetingActionItemsPending.find(i => String(i.id) === String(id)); if (!item) return;
+  await confirmItemsBulk([{ item, pid: personId }], false);
 }
 
 async function dismissMeetingActionItem(id) {
@@ -2049,6 +2046,7 @@ async function renderPendingActionItemsPanel() {
   if (!items.length) { wrap.classList.add('hidden'); container.innerHTML = ''; return; }
   wrap.classList.remove('hidden');
   const cnt = document.getElementById('meetingPendingCount'); if (cnt) cnt.innerText = items.length;
+  populateTargetTaskSelects();
   const peopleOpts = registeredPeople.filter(isAssignable)
     .map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
 
@@ -2114,13 +2112,7 @@ async function renderPendingActionItemsPanel() {
 
 async function confirmPersonGroup(date, pid) {
   const items = meetingActionItemsPending.filter(i => i.week_date === date && i.suggested_person_id === pid);
-  for (const i of items) {
-    const { error } = await supabaseClient.from('meeting_action_items').update({ status: 'confirmed', confirmed_person_id: pid }).eq('id', i.id);
-    if (!error) queueMeetingNotify(i, pid);
-  }
-  flushMeetingNotify();
-  await loadPendingMeetingActionItems(); await loadConfirmedMeetingActionItems();
-  refreshMeetingTodoViews();
+  await confirmItemsBulk(items.map(item => ({ item, pid })), true);
 }
 
 // ---------------------------------------------------------------------
@@ -2179,13 +2171,7 @@ async function importDriveTodos() {
 async function confirmAllSuggestedActions() {
   const items = meetingActionItemsPending.filter(i => i.suggested_person_id);
   if (!items.length) return;
-  for (const i of items) {
-    const { error } = await supabaseClient.from('meeting_action_items').update({ status: 'confirmed', confirmed_person_id: i.suggested_person_id }).eq('id', i.id);
-    if (!error) queueMeetingNotify(i, i.suggested_person_id);
-  }
-  flushMeetingNotify();
-  await loadPendingMeetingActionItems(); await loadConfirmedMeetingActionItems();
-  refreshMeetingTodoViews();
+  await confirmItemsBulk(items.map(item => ({ item, pid: item.suggested_person_id })), true);
 }
 
 // ---------------------------------------------------------------------
@@ -3135,8 +3121,13 @@ async function updateWeeklyTodoStatus(taskIdx, todoId, status) {
 }
 
 async function deleteWeeklyTodo(taskIdx, todoId) {
+  const gone = tasks[taskIdx].weeklyTodos.find(w => w.id === todoId);
   tasks[taskIdx].weeklyTodos = tasks[taskIdx].weeklyTodos.filter(w => w.id !== todoId);
   await persistTask(tasks[taskIdx]);
+  if (gone && gone.meetingItemId && supabaseClient) {
+    await supabaseClient.from('meeting_action_items').update({ status: 'dismissed', confirmed_person_id: null }).eq('id', gone.meetingItemId);
+    await loadConfirmedMeetingActionItems();
+  }
   renderAll();
 }
 
@@ -3218,7 +3209,9 @@ async function saveWeeklyTodo(e) {
     status: document.getElementById('weeklyTodoStatus').value,
     link: document.getElementById('weeklyTodoLink').value,
     text: document.getElementById('weeklyTodoText').value,
-    comments: isNew ? [] : ((tasks[taskIdx].weeklyTodos.find(w => w.id === id) || {}).comments || [])
+    comments: isNew ? [] : ((tasks[taskIdx].weeklyTodos.find(w => w.id === id) || {}).comments || []),
+    meetingItemId: isNew ? undefined : (tasks[taskIdx].weeklyTodos.find(w => w.id === id) || {}).meetingItemId,
+    meetingDate: isNew ? undefined : (tasks[taskIdx].weeklyTodos.find(w => w.id === id) || {}).meetingDate
   };
   if (id) {
     const idx = tasks[taskIdx].weeklyTodos.findIndex(w => w.id === id);
@@ -3260,7 +3253,7 @@ function renderWeeklyOverviewTable() {
     ensureWeeklyTodos(t);
     t.weeklyTodos.forEach(w => rows.push({ kind: 'w', ti, w, t }));
   });
-  (meetingActionItemsConfirmed || []).forEach(m => rows.push({
+  legacyConfirmed().forEach(m => rows.push({
     kind: 'm', m, ti: '__m',
     t: { name: 'Toplantı · ' + formatMeetingDate(m.week_date) },
     w: { id: m.id, assigneeIds: m.confirmed_person_id ? [m.confirmed_person_id] : [], status: m.todo_status || 'Başlamadı', priority: 'Orta', text: m.raw_text, startDate: m.week_date, endDate: '' }
@@ -3346,7 +3339,7 @@ function updateMyTodoBadge() {
       if ((w.assigneeIds || []).includes(myId) && w.status !== 'Tamamlandı') count++;
     });
   });
-  (meetingActionItemsConfirmed || []).forEach(m => { if (m.confirmed_person_id === myId && (m.todo_status || 'Başlamadı') !== 'Tamamlandı') count++; });
+  legacyConfirmed().forEach(m => { if (m.confirmed_person_id === myId && (m.todo_status || 'Başlamadı') !== 'Tamamlandı') count++; });
   if (count > 0) {
     badge.innerText = '+' + count;
     badge.classList.remove('hidden');
@@ -3478,6 +3471,7 @@ function renderTodoDetail() {
       <select id="todoDetailStatus" ${canEdit ? '' : 'disabled'} class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100">${statusOpts}</select>
       ${canEdit ? '<button onclick="saveTodoDetail()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Kaydet</button>' : '<span class="text-[10px] text-slate-500">Yalnızca atanan kişi düzenleyebilir; yorum yazabilirsiniz.</span>'}
       ${d.kind === 'w' && canEdit ? `<button onclick="closeTodoDetail();openWeeklyTodoModal(${todoDetailCtx.ti}, '${todoDetailCtx.wid}')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">Tam düzenle</button>` : ''}
+      ${d.kind === 'w' && d.w.meetingItemId && canEdit ? `<button onclick="unconfirmMeetingTodo('${d.w.meetingItemId}', true)" class="px-3 py-1.5 bg-amber-600/80 hover:bg-amber-500 text-white text-[11px] font-semibold rounded-lg">Onaydan geri al</button><button onclick="deleteMeetingTodo('${d.w.meetingItemId}', true)" class="px-3 py-1.5 bg-rose-600/80 hover:bg-rose-500 text-white text-[11px] font-semibold rounded-lg">Sil</button>` : ''}
       ${d.kind === 'm' && canEdit ? `<button onclick="unconfirmMeetingTodo('${d.m.id}', true)" class="px-3 py-1.5 bg-amber-600/80 hover:bg-amber-500 text-white text-[11px] font-semibold rounded-lg">Onaydan geri al</button><button onclick="deleteMeetingTodo('${d.m.id}', true)" class="px-3 py-1.5 bg-rose-600/80 hover:bg-rose-500 text-white text-[11px] font-semibold rounded-lg">Sil</button>` : ''}
       <button onclick="goToTodoSource()" class="ml-auto px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">Kaynağa git</button>
     </div>
@@ -3553,20 +3547,96 @@ function goToTodoSource() {
 }
 
 // =====================================================================
-// ATANMIŞ (ONAYLANMIŞ) TOPLANTI GÖREVLERİ: görev takibi + toplantı sayfası paneli
+// ATANMIŞ (ONAYLANMIŞ) TOPLANTI GÖREVLERİ
+// Onaylanan madde, seçilen "Görev / Adım" altında GERÇEK bir haftalık to-do olarak açılır
+// (Haftalık Görev formundaki tüm alanlar: sorumlu, tarih, öncelik, durum, link, açıklama).
 // =====================================================================
 const assignedTodoFilter = {};
 const assignedOuterDefault = { assignedTodosTasksPanel: true, assignedTodosMeetingsPanel: false };
+let pendingTargetTaskIdx = null;
+
+function addDaysIso(iso, n) { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+function findTwin(mid) {
+  for (let ti = 0; ti < tasks.length; ti++) {
+    const w = (tasks[ti].weeklyTodos || []).find(x => x.meetingItemId && String(x.meetingItemId) === String(mid));
+    if (w) return { ti, w };
+  }
+  return null;
+}
+function legacyConfirmed() { return (meetingActionItemsConfirmed || []).filter(m => !findTwin(m.id)); }
+function assignedList() {
+  return (meetingActionItemsConfirmed || []).map(m => {
+    const tw = findTwin(m.id);
+    return tw
+      ? { m, tw, id: m.id, pid: (tw.w.assigneeIds && tw.w.assigneeIds[0]) || m.confirmed_person_id, date: m.week_date, text: tw.w.text, status: tw.w.status || 'Başlamadı', comments: tw.w.comments || [], taskName: tasks[tw.ti].name }
+      : { m, tw: null, id: m.id, pid: m.confirmed_person_id, date: m.week_date, text: m.raw_text, status: m.todo_status || 'Başlamadı', comments: m.comments || [], taskName: '' };
+  });
+}
+function currentTargetTaskIdx() {
+  if (!tasks.length) return null;
+  if (pendingTargetTaskIdx !== null && tasks[pendingTargetTaskIdx]) return pendingTargetTaskIdx;
+  const i = tasks.findIndex(t => /toplant/i.test(t.name));
+  return i >= 0 ? i : 0;
+}
+function setPendingTargetTask(v) { pendingTargetTaskIdx = parseInt(v, 10); populateTargetTaskSelects(); }
+function targetTaskOptionsHTML() {
+  const cur = currentTargetTaskIdx();
+  return tasks.map((t, i) => `<option value="${i}" ${i === cur ? 'selected' : ''}>${escapeHtml(t.name)}</option>`).join('');
+}
+function populateTargetTaskSelects() {
+  document.querySelectorAll('select.target-task-select').forEach(sel => { sel.innerHTML = targetTaskOptionsHTML(); });
+}
+
+async function createWeeklyFromMeeting(item, personId, ti) {
+  const t = tasks[ti]; if (!t) return false;
+  ensureWeeklyTodos(t);
+  t.weeklyTodos.push({
+    id: 'w' + Date.now() + Math.floor(Math.random() * 100000),
+    assigneeIds: [personId],
+    startDate: item.week_date,
+    endDate: addDaysIso(item.week_date, 7),
+    priority: 'Orta', status: 'Başlamadı', link: '',
+    text: item.raw_text, comments: [],
+    meetingItemId: item.id, meetingDate: item.week_date
+  });
+  sortWeeklyTodos(t);
+  return true;
+}
+
+async function confirmItemsBulk(pairs, flush) {
+  if (!supabaseClient || !pairs.length) return;
+  const ti = currentTargetTaskIdx(); const touched = new Set();
+  for (const { item, pid } of pairs) {
+    const { error } = await supabaseClient.from('meeting_action_items').update({ status: 'confirmed', confirmed_person_id: pid }).eq('id', item.id);
+    if (error) { console.error('Aksiyon onaylanamadı:', error); continue; }
+    if (ti !== null && await createWeeklyFromMeeting(item, pid, ti)) touched.add(ti);
+    queueMeetingNotify(item, pid);
+  }
+  for (const i of touched) await persistTask(tasks[i]);
+  if (flush) flushMeetingNotify();
+  await refreshMeetingTodoViews();
+}
+
+async function convertLegacyTodos() {
+  const list = legacyConfirmed(); const ti = currentTargetTaskIdx();
+  if (!list.length || ti === null) return;
+  if (!confirm(`${list.length} eski atama "${tasks[ti].name}" altında haftalık görev formuna dönüştürülsün mü?`)) return;
+  for (const m of list) {
+    await createWeeklyFromMeeting(m, m.confirmed_person_id, ti);
+    const tw = findTwin(m.id);
+    if (tw && m.todo_status) tw.w.status = m.todo_status;
+    if (tw && m.comments && m.comments.length) tw.w.comments = m.comments;
+  }
+  await persistTask(tasks[ti]);
+  await refreshMeetingTodoViews();
+  showMiniToast('Eski atamalar haftalık göreve dönüştürüldü.');
+}
 
 async function refreshMeetingTodoViews() {
   await loadPendingMeetingActionItems();
   await loadConfirmedMeetingActionItems();
   renderPendingActionItemsPanel();
-  renderAssignedTodosPanel('assignedTodosTasksPanel');
-  renderAssignedTodosPanel('assignedTodosMeetingsPanel');
-  renderSidebarTodos();
-  renderWeeklyOverviewTable();
-  updateMyTodoBadge();
+  renderAll();
   if (typeof renderMeetingsSection === 'function') renderMeetingsSection();
   if (todoDetailCtx && !todoDetailGet()) closeTodoDetail();
   else if (todoDetailCtx) renderTodoDetail();
@@ -3579,12 +3649,18 @@ async function quickToggleMeetingTodo(id) {
   if (await persistMeetingItemFields(m, { todo_status: next })) await refreshMeetingTodoViews();
 }
 async function setMeetingTodoStatus(id, val) {
-  const m = (meetingActionItemsConfirmed || []).find(x => String(x.id) === String(id)); if (!m) return;
-  if (await persistMeetingItemFields(m, { todo_status: val })) await refreshMeetingTodoViews();
+  const it = assignedList().find(x => String(x.id) === String(id)); if (!it) return;
+  if (it.tw) { it.tw.w.status = val; await persistTask(tasks[it.tw.ti]); await refreshMeetingTodoViews(); return; }
+  if (await persistMeetingItemFields(it.m, { todo_status: val })) await refreshMeetingTodoViews();
+}
+async function removeTwinOf(mid) {
+  const tw = findTwin(mid);
+  if (tw) { tasks[tw.ti].weeklyTodos = tasks[tw.ti].weeklyTodos.filter(x => x !== tw.w); await persistTask(tasks[tw.ti]); }
 }
 async function unconfirmMeetingTodo(id, fromDetail) {
   const m = (meetingActionItemsConfirmed || []).find(x => String(x.id) === String(id)); if (!m) return;
   if (!confirm('Bu görev atamadan çıkarılıp "Onay Bekliyor" listesine geri alınsın mı?')) return;
+  await removeTwinOf(id);
   if (await persistMeetingItemFields(m, { status: 'pending', confirmed_person_id: null })) {
     if (fromDetail) closeTodoDetail();
     await refreshMeetingTodoViews();
@@ -3594,6 +3670,7 @@ async function unconfirmMeetingTodo(id, fromDetail) {
 async function deleteMeetingTodo(id, fromDetail) {
   const m = (meetingActionItemsConfirmed || []).find(x => String(x.id) === String(id)); if (!m) return;
   if (!confirm('Bu görev silinsin mi? (Kişinin listesinden ve toplantı kartından kalkar.)')) return;
+  await removeTwinOf(id);
   if (await persistMeetingItemFields(m, { status: 'dismissed', confirmed_person_id: null })) {
     if (fromDetail) closeTodoDetail();
     await refreshMeetingTodoViews();
@@ -3601,28 +3678,38 @@ async function deleteMeetingTodo(id, fromDetail) {
   }
 }
 async function bulkMeetingTodos(pid, mode) {
-  const list = (meetingActionItemsConfirmed || []).filter(m => m.confirmed_person_id === pid);
+  const list = assignedList().filter(x => x.pid === pid);
   if (!list.length) return;
   const person = (registeredPeople.find(p => p.id === pid) || {}).name || pid;
   const msg = mode === 'delete' ? `${person} kişisinin ${list.length} görevi silinsin mi?` : `${person} kişisinin ${list.length} görevi atamadan çıkarılıp "Onay Bekliyor" listesine alınsın mı?`;
   if (!confirm(msg)) return;
   const fields = mode === 'delete' ? { status: 'dismissed', confirmed_person_id: null } : { status: 'pending', confirmed_person_id: null };
-  for (const m of list.slice()) await persistMeetingItemFields(m, fields);
+  for (const it of list.slice()) { await removeTwinOf(it.id); await persistMeetingItemFields(it.m, fields); }
   await refreshMeetingTodoViews();
   showMiniToast(mode === 'delete' ? 'Görevler silindi.' : 'Görevler onay listesine geri alındı.');
 }
 
+function openAssignedTodo(id) {
+  const it = assignedList().find(x => String(x.id) === String(id)); if (!it) return;
+  if (it.tw) openTodoDetail('w', it.tw.ti, it.tw.w.id); else openTodoDetail('m', it.m.id);
+}
+function editAssignedTodo(id) {
+  const it = assignedList().find(x => String(x.id) === String(id)); if (!it) return;
+  if (it.tw) openWeeklyTodoModal(it.tw.ti, it.tw.w.id); else openTodoDetail('m', it.m.id);
+}
+
 function renderAssignedTodosPanel(cid) {
   const box = document.getElementById(cid); if (!box) return;
-  const items = (meetingActionItemsConfirmed || []).slice().sort((a, b) => String(b.week_date).localeCompare(String(a.week_date)));
+  const items = assignedList().sort((a, b) => String(b.date).localeCompare(String(a.date)));
   if (!items.length) { box.innerHTML = ''; return; }
   const initKey = 'init:' + cid;
   if (!pendingOpenKeys.has(initKey)) { pendingOpenKeys.add(initKey); if (assignedOuterDefault[cid]) pendingOpenKeys.add('A:' + cid); }
   const nameOf = id => (registeredPeople.find(p => p.id === id) || {}).name || id || '—';
-  const pids = [...new Set(items.map(i => i.confirmed_person_id))].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'tr'));
+  const pids = [...new Set(items.map(i => i.pid))].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'tr'));
   const flt = assignedTodoFilter[cid] || '';
   const shown = flt ? pids.filter(x => x === flt) : pids;
-  const done = items.filter(i => (i.todo_status || 'Başlamadı') === 'Tamamlandı').length;
+  const done = items.filter(i => i.status === 'Tamamlandı').length;
+  const legacy = legacyConfirmed().length;
   const outerKey = 'A:' + cid;
   box.innerHTML = `<details ${pendingOpenKeys.has(outerKey) ? 'open' : ''} ontoggle="togglePendingGroup('${outerKey}', this.open)" class="glass rounded-2xl shadow-xl border border-slate-800 group">
     <summary class="cursor-pointer list-none flex items-center justify-between gap-2 px-5 py-3.5">
@@ -3632,14 +3719,19 @@ function renderAssignedTodosPanel(cid) {
       <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180"></i>
     </summary>
     <div class="px-5 pb-5 space-y-2">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kişi</label>
         <select onchange="assignedTodoFilter['${cid}']=this.value;renderAssignedTodosPanel('${cid}')" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-100">
           <option value="">Tüm Kişiler (grup)</option>${pids.map(x => `<option value="${x}" ${x === flt ? 'selected' : ''}>${escapeHtml(nameOf(x))}</option>`).join('')}
         </select>
       </div>
+      ${legacy ? `<div class="flex items-center gap-2 flex-wrap text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+        <span>${legacy} eski atama henüz haftalık görev formuna çevrilmedi.</span>
+        <select class="target-task-select bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-100 max-w-[220px]" onchange="setPendingTargetTask(this.value)">${targetTaskOptionsHTML()}</select>
+        <button onclick="convertLegacyTodos()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-semibold rounded-md">Haftalık göreve çevir</button>
+      </div>` : ''}
       ${shown.map(pid => {
-        const mine = items.filter(i => i.confirmed_person_id === pid);
+        const mine = items.filter(i => i.pid === pid);
         const canAct = todoCanEdit([pid]);
         const pKey = 'ap:' + cid + ':' + pid;
         return `<details ${pendingOpenKeys.has(pKey) ? 'open' : ''} ontoggle="togglePendingGroup('${pKey}', this.open)" class="bg-slate-800/50 border border-slate-700/70 rounded-lg group/p">
@@ -3653,17 +3745,18 @@ function renderAssignedTodosPanel(cid) {
             </span>
           </summary>
           <div class="px-3 pb-2.5 space-y-1.5">
-            ${mine.map(m => { const st = m.todo_status || 'Başlamadı'; return `
-            <div class="flex flex-col md:flex-row md:items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-md p-2 ${st === 'Tamamlandı' ? 'opacity-60' : ''}">
-              <span class="text-[10px] text-slate-400 whitespace-nowrap">${formatMeetingDate(m.week_date)}</span>
-              <div class="flex-1 min-w-0 text-[11px] text-slate-100 ${st === 'Tamamlandı' ? 'line-through' : ''}">${escapeHtml(m.raw_text)}${(m.comments || []).length ? ` <span class="text-[10px] text-slate-400">💬${m.comments.length}</span>` : ''}</div>
+            ${mine.map(it => `
+            <div class="flex flex-col md:flex-row md:items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-md p-2 ${it.status === 'Tamamlandı' ? 'opacity-60' : ''}">
+              <div class="flex flex-col whitespace-nowrap"><span class="text-[10px] text-slate-400">${formatMeetingDate(it.date)}</span>${it.taskName ? `<span class="text-[9px] text-indigo-300 max-w-[140px] truncate" title="${escapeHtml(it.taskName)}">${escapeHtml(it.taskName)}</span>` : ''}</div>
+              <div class="flex-1 min-w-0 text-[11px] text-slate-100 ${it.status === 'Tamamlandı' ? 'line-through' : ''}">${escapeHtml(it.text)}${it.comments.length ? ` <span class="text-[10px] text-slate-400">💬${it.comments.length}</span>` : ''}</div>
               <div class="flex items-center gap-1.5 shrink-0">
-                <select ${canAct ? '' : 'disabled'} onchange="setMeetingTodoStatus('${m.id}', this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-1 text-[10px] text-slate-100">${TODO_STATUSES.map(x => `<option ${x === st ? 'selected' : ''}>${x}</option>`).join('')}</select>
-                <button onclick="openTodoDetail('m', '${m.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold rounded-md">Aç / Düzenle</button>
-                ${canAct ? `<button onclick="unconfirmMeetingTodo('${m.id}')" title="Onay listesine geri al" class="px-2 py-1 bg-amber-600/80 hover:bg-amber-500 text-white text-[10px] font-semibold rounded-md">Geri al</button>
-                <button onclick="deleteMeetingTodo('${m.id}')" class="px-2 py-1 bg-rose-600/80 hover:bg-rose-500 text-white text-[10px] font-semibold rounded-md">Sil</button>` : ''}
+                <select ${canAct ? '' : 'disabled'} onchange="setMeetingTodoStatus('${it.id}', this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-1 text-[10px] text-slate-100">${TODO_STATUSES.map(x => `<option ${x === it.status ? 'selected' : ''}>${x}</option>`).join('')}</select>
+                <button onclick="openAssignedTodo('${it.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold rounded-md">Aç</button>
+                ${canAct ? `<button onclick="editAssignedTodo('${it.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold rounded-md">Düzenle</button>
+                <button onclick="unconfirmMeetingTodo('${it.id}')" title="Onay listesine geri al" class="px-2 py-1 bg-amber-600/80 hover:bg-amber-500 text-white text-[10px] font-semibold rounded-md">Geri al</button>
+                <button onclick="deleteMeetingTodo('${it.id}')" class="px-2 py-1 bg-rose-600/80 hover:bg-rose-500 text-white text-[10px] font-semibold rounded-md">Sil</button>` : ''}
               </div>
-            </div>`; }).join('')}
+            </div>`).join('')}
           </div>
         </details>`;
       }).join('')}
@@ -3699,7 +3792,7 @@ function renderSidebarTodos() {
       }
     });
   });
-  (meetingActionItemsConfirmed || []).forEach(m => {
+  legacyConfirmed().forEach(m => {
     if (filterVal === 'all' || m.confirmed_person_id === targetId) {
       items.push({
         task: 'Toplantı · ' + (typeof formatMeetingDate === 'function' ? formatMeetingDate(m.week_date) : m.week_date),
@@ -4596,11 +4689,11 @@ async function renderMeetingsSection() {
             </div>`;
           }).join('')}
           ${(() => {
-            const done = (meetingActionItemsConfirmed || []).filter(a => a.week_date === w.date);
+            const done = assignedList().filter(a => a.date === w.date);
             if (!done.length) return '';
             return `<div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3.5">
               <div class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider mb-1.5">Bu toplantıdan atanan görevler (${done.length})</div>
-              ${done.map(a => { const pp = registeredPeople.find(x => x.id === a.confirmed_person_id); return `<div class="text-[11px] text-slate-200 py-0.5"><span class="font-semibold text-emerald-300">${escHtml(pp ? pp.name : '-')}:</span> ${escHtml(a.raw_text)}</div>`; }).join('')}
+              ${done.map(a => { const pp = registeredPeople.find(x => x.id === a.pid); return `<div class="text-[11px] text-slate-200 py-0.5 ${a.status === 'Tamamlandı' ? 'opacity-60 line-through' : ''}"><span class="font-semibold text-emerald-300">${escapeHtml(pp ? pp.name : '-')}:</span> ${escapeHtml(a.text)}${a.taskName ? ` <span class="text-[10px] text-indigo-300">· ${escapeHtml(a.taskName)}</span>` : ''}</div>`; }).join('')}
             </div>`;
           })()}
         </div>
