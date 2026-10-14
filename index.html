@@ -319,7 +319,7 @@
             <select id="woFilterPerson" onchange="renderWeeklyOverviewTable()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-100"></select>
             <select id="woFilterTask" onchange="renderWeeklyOverviewTable()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-100 max-w-[180px]"></select>
             <select id="woFilterStatus" onchange="renderWeeklyOverviewTable()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-100">
-              <option value="">Tüm Durumlar</option><option value="Başlamadı">Başlamadı</option><option value="Devam Ediyor">Devam Ediyor</option><option value="Tamamlandı">Tamamlandı</option>
+              <option value="__open" selected>Açık görevler</option><option value="">Tüm Durumlar (tamamlananlar dahil)</option><option value="Başlamadı">Başlamadı</option><option value="Devam Ediyor">Devam Ediyor</option><option value="Tamamlandı">Tamamlandı</option>
             </select>
             <button onclick="openWeeklyTodoModal(null)" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg flex items-center space-x-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Haftalık Görev Ekle</span></button>
           </div>
@@ -357,7 +357,7 @@
             <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
               <i data-lucide="calendar" class="w-4 h-4 text-indigo-400"></i><span data-i18n="timeline_title">Project Timeline & Çalışma Takvimi</span>
             </h3>
-            <p class="text-[11px] text-slate-400 mt-0.5" data-i18n="timeline_subtitle">Görev adının solundaki oka tıklayarak haftalık to-do listesini açabilir, ilerlemeyi buradan takip edebilirsiniz.</p>
+            <p class="text-[11px] text-slate-400 mt-0.5" data-i18n="timeline_subtitle">Görev adının solundaki oka tıklayarak haftalık to-do listesini açabilirsiniz. İlerleme: aylık kutudaki + düğmesi %5 artırır, − düğmesi %5 azaltır (ör. yanlışlıkla fazla girdiyseniz −'ye basın).</p>
           </div>
           <div class="flex items-center space-x-3 text-[10px] bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
             <span class="flex items-center space-x-1"><span class="w-2.5 h-2.5 rounded bg-emerald-500"></span><span class="text-slate-300" data-i18n="legend_completed">Tamamlandı</span></span>
@@ -606,6 +606,62 @@
         </div>
       </div>
 
+      <details open class="glass rounded-2xl shadow-xl border border-slate-800 group">
+        <summary class="cursor-pointer list-none flex items-center justify-between px-5 py-3.5">
+          <span class="text-xs font-bold text-slate-100 flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i>Haftalık Saat Planı</span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+      <div class="border-t border-slate-800">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider border-b border-slate-800">
+              <tr>
+                <th class="p-3" data-i18n="meetings_th_time">Saat</th>
+                <th class="p-3" data-i18n="meetings_th_subgroup">Subgroup Hafta</th>
+                <th class="p-3" data-i18n="meetings_th_fullgroup">Full Group Hafta</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60">
+              <tr>
+                <td class="p-3 font-mono text-[11px] text-slate-400">17:00–17:30</td>
+                <td class="p-3" colspan="2" data-i18n="meetings_slot_1">Other Side Projects (ihtiyaç halinde) — Zeynep veya Helin</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono text-[11px] text-slate-400">17:30–18:00</td>
+                <td class="p-3" colspan="2" data-i18n="meetings_slot_2">Expert Survey — Ayşenur, Eslem</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono text-[11px] text-slate-400">18:00–18:30</td>
+                <td class="p-3" data-i18n="meetings_slot_3_sub">Synthetic Agents (Selim, Sena)</td>
+                <td class="p-3" data-i18n="meetings_slot_3_full">Full Group Meeting (Herkes)</td>
+              </tr>
+              <tr>
+                <td class="p-3 font-mono text-[11px] text-slate-400">18:30–19:00</td>
+                <td class="p-3" data-i18n="meetings_slot_4_sub">Model Development (ihtiyaç halinde — Selim, Helin, Ahmet, Abdullatif)</td>
+                <td class="p-3" data-i18n="meetings_slot_4_full">Synthetic Agents (Selim, Sena)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      </details>
+
+      <details open class="glass rounded-2xl shadow-xl border border-slate-800 group">
+        <summary class="cursor-pointer list-none flex items-center justify-between px-5 py-3.5"><span class="text-xs font-bold text-slate-100 flex items-center gap-2"><i data-lucide="clipboard-paste" class="w-4 h-4 text-indigo-400"></i>Toplantı To-Do Listesini İçe Aktar</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180"></i></summary>
+        <div class="px-5 pb-5">
+        <p class="text-[11px] text-slate-400 mb-3">Toplantı notlarındaki to-do listesinin içeriğini (Drive/Zoom AI) buraya yapıştırın veya .txt/.csv/.md olarak yükleyin. Her satır bir madde olur; "Ad: görev", "görev - Ad" ya da "@Ad" biçimindeki isimler otomatik eşleştirilir. Maddeler aşağıdaki "Onay Bekliyor" panelinde çıkar; oradan doğrudan kişiye atarsınız.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+          <select id="driveImportWeekSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
+          <input type="file" id="driveImportFile" accept=".txt,.csv,.md,.tsv" onchange="handleDriveImportFile(event)" class="w-full text-[11px] text-slate-400 file:mr-2 file:px-2.5 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200 file:text-[11px] file:font-semibold">
+        </div>
+        <textarea id="driveImportText" rows="4" placeholder="- Selim: Reward model testlerini tamamla&#10;- Anket taslağını gözden geçir (Ayşenur)&#10;..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 focus:outline-none focus:border-indigo-500"></textarea>
+        <div class="flex items-center gap-2 mt-2">
+          <button onclick="importDriveTodos()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Maddeleri İçe Aktar</button>
+          <span id="driveImportStatus" class="text-[11px] text-slate-400"></span>
+        </div>
+      </div>
+      </details>
+
       <details id="meetingPendingActionsWrap" class="hidden glass rounded-2xl shadow-xl border border-amber-500/30 group">
         <summary class="cursor-pointer list-none flex items-center justify-between gap-2 p-5">
           <span class="text-sm font-bold text-slate-100 flex items-center space-x-2">
@@ -653,64 +709,6 @@
           <div id="meetingWeeksContainer" class="space-y-3"></div>
         </div>
       </div>
-
-      <details class="glass rounded-2xl shadow-xl border border-slate-800 group">
-        <summary class="cursor-pointer list-none flex items-center justify-between px-5 py-3.5">
-          <span class="text-xs font-bold text-slate-100 flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i>Haftalık Saat Planı</span>
-          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180"></i>
-        </summary>
-      <div class="border-t border-slate-800">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs text-slate-300">
-            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider border-b border-slate-800">
-              <tr>
-                <th class="p-3" data-i18n="meetings_th_time">Saat</th>
-                <th class="p-3" data-i18n="meetings_th_subgroup">Subgroup Hafta</th>
-                <th class="p-3" data-i18n="meetings_th_fullgroup">Full Group Hafta</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-800/60">
-              <tr>
-                <td class="p-3 font-mono text-[11px] text-slate-400">17:00–17:30</td>
-                <td class="p-3" colspan="2" data-i18n="meetings_slot_1">Other Side Projects (ihtiyaç halinde) — Zeynep veya Helin</td>
-              </tr>
-              <tr>
-                <td class="p-3 font-mono text-[11px] text-slate-400">17:30–18:00</td>
-                <td class="p-3" colspan="2" data-i18n="meetings_slot_2">Expert Survey — Ayşenur, Eslem</td>
-              </tr>
-              <tr>
-                <td class="p-3 font-mono text-[11px] text-slate-400">18:00–18:30</td>
-                <td class="p-3" data-i18n="meetings_slot_3_sub">Synthetic Agents (Selim, Sena)</td>
-                <td class="p-3" data-i18n="meetings_slot_3_full">Full Group Meeting (Herkes)</td>
-              </tr>
-              <tr>
-                <td class="p-3 font-mono text-[11px] text-slate-400">18:30–19:00</td>
-                <td class="p-3" data-i18n="meetings_slot_4_sub">Model Development (ihtiyaç halinde — Selim, Helin, Ahmet, Abdullatif)</td>
-                <td class="p-3" data-i18n="meetings_slot_4_full">Synthetic Agents (Selim, Sena)</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      </details>
-
-      <details class="glass rounded-2xl shadow-xl border border-slate-800 group">
-        <summary class="cursor-pointer list-none flex items-center justify-between px-5 py-3.5"><span class="text-xs font-bold text-slate-100 flex items-center gap-2"><i data-lucide="clipboard-paste" class="w-4 h-4 text-indigo-400"></i>Toplantı To-Do Listesini İçe Aktar</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180"></i></summary>
-        <div class="px-5 pb-5">
-        <p class="text-[11px] text-slate-400 mb-3">Toplantı notlarındaki to-do listesinin içeriğini (Drive/Zoom AI) buraya yapıştırın veya .txt/.csv/.md olarak yükleyin. Her satır bir madde olur; "Ad: görev", "görev - Ad" ya da "@Ad" biçimindeki isimler otomatik eşleştirilir. Maddeler aşağıdaki "Onay Bekliyor" panelinde çıkar; oradan doğrudan kişiye atarsınız.</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
-          <select id="driveImportWeekSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
-          <input type="file" id="driveImportFile" accept=".txt,.csv,.md,.tsv" onchange="handleDriveImportFile(event)" class="w-full text-[11px] text-slate-400 file:mr-2 file:px-2.5 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200 file:text-[11px] file:font-semibold">
-        </div>
-        <textarea id="driveImportText" rows="4" placeholder="- Selim: Reward model testlerini tamamla&#10;- Anket taslağını gözden geçir (Ayşenur)&#10;..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 focus:outline-none focus:border-indigo-500"></textarea>
-        <div class="flex items-center gap-2 mt-2">
-          <button onclick="importDriveTodos()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Maddeleri İçe Aktar</button>
-          <span id="driveImportStatus" class="text-[11px] text-slate-400"></span>
-        </div>
-      </div>
-      </details>
-
-
     </section>
 
   </main>
@@ -1035,7 +1033,7 @@ const I18N = {
     diagrams_subtitle: "DEMIG AI Development Workplan çizelgesi ve güncel ilerleme istatistikleri.",
     diagrams_avg_progress: "Ortalama İlerleme:",
     timeline_title: "Project Timeline & Çalışma Takvimi",
-    timeline_subtitle: "Görev adının solundaki oka tıklayarak haftalık to-do listesini açabilir, ilerlemeyi buradan takip edebilirsiniz.",
+    timeline_subtitle: "Görev adının solundaki oka tıklayarak haftalık to-do listesini açabilirsiniz. İlerleme: aylık kutudaki + düğmesi %5 artırır, − düğmesi %5 azaltır (ör. yanlışlıkla fazla girdiyseniz −'ye basın).",
     legend_completed: "Tamamlandı",
     legend_active: "Aktif/Planlı Dönem",
     legend_inactive: "Pasif",
@@ -1299,7 +1297,7 @@ const I18N = {
     diagrams_subtitle: "DEMIG AI Development Workplan timeline and current progress statistics.",
     diagrams_avg_progress: "Average Progress:",
     timeline_title: "Project Timeline & Work Schedule",
-    timeline_subtitle: "Click the arrow to the left of a task name to open its weekly to-do list and track progress here.",
+    timeline_subtitle: "Click the arrow left of a task name to open its weekly to-dos. Progress: the + button in a month cell adds 5%, the − button removes 5% (use − to correct a mistake).",
     legend_completed: "Completed",
     legend_active: "Active/Planned Period",
     legend_inactive: "Inactive",
@@ -2072,7 +2070,7 @@ async function renderPendingActionItemsPanel() {
     const dKey = 'd:' + date;
     return `<details ${pendingOpenKeys.has(dKey) ? 'open' : ''} ontoggle="togglePendingGroup('${dKey}', this.open)" class="bg-slate-900/50 border border-slate-800 rounded-xl group/d">
       <summary class="cursor-pointer list-none flex items-center justify-between gap-2 px-3.5 py-2.5">
-        <span class="text-xs font-bold text-slate-100">📅 ${formatMeetingDate(date)}</span>
+        <span class="text-xs font-bold text-slate-100">Toplantı · ${formatMeetingDate(date)}</span>
         <span class="flex items-center gap-2 text-[10px] text-slate-400"><span>${dItems.length} görev · ${pKeys.length} kişi</span><i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform group-open/d:rotate-180"></i></span>
       </summary>
       <div class="px-3 pb-3 space-y-2">
@@ -3252,7 +3250,7 @@ function renderWeeklyOverviewTable() {
   const prevP = fp.value, prevT = ft.value;
   fp.innerHTML = '<option value="">Tüm Kişiler</option><option value="__none">Atanmamış</option>' +
     registeredPeople.filter(p => p.active !== false).map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-  ft.innerHTML = '<option value="">Tüm Görevler</option><option value="__meeting">📅 Toplantı Görevleri</option>' + tasks.map((t, i) => `<option value="${i}">${escapeHtml(t.name)}</option>`).join('');
+  ft.innerHTML = '<option value="">Tüm Görevler</option><option value="__meeting">Toplantıdan gelen görevler</option>' + tasks.map((t, i) => `<option value="${i}">${escapeHtml(t.name)}</option>`).join('');
   fp.value = [...fp.options].some(o => o.value === prevP) ? prevP : '';
   ft.value = [...ft.options].some(o => o.value === prevT) ? prevT : '';
   const fs = document.getElementById('woFilterStatus').value;
@@ -3264,7 +3262,7 @@ function renderWeeklyOverviewTable() {
   });
   (meetingActionItemsConfirmed || []).forEach(m => rows.push({
     kind: 'm', m, ti: '__m',
-    t: { name: '📅 ' + formatMeetingDate(m.week_date) },
+    t: { name: 'Toplantı · ' + formatMeetingDate(m.week_date) },
     w: { id: m.id, assigneeIds: m.confirmed_person_id ? [m.confirmed_person_id] : [], status: m.todo_status || 'Başlamadı', priority: 'Orta', text: m.raw_text, startDate: m.week_date, endDate: '' }
   }));
   const total = rows.length, doneAll = rows.filter(r => r.w.status === 'Tamamlandı').length;
@@ -3274,7 +3272,8 @@ function renderWeeklyOverviewTable() {
     if (fp.value && fp.value !== '__none' && !ids.includes(fp.value)) return false;
     if (ft.value === '__meeting') return r.kind === 'm';
     if (ft.value !== '' && String(r.ti) !== ft.value) return false;
-    if (fs && r.w.status !== fs) return false;
+    if (fs === '__open') { if (r.w.status === 'Tamamlandı') return false; }
+    else if (fs && r.w.status !== fs) return false;
     return true;
   });
   rows.sort((a, b) => (a.w.status === 'Tamamlandı') - (b.w.status === 'Tamamlandı') || priorityWeight(b.w.priority) - priorityWeight(a.w.priority));
@@ -3305,10 +3304,12 @@ function renderWeeklyOverviewTable() {
       <td class="p-1.5 text-right whitespace-nowrap">
         ${kind === 'm' ? `
         <button onclick="quickToggleMeetingTodo('${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">${done ? '↩ Geri al' : '✓ Bitti'}</button>
-        <button onclick="openTodoDetail('m', '${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">Aç</button>` : `
+        <button onclick="openTodoDetail('m', '${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">Aç</button>
+        <button onclick="deleteMeetingTodo('${w.id}')" title="Atamadan sil" class="text-[11px] px-1.5 py-0.5 rounded border border-rose-500/40 text-rose-300 hover:bg-rose-500/20 font-bold leading-none">✕</button>` : `
         <button onclick="quickToggleWeeklyTodo(${ti}, '${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300" title="${done ? 'Geri al (Devam Ediyor)' : 'Tamamlandı işaretle'}">${done ? '↩ Geri al' : '✓ Bitti'}</button>
         <button onclick="openTodoDetail('w', ${ti}, '${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">Aç${(w.comments || []).length ? ' 💬' + w.comments.length : ''}</button>
-        <button onclick="openWeeklyTodoModal(${ti}, '${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">Düzenle</button>`}
+        <button onclick="openWeeklyTodoModal(${ti}, '${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">Düzenle</button>
+        <button onclick="if(confirm('Bu to-do silinsin mi?')) deleteWeeklyTodo(${ti}, '${w.id}')" title="Atamadan sil" class="text-[11px] px-1.5 py-0.5 rounded border border-rose-500/40 text-rose-300 hover:bg-rose-500/20 font-bold leading-none">✕</button>`}
       </td>
     `;
     tbody.appendChild(tr);
@@ -3458,7 +3459,7 @@ function renderTodoDetail() {
   const status = d.kind === 'w' ? (d.w.status || 'Başlamadı') : (d.m.todo_status || 'Başlamadı');
   const text = d.kind === 'w' ? (d.w.text || '') : (d.m.raw_text || '');
   document.getElementById('todoDetailKicker').innerText = names;
-  document.getElementById('todoDetailTitle').innerText = d.kind === 'w' ? d.t.name : '📅 ' + formatMeetingDate(d.m.week_date) + ' toplantısı';
+  document.getElementById('todoDetailTitle').innerText = d.kind === 'w' ? d.t.name : 'Toplantı · ' + formatMeetingDate(d.m.week_date);
   const statusOpts = TODO_STATUSES.map(x => `<option value="${x}" ${x === status ? 'selected' : ''}>${x}</option>`).join('');
   const meta = d.kind === 'w'
     ? `<div class="text-[11px] text-slate-400">Öncelik: <b class="text-slate-200">${escapeHtml(d.w.priority || '-')}</b> · ${escapeHtml(d.w.startDate || '')} ${d.w.endDate ? '→ ' + escapeHtml(d.w.endDate) : ''}${d.w.link ? ` · <a href="${escapeHtml(d.w.link)}" target="_blank" rel="noopener" class="text-indigo-400 underline">bağlantı</a>` : ''}</div>`
@@ -3701,12 +3702,13 @@ function renderSidebarTodos() {
   (meetingActionItemsConfirmed || []).forEach(m => {
     if (filterVal === 'all' || m.confirmed_person_id === targetId) {
       items.push({
-        task: '📅 ' + (typeof formatMeetingDate === 'function' ? formatMeetingDate(m.week_date) : m.week_date),
+        task: 'Toplantı · ' + (typeof formatMeetingDate === 'function' ? formatMeetingDate(m.week_date) : m.week_date),
         text: m.raw_text, priority: 'Orta', status: m.todo_status || 'Başlamadı', isMeeting: true,
         click: `openTodoDetail('m', '${m.id}')`, nComments: (m.comments || []).length
       });
     }
   });
+  items = items.filter(it => it.status !== 'Tamamlandı'); // tamamlananlar listeyi uzatmasın
   items.sort((a, b) => priorityWeight(b.priority) - priorityWeight(a.priority));
 
   if (items.length === 0) {
@@ -3774,13 +3776,13 @@ function renderExcelGanttMatrix() {
       }
       const tone = val === 100 ? 'bg-emerald-500 text-slate-950 shadow' : (val > 0 ? 'bg-indigo-600 text-white shadow' : 'bg-slate-900/40 text-slate-300 border border-slate-800/80');
       const lbl = val === 100 ? '✓ %100' : (val > 0 ? '%' + val : '–');
-      const stepBtn = 'w-4 h-full flex items-center justify-center text-[11px] font-bold leading-none hover:bg-black/25 transition';
-      const cellContent = `<div class="w-full h-7 rounded overflow-hidden flex items-stretch ${tone}" title="−5 / +5">
-        <button onclick="toggleMonthState(${tIdx}, ${m}, -1)" class="${stepBtn}" ${val > 0 ? '' : 'disabled style="opacity:.3;cursor:default"'}>−</button>
-        <div class="flex-1 flex items-center justify-center text-[10px] font-bold select-none">${lbl}</div>
-        <button onclick="toggleMonthState(${tIdx}, ${m}, 1)" class="${stepBtn}">+</button>
+      const stepBtn = 'absolute top-1/2 -translate-y-1/2 w-[18px] h-[18px] rounded-full bg-black/25 hover:bg-black/50 text-[11px] font-bold leading-none flex items-center justify-center transition opacity-50 group-hover:opacity-100';
+      const cellContent = `<div class="group relative w-full h-7 rounded-md flex items-center justify-center ${tone}" title="Kenardaki − ve + ilerlemeyi 5 puan azaltır / artırır">
+        ${val > 0 ? `<button onclick="toggleMonthState(${tIdx}, ${m}, -1)" class="${stepBtn} left-1" title="−5">−</button>` : ''}
+        <span class="text-[10px] font-bold select-none">${lbl}</span>
+        <button onclick="toggleMonthState(${tIdx}, ${m}, 1)" class="${stepBtn} right-1" title="+5">+</button>
       </div>`;
-      monthCells += `<td class="p-1 text-center w-20 h-8">${cellContent}</td>`;
+      monthCells += `<td class="p-1 text-center w-24 h-8">${cellContent}</td>`;
     }
 
     tr.innerHTML = `
