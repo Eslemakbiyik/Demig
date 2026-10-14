@@ -640,38 +640,9 @@
         </div>
       </div>
 
-      <div class="glass p-5 rounded-2xl shadow-xl">
-        <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2 mb-1">
-          <i data-lucide="upload" class="w-4 h-4 text-indigo-400"></i><span data-i18n="meetings_upload_title">Toplantı Transkripti Yükle</span>
-        </h3>
-        <p class="text-[11px] text-slate-400 mb-3" data-i18n="meetings_upload_subtitle">Önce haftayı ve o hafta içindeki hangi görüşmeye ait olduğunu seçin, sonra Zoom'dan indirdiğiniz transkripti (.txt/.vtt) yükleyin ya da aşağıya yapıştırın. Yapay zeka aksiyon maddelerini ve sorumlu kişileri bulup "Onay Bekliyor" listesine ekleyecek; kayıt, seçtiğiniz görüşmenin kartı altında (Yaklaşan/Geçmiş/Tümü listesinde) otomatik görünür.</p>
-        <div class="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-3 items-start">
-          <div class="space-y-2">
-            <div>
-              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1" data-i18n="meetings_upload_week_label">Hafta</label>
-              <select id="meetingUploadWeekSelect" onchange="populateMeetingUploadTrackSelect()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
-            </div>
-            <div>
-              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1" data-i18n="meetings_upload_track_label">Hangi Görüşme</label>
-              <select id="meetingUploadTrackSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
-            </div>
-          </div>
-          <div class="space-y-2">
-            <input type="file" id="meetingTranscriptFile" accept=".txt,.vtt,.srt" onchange="handleMeetingTranscriptFile(event)" class="w-full text-[11px] text-slate-400 file:mr-2 file:px-2.5 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200 file:text-[11px] file:font-semibold">
-            <textarea id="meetingTranscriptText" rows="4" placeholder="...veya transkripti doğrudan buraya yapıştırın" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500"></textarea>
-            <div class="flex items-center gap-2">
-              <button onclick="submitMeetingTranscript()" id="meetingTranscriptSubmitBtn" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg flex items-center gap-1.5">
-                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i><span data-i18n="meetings_upload_btn">AI ile Analiz Et</span>
-              </button>
-              <span id="meetingTranscriptStatus" class="text-[11px] text-slate-400"></span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div class="glass p-5 rounded-2xl shadow-xl border border-slate-700">
-        <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2 mb-1"><i data-lucide="clipboard-paste" class="w-4 h-4 text-indigo-400"></i><span>Drive'daki Zoom AI To-Do Listesini İçe Aktar</span></h3>
-        <p class="text-[11px] text-slate-400 mb-3">Drive'daki (Zoom kayıtlarından AI ile çıkarılan) to-do dosyasının içeriğini buraya yapıştırın veya .txt/.csv/.md olarak yükleyin. Her satır bir madde olur; "Ad: görev", "görev - Ad" ya da "@Ad" biçimindeki isimler otomatik eşleştirilir. Maddeler aşağıdaki "Onay Bekliyor" panelinde çıkar; oradan doğrudan kişiye atarsınız.</p>
+        <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2 mb-1"><i data-lucide="clipboard-paste" class="w-4 h-4 text-indigo-400"></i><span>Toplantı To-Do Listesini İçe Aktar</span></h3>
+        <p class="text-[11px] text-slate-400 mb-3">Toplantı notlarındaki to-do listesinin içeriğini (Drive/Zoom AI) buraya yapıştırın veya .txt/.csv/.md olarak yükleyin. Her satır bir madde olur; "Ad: görev", "görev - Ad" ya da "@Ad" biçimindeki isimler otomatik eşleştirilir. Maddeler aşağıdaki "Onay Bekliyor" panelinde çıkar; oradan doğrudan kişiye atarsınız.</p>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
           <select id="driveImportWeekSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
           <input type="file" id="driveImportFile" accept=".txt,.csv,.md,.tsv" onchange="handleDriveImportFile(event)" class="w-full text-[11px] text-slate-400 file:mr-2 file:px-2.5 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200 file:text-[11px] file:font-semibold">
@@ -683,14 +654,20 @@
         </div>
       </div>
 
-      <div id="meetingPendingActionsWrap" class="hidden glass p-5 rounded-2xl shadow-xl border border-amber-500/30">
-        <h3 class="text-sm font-bold text-slate-100 flex items-center space-x-2 mb-1">
-          <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i><span data-i18n="meetings_pending_title">Toplantıdan Çıkarılan Aksiyonlar — Onay Bekliyor</span>
-        </h3>
-        <p class="text-[11px] text-slate-400 mb-3" data-i18n="meetings_pending_subtitle">Zoom kaydından AI ile çıkarıldı. Sorumlu kişiyi seçip onaylarsanız, o kişinin sol bardaki haftalık to-do listesine eklenir.</p>
-        <div class="mb-2"><button onclick="confirmAllSuggestedActions()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold rounded-lg">Önerilen kişiyle eşleşenlerin hepsini onayla</button></div>
-        <div id="meetingPendingActionsContainer" class="space-y-2"></div>
-      </div>
+      <details id="meetingPendingActionsWrap" class="hidden glass rounded-2xl shadow-xl border border-amber-500/30 group">
+        <summary class="cursor-pointer list-none flex items-center justify-between gap-2 p-5">
+          <span class="text-sm font-bold text-slate-100 flex items-center space-x-2">
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i><span data-i18n="meetings_pending_title">Toplantıdan Çıkarılan Aksiyonlar — Onay Bekliyor</span>
+            <span id="meetingPendingCount" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold"></span>
+          </span>
+          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="px-5 pb-5">
+          <p class="text-[11px] text-slate-400 mb-3" data-i18n="meetings_pending_subtitle">Sorumlu kişiyi seçip onaylarsanız, o kişinin sol bardaki to-do listesine ve ilgili toplantı kartına eklenir.</p>
+          <div class="mb-2"><button onclick="confirmAllSuggestedActions()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold rounded-lg">Önerilen kişiyle eşleşenlerin hepsini onayla</button></div>
+          <div id="meetingPendingActionsContainer" class="space-y-2 max-h-[28rem] overflow-y-auto pr-1"></div>
+        </div>
+      </details>
 
       <div class="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4 items-start">
         <div class="glass p-4 rounded-2xl shadow-xl">
@@ -992,6 +969,19 @@
         <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg" data-i18n="btn_save">Kaydet</button>
       </div>
     </form>
+  </div>
+</div>
+
+<div id="todoDetailModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+  <div class="glass p-5 rounded-2xl w-full max-w-lg border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="flex items-start justify-between gap-3 pb-3 mb-3 border-b border-slate-800">
+      <div class="min-w-0">
+        <div id="todoDetailKicker" class="text-[10px] text-slate-400"></div>
+        <h3 id="todoDetailTitle" class="text-sm font-bold text-slate-100"></h3>
+      </div>
+      <button onclick="closeTodoDetail()" class="text-slate-400 hover:text-slate-100 shrink-0"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div id="todoDetailBody" class="space-y-3"></div>
   </div>
 </div>
 
@@ -1966,7 +1956,7 @@ async function loadConfirmedMeetingActionItems() {
 
 async function loadPendingMeetingActionItems() {
   if (!supabaseClient) { meetingActionItemsPending = []; return; }
-  const { data, error } = await supabaseClient.from('meeting_action_items').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+  const { data, error } = await supabaseClient.from('meeting_action_items').select('*').eq('status', 'pending').order('week_date', { ascending: false }).order('created_at', { ascending: true });
   if (error) { console.error('Onay bekleyen aksiyon maddeleri okunamadı:', error); meetingActionItemsPending = []; return; }
   meetingActionItemsPending = data || [];
 }
@@ -2025,6 +2015,7 @@ async function confirmMeetingActionItem(id, personId) {
   await loadConfirmedMeetingActionItems();
   renderPendingActionItemsPanel();
   renderSidebarTodos();
+  if (typeof renderMeetingsSection === 'function') renderMeetingsSection();
 }
 
 async function dismissMeetingActionItem(id) {
@@ -2042,6 +2033,7 @@ async function renderPendingActionItemsPanel() {
   await loadPendingMeetingActionItems();
   if (!meetingActionItemsPending.length) { wrap.classList.add('hidden'); container.innerHTML = ''; return; }
   wrap.classList.remove('hidden');
+  const cnt = document.getElementById('meetingPendingCount'); if (cnt) cnt.innerText = meetingActionItemsPending.length;
   const peopleOpts = registeredPeople.filter(isAssignable)
     .map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
   container.innerHTML = meetingActionItemsPending.map(item => `
@@ -2133,20 +2125,20 @@ async function confirmAllSuggestedActions() {
   flushMeetingNotify();
   await loadPendingMeetingActionItems(); await loadConfirmedMeetingActionItems();
   renderPendingActionItemsPanel(); renderSidebarTodos();
+  if (typeof renderMeetingsSection === 'function') renderMeetingsSection();
 }
 
 // ---------------------------------------------------------------------
 // Manuel Transkript Yükleme (Zoom'dan indirip siteye yapıştırma/yükleme)
 // ---------------------------------------------------------------------
 function populateMeetingUploadWeekSelect() {
-  const sel = document.getElementById('meetingUploadWeekSelect');
-  if (!sel) return;
-  const cur = sel.value;
-  sel.innerHTML = MEETING_WEEKS.map(w => `<option value="${w.date}">${formatMeetingDate(w.date)}</option>`).join('');
-  if (cur && MEETING_WEEKS.some(w => w.date === cur)) sel.value = cur;
+  const opts = MEETING_WEEKS.map(w => `<option value="${w.date}">${formatMeetingDate(w.date)}</option>`).join('');
+  const t = todayIso();
+  const latestPast = MEETING_WEEKS.filter(w => w.date <= t).map(w => w.date).pop() || MEETING_WEEKS[0].date;
   const dsel = document.getElementById('driveImportWeekSelect');
-  if (dsel) { const dc = dsel.value; dsel.innerHTML = sel.innerHTML; if (dc) dsel.value = dc; }
-  populateMeetingUploadTrackSelect();
+  if (dsel) { const dc = dsel.value; dsel.innerHTML = opts; dsel.value = (dc && MEETING_WEEKS.some(w => w.date === dc)) ? dc : latestPast; }
+  const sel = document.getElementById('meetingUploadWeekSelect');
+  if (sel) { const cur = sel.value; sel.innerHTML = opts; if (cur && MEETING_WEEKS.some(w => w.date === cur)) sel.value = cur; populateMeetingUploadTrackSelect(); }
 }
 
 function populateMeetingUploadTrackSelect() {
@@ -3163,7 +3155,8 @@ async function saveWeeklyTodo(e) {
     priority: document.getElementById('weeklyTodoPriority').value,
     status: document.getElementById('weeklyTodoStatus').value,
     link: document.getElementById('weeklyTodoLink').value,
-    text: document.getElementById('weeklyTodoText').value
+    text: document.getElementById('weeklyTodoText').value,
+    comments: isNew ? [] : ((tasks[taskIdx].weeklyTodos.find(w => w.id === id) || {}).comments || [])
   };
   if (id) {
     const idx = tasks[taskIdx].weeklyTodos.findIndex(w => w.id === id);
@@ -3353,6 +3346,135 @@ function populateSidebarPersonFilter() {
   if (prevValue) sel.value = prevValue;
 }
 
+
+// =====================================================================
+// TO-DO DETAYI: sol çubuktan açılır; düzenleme + yorum (haftalık to-do ve toplantı görevleri)
+// =====================================================================
+let todoDetailCtx = null; // { kind:'w'|'m', ti, wid, mid }
+const TODO_STATUSES = ['Başlamadı', 'Devam Ediyor', 'Tamamlandı'];
+
+function todoDetailGet() {
+  if (!todoDetailCtx) return null;
+  if (todoDetailCtx.kind === 'w') {
+    const t = tasks[todoDetailCtx.ti]; if (!t) return null;
+    const w = (t.weeklyTodos || []).find(x => x.id === todoDetailCtx.wid); if (!w) return null;
+    return { kind: 'w', t, w, assigneeIds: w.assigneeIds || [], comments: w.comments || [] };
+  }
+  const m = (meetingActionItemsConfirmed || []).find(x => String(x.id) === String(todoDetailCtx.mid)); if (!m) return null;
+  return { kind: 'm', m, assigneeIds: m.confirmed_person_id ? [m.confirmed_person_id] : [], comments: m.comments || [] };
+}
+function todoCanEdit(assigneeIds) {
+  const me = getCurrentPersonId();
+  return !!me && ((assigneeIds || []).includes(me) || me === 'p1' || me === 'p2');
+}
+function openTodoDetail(kind, a, b) {
+  todoDetailCtx = kind === 'w' ? { kind, ti: a, wid: b } : { kind, mid: a };
+  renderTodoDetail();
+  document.getElementById('todoDetailModal').classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+function closeTodoDetail() { document.getElementById('todoDetailModal').classList.add('hidden'); todoDetailCtx = null; }
+
+function renderTodoDetail() {
+  const d = todoDetailGet();
+  if (!d) { closeTodoDetail(); return; }
+  const canEdit = todoCanEdit(d.assigneeIds);
+  const names = d.assigneeIds.map(id => (registeredPeople.find(p => p.id === id) || {}).name).filter(Boolean).map(n => '@' + n).join(', ') || 'Atanmamış';
+  const status = d.kind === 'w' ? (d.w.status || 'Başlamadı') : (d.m.todo_status || 'Başlamadı');
+  const text = d.kind === 'w' ? (d.w.text || '') : (d.m.raw_text || '');
+  document.getElementById('todoDetailKicker').innerText = names;
+  document.getElementById('todoDetailTitle').innerText = d.kind === 'w' ? d.t.name : '📅 ' + formatMeetingDate(d.m.week_date) + ' toplantısı';
+  const statusOpts = TODO_STATUSES.map(x => `<option value="${x}" ${x === status ? 'selected' : ''}>${x}</option>`).join('');
+  const meta = d.kind === 'w'
+    ? `<div class="text-[11px] text-slate-400">Öncelik: <b class="text-slate-200">${escapeHtml(d.w.priority || '-')}</b> · ${escapeHtml(d.w.startDate || '')} ${d.w.endDate ? '→ ' + escapeHtml(d.w.endDate) : ''}${d.w.link ? ` · <a href="${escapeHtml(d.w.link)}" target="_blank" rel="noopener" class="text-indigo-400 underline">bağlantı</a>` : ''}</div>`
+    : '';
+  const comments = d.comments.length
+    ? d.comments.map(c => `<div class="bg-slate-900/70 border border-slate-800 rounded-lg px-2.5 py-1.5"><div class="text-[10px] text-slate-500"><b class="text-slate-300">${escapeHtml(c.by || '-')}</b> · ${escapeHtml(new Date(c.at).toLocaleString('tr-TR'))}</div><div class="text-[11px] text-slate-200 whitespace-pre-wrap">${escapeHtml(c.text)}</div></div>`).join('')
+    : '<div class="text-[11px] text-slate-500 italic">Henüz yorum yok.</div>';
+  document.getElementById('todoDetailBody').innerHTML = `
+    ${meta}
+    <div>
+      <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Açıklama</label>
+      <textarea id="todoDetailText" rows="3" ${canEdit ? '' : 'readonly'} class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 ${canEdit ? '' : 'opacity-70'}">${escapeHtml(text)}</textarea>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap">
+      <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Durum</label>
+      <select id="todoDetailStatus" ${canEdit ? '' : 'disabled'} class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100">${statusOpts}</select>
+      ${canEdit ? '<button onclick="saveTodoDetail()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Kaydet</button>' : '<span class="text-[10px] text-slate-500">Yalnızca atanan kişi düzenleyebilir; yorum yazabilirsiniz.</span>'}
+      ${d.kind === 'w' && canEdit ? `<button onclick="closeTodoDetail();openWeeklyTodoModal(${todoDetailCtx.ti}, '${todoDetailCtx.wid}')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">Tam düzenle</button>` : ''}
+      <button onclick="goToTodoSource()" class="ml-auto px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">Kaynağa git</button>
+    </div>
+    <div>
+      <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Yorumlar (${d.comments.length})</div>
+      <div class="space-y-1.5 max-h-48 overflow-y-auto mb-2">${comments}</div>
+      <textarea id="todoDetailNewComment" rows="2" placeholder="Yorum yaz..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100"></textarea>
+      <div class="flex justify-end mt-1.5"><button onclick="addTodoComment()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold rounded-lg">Yorum ekle</button></div>
+    </div>`;
+}
+
+async function persistMeetingItemFields(m, fields) {
+  if (!supabaseClient) return false;
+  const { error } = await supabaseClient.from('meeting_action_items').update(fields).eq('id', m.id);
+  if (error) {
+    console.error('Toplantı görevi güncellenemedi:', error);
+    showMiniToast('Kaydedilemedi. meeting_action_items_todo_cols.sql dosyasını Supabase\'de çalıştırdığınızdan emin olun.');
+    return false;
+  }
+  Object.assign(m, fields);
+  return true;
+}
+
+async function saveTodoDetail() {
+  const d = todoDetailGet(); if (!d || !todoCanEdit(d.assigneeIds)) return;
+  const text = document.getElementById('todoDetailText').value.trim();
+  const status = document.getElementById('todoDetailStatus').value;
+  if (d.kind === 'w') {
+    d.w.text = text; d.w.status = status;
+    await persistTask(d.t);
+    renderAll();
+  } else {
+    if (!text) return;
+    const ok = await persistMeetingItemFields(d.m, { raw_text: text, todo_status: status });
+    if (!ok) return;
+    renderSidebarTodos();
+    if (typeof renderMeetingsSection === 'function') renderMeetingsSection();
+  }
+  showMiniToast('Kaydedildi.');
+  renderTodoDetail();
+}
+
+async function addTodoComment() {
+  const d = todoDetailGet(); if (!d) return;
+  const ta = document.getElementById('todoDetailNewComment');
+  const text = ta.value.trim(); if (!text) return;
+  const c = { by: currentUser ? currentUser.name : '-', personId: getCurrentPersonId(), at: new Date().toISOString(), text };
+  const list = (d.comments || []).concat([c]);
+  if (d.kind === 'w') {
+    d.w.comments = list;
+    await persistTask(d.t);
+    renderAll();
+  } else {
+    const ok = await persistMeetingItemFields(d.m, { comments: list });
+    if (!ok) return;
+    renderSidebarTodos();
+  }
+  renderTodoDetail();
+}
+
+function goToTodoSource() {
+  const d = todoDetailGet(); if (!d) return;
+  if (d.kind === 'w') {
+    const ti = todoDetailCtx.ti;
+    closeTodoDetail();
+    goToTaskInTracker(ti);
+  } else {
+    const date = d.m.week_date;
+    closeTodoDetail();
+    switchTab('meetings');
+    jumpToMeetingWeek(date);
+  }
+}
+
 function renderSidebarTodos() {
   const list = document.getElementById('sidebarTodoList');
   if (!list) return;
@@ -3377,7 +3499,7 @@ function renderSidebarTodos() {
       const assignees = (w.assigneeIds || []).map(id => registeredPeople.find(p => p.id === id)).filter(Boolean);
       if (assignees.length && assignees.every(p => p.isPure)) return;
       if (filterVal === 'all' || (w.assigneeIds || []).includes(targetId)) {
-        items.push({ task: t.name, text: w.text, priority: w.priority, status: w.status });
+        items.push({ task: t.name, text: w.text, priority: w.priority, status: w.status, click: `openTodoDetail('w', ${tasks.indexOf(t)}, '${w.id}')`, nComments: (w.comments || []).length });
       }
     });
   });
@@ -3385,7 +3507,8 @@ function renderSidebarTodos() {
     if (filterVal === 'all' || m.confirmed_person_id === targetId) {
       items.push({
         task: '📅 ' + (typeof formatMeetingDate === 'function' ? formatMeetingDate(m.week_date) : m.week_date),
-        text: m.raw_text, priority: 'Orta', status: 'Planlandı', isMeeting: true
+        text: m.raw_text, priority: 'Orta', status: m.todo_status || 'Başlamadı', isMeeting: true,
+        click: `openTodoDetail('m', '${m.id}')`, nComments: (m.comments || []).length
       });
     }
   });
@@ -3397,10 +3520,11 @@ function renderSidebarTodos() {
   }
 
   list.innerHTML = items.map(it => `
-    <div class="bg-slate-800/60 px-2 py-1.5 rounded-lg border border-slate-700/60">
+    <div onclick="${it.click}" class="cursor-pointer hover:border-indigo-500/60 hover:bg-slate-800 transition bg-slate-800/60 px-2 py-1.5 rounded-lg border border-slate-700/60" title="Aç / yorum yap">
       <div class="flex items-center gap-1 mb-0.5">
         <span class="px-1 py-0.5 rounded text-[8px] font-bold border ${priorityBadgeClass(it.priority)}">${it.priority}</span>
         <span class="px-1 py-0.5 rounded text-[8px] font-bold border ${statusBadgeClass(it.status)}">${it.status}</span>
+        ${it.nComments ? `<span class="ml-auto text-[9px] text-slate-400">💬 ${it.nComments}</span>` : ''}
       </div>
       <div class="text-[10px] text-slate-300 truncate" title="${it.task}">${it.task}</div>
       <div class="text-[10px] text-slate-400 truncate" title="${it.text}">${it.text || '-'}</div>
@@ -4088,7 +4212,7 @@ function todayIso() {
 function filteredMeetingWeeks() {
   const t = todayIso();
   if (meetingFilter === 'upcoming') return MEETING_WEEKS.filter(w => w.date >= t);
-  if (meetingFilter === 'past') return MEETING_WEEKS.filter(w => w.date < t);
+  if (meetingFilter === 'past') return MEETING_WEEKS.filter(w => w.date < t).slice().reverse(); // en yeni üstte
   return MEETING_WEEKS;
 }
 
@@ -4274,6 +4398,14 @@ async function renderMeetingsSection() {
               </div>
             </div>`;
           }).join('')}
+          ${(() => {
+            const done = (meetingActionItemsConfirmed || []).filter(a => a.week_date === w.date);
+            if (!done.length) return '';
+            return `<div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3.5">
+              <div class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider mb-1.5">Bu toplantıdan atanan görevler (${done.length})</div>
+              ${done.map(a => { const pp = registeredPeople.find(x => x.id === a.confirmed_person_id); return `<div class="text-[11px] text-slate-200 py-0.5"><span class="font-semibold text-emerald-300">${escHtml(pp ? pp.name : '-')}:</span> ${escHtml(a.raw_text)}</div>`; }).join('')}
+            </div>`;
+          })()}
         </div>
       </div>
     `;
