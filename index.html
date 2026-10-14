@@ -422,6 +422,7 @@
           </table>
         </div>
       </div>
+      <div id="assignedTodosTasksPanel"></div>
     </section>
 
     <section id="view-people" class="hidden space-y-6">
@@ -619,6 +620,8 @@
           <div id="meetingPendingActionsContainer" class="space-y-2 max-h-[28rem] overflow-y-auto pr-1"></div>
         </div>
       </details>
+
+      <div id="assignedTodosMeetingsPanel"></div>
 
       <div class="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4 items-start">
         <div class="glass p-4 rounded-2xl shadow-xl">
@@ -2024,7 +2027,7 @@ async function confirmMeetingActionItem(id, personId) {
   await loadConfirmedMeetingActionItems();
   renderPendingActionItemsPanel();
   renderSidebarTodos();
-  if (typeof renderMeetingsSection === 'function') renderMeetingsSection();
+  refreshMeetingTodoViews();
 }
 
 async function dismissMeetingActionItem(id) {
@@ -2119,8 +2122,7 @@ async function confirmPersonGroup(date, pid) {
   }
   flushMeetingNotify();
   await loadPendingMeetingActionItems(); await loadConfirmedMeetingActionItems();
-  renderPendingActionItemsPanel(); renderSidebarTodos();
-  if (typeof renderMeetingsSection === 'function') renderMeetingsSection();
+  refreshMeetingTodoViews();
 }
 
 // ---------------------------------------------------------------------
@@ -2185,8 +2187,7 @@ async function confirmAllSuggestedActions() {
   }
   flushMeetingNotify();
   await loadPendingMeetingActionItems(); await loadConfirmedMeetingActionItems();
-  renderPendingActionItemsPanel(); renderSidebarTodos();
-  if (typeof renderMeetingsSection === 'function') renderMeetingsSection();
+  refreshMeetingTodoViews();
 }
 
 // ---------------------------------------------------------------------
@@ -2958,6 +2959,8 @@ function renderAll() {
   populateSidebarPersonFilter();
   renderSidebarTodos();
   updateMyTodoBadge();
+  renderAssignedTodosPanel('assignedTodosTasksPanel');
+  renderAssignedTodosPanel('assignedTodosMeetingsPanel');
   lucide.createIcons();
 }
 
@@ -3249,7 +3252,7 @@ function renderWeeklyOverviewTable() {
   const prevP = fp.value, prevT = ft.value;
   fp.innerHTML = '<option value="">Tüm Kişiler</option><option value="__none">Atanmamış</option>' +
     registeredPeople.filter(p => p.active !== false).map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-  ft.innerHTML = '<option value="">Tüm Görevler</option>' + tasks.map((t, i) => `<option value="${i}">${escapeHtml(t.name)}</option>`).join('');
+  ft.innerHTML = '<option value="">Tüm Görevler</option><option value="__meeting">📅 Toplantı Görevleri</option>' + tasks.map((t, i) => `<option value="${i}">${escapeHtml(t.name)}</option>`).join('');
   fp.value = [...fp.options].some(o => o.value === prevP) ? prevP : '';
   ft.value = [...ft.options].some(o => o.value === prevT) ? prevT : '';
   const fs = document.getElementById('woFilterStatus').value;
@@ -3257,13 +3260,19 @@ function renderWeeklyOverviewTable() {
   let rows = [];
   tasks.forEach((t, ti) => {
     ensureWeeklyTodos(t);
-    t.weeklyTodos.forEach(w => rows.push({ ti, w, t }));
+    t.weeklyTodos.forEach(w => rows.push({ kind: 'w', ti, w, t }));
   });
+  (meetingActionItemsConfirmed || []).forEach(m => rows.push({
+    kind: 'm', m, ti: '__m',
+    t: { name: '📅 ' + formatMeetingDate(m.week_date) },
+    w: { id: m.id, assigneeIds: m.confirmed_person_id ? [m.confirmed_person_id] : [], status: m.todo_status || 'Başlamadı', priority: 'Orta', text: m.raw_text, startDate: m.week_date, endDate: '' }
+  }));
   const total = rows.length, doneAll = rows.filter(r => r.w.status === 'Tamamlandı').length;
   rows = rows.filter(r => {
     const ids = r.w.assigneeIds || [];
     if (fp.value === '__none' && ids.length) return false;
     if (fp.value && fp.value !== '__none' && !ids.includes(fp.value)) return false;
+    if (ft.value === '__meeting') return r.kind === 'm';
     if (ft.value !== '' && String(r.ti) !== ft.value) return false;
     if (fs && r.w.status !== fs) return false;
     return true;
@@ -3277,7 +3286,7 @@ function renderWeeklyOverviewTable() {
     tbody.innerHTML = `<tr><td colspan="7" class="p-3 text-center text-slate-400">${translate('weekly_todo_empty')}</td></tr>`;
     return;
   }
-  rows.forEach(({ ti, w, t }) => {
+  rows.forEach(({ ti, w, t, kind, m }) => {
     const ppl = (w.assigneeIds || []).map(id => registeredPeople.find(x => x.id === id)).filter(Boolean);
     let personCell;
     if (ppl.length === 0) personCell = `<span class="text-slate-400">${translate('not_assigned')}</span>`;
@@ -3294,8 +3303,12 @@ function renderWeeklyOverviewTable() {
       <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold border whitespace-nowrap ${statusBadgeClass(w.status)}">${w.status}</span></td>
       <td class="p-1.5 font-mono text-[10px] text-slate-400 whitespace-nowrap">${w.startDate || '?'} → ${w.endDate || '?'}</td>
       <td class="p-1.5 text-right whitespace-nowrap">
+        ${kind === 'm' ? `
+        <button onclick="quickToggleMeetingTodo('${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">${done ? '↩ Geri al' : '✓ Bitti'}</button>
+        <button onclick="openTodoDetail('m', '${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">Aç</button>` : `
         <button onclick="quickToggleWeeklyTodo(${ti}, '${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300" title="${done ? 'Geri al (Devam Ediyor)' : 'Tamamlandı işaretle'}">${done ? '↩ Geri al' : '✓ Bitti'}</button>
-        <button onclick="openWeeklyTodoModal(${ti}, '${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">Düzenle</button>
+        <button onclick="openTodoDetail('w', ${ti}, '${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">Aç${(w.comments || []).length ? ' 💬' + w.comments.length : ''}</button>
+        <button onclick="openWeeklyTodoModal(${ti}, '${w.id}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">Düzenle</button>`}
       </td>
     `;
     tbody.appendChild(tr);
@@ -3332,6 +3345,7 @@ function updateMyTodoBadge() {
       if ((w.assigneeIds || []).includes(myId) && w.status !== 'Tamamlandı') count++;
     });
   });
+  (meetingActionItemsConfirmed || []).forEach(m => { if (m.confirmed_person_id === myId && (m.todo_status || 'Başlamadı') !== 'Tamamlandı') count++; });
   if (count > 0) {
     badge.innerText = '+' + count;
     badge.classList.remove('hidden');
@@ -3463,6 +3477,7 @@ function renderTodoDetail() {
       <select id="todoDetailStatus" ${canEdit ? '' : 'disabled'} class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100">${statusOpts}</select>
       ${canEdit ? '<button onclick="saveTodoDetail()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Kaydet</button>' : '<span class="text-[10px] text-slate-500">Yalnızca atanan kişi düzenleyebilir; yorum yazabilirsiniz.</span>'}
       ${d.kind === 'w' && canEdit ? `<button onclick="closeTodoDetail();openWeeklyTodoModal(${todoDetailCtx.ti}, '${todoDetailCtx.wid}')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">Tam düzenle</button>` : ''}
+      ${d.kind === 'm' && canEdit ? `<button onclick="unconfirmMeetingTodo('${d.m.id}', true)" class="px-3 py-1.5 bg-amber-600/80 hover:bg-amber-500 text-white text-[11px] font-semibold rounded-lg">Onaydan geri al</button><button onclick="deleteMeetingTodo('${d.m.id}', true)" class="px-3 py-1.5 bg-rose-600/80 hover:bg-rose-500 text-white text-[11px] font-semibold rounded-lg">Sil</button>` : ''}
       <button onclick="goToTodoSource()" class="ml-auto px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">Kaynağa git</button>
     </div>
     <div>
@@ -3534,6 +3549,125 @@ function goToTodoSource() {
     switchTab('meetings');
     jumpToMeetingWeek(date);
   }
+}
+
+// =====================================================================
+// ATANMIŞ (ONAYLANMIŞ) TOPLANTI GÖREVLERİ: görev takibi + toplantı sayfası paneli
+// =====================================================================
+const assignedTodoFilter = {};
+const assignedOuterDefault = { assignedTodosTasksPanel: true, assignedTodosMeetingsPanel: false };
+
+async function refreshMeetingTodoViews() {
+  await loadPendingMeetingActionItems();
+  await loadConfirmedMeetingActionItems();
+  renderPendingActionItemsPanel();
+  renderAssignedTodosPanel('assignedTodosTasksPanel');
+  renderAssignedTodosPanel('assignedTodosMeetingsPanel');
+  renderSidebarTodos();
+  renderWeeklyOverviewTable();
+  updateMyTodoBadge();
+  if (typeof renderMeetingsSection === 'function') renderMeetingsSection();
+  if (todoDetailCtx && !todoDetailGet()) closeTodoDetail();
+  else if (todoDetailCtx) renderTodoDetail();
+  if (window.lucide) lucide.createIcons();
+}
+
+async function quickToggleMeetingTodo(id) {
+  const m = (meetingActionItemsConfirmed || []).find(x => String(x.id) === String(id)); if (!m) return;
+  const next = (m.todo_status || 'Başlamadı') === 'Tamamlandı' ? 'Devam Ediyor' : 'Tamamlandı';
+  if (await persistMeetingItemFields(m, { todo_status: next })) await refreshMeetingTodoViews();
+}
+async function setMeetingTodoStatus(id, val) {
+  const m = (meetingActionItemsConfirmed || []).find(x => String(x.id) === String(id)); if (!m) return;
+  if (await persistMeetingItemFields(m, { todo_status: val })) await refreshMeetingTodoViews();
+}
+async function unconfirmMeetingTodo(id, fromDetail) {
+  const m = (meetingActionItemsConfirmed || []).find(x => String(x.id) === String(id)); if (!m) return;
+  if (!confirm('Bu görev atamadan çıkarılıp "Onay Bekliyor" listesine geri alınsın mı?')) return;
+  if (await persistMeetingItemFields(m, { status: 'pending', confirmed_person_id: null })) {
+    if (fromDetail) closeTodoDetail();
+    await refreshMeetingTodoViews();
+    showMiniToast('Görev onay listesine geri alındı.');
+  }
+}
+async function deleteMeetingTodo(id, fromDetail) {
+  const m = (meetingActionItemsConfirmed || []).find(x => String(x.id) === String(id)); if (!m) return;
+  if (!confirm('Bu görev silinsin mi? (Kişinin listesinden ve toplantı kartından kalkar.)')) return;
+  if (await persistMeetingItemFields(m, { status: 'dismissed', confirmed_person_id: null })) {
+    if (fromDetail) closeTodoDetail();
+    await refreshMeetingTodoViews();
+    showMiniToast('Görev silindi.');
+  }
+}
+async function bulkMeetingTodos(pid, mode) {
+  const list = (meetingActionItemsConfirmed || []).filter(m => m.confirmed_person_id === pid);
+  if (!list.length) return;
+  const person = (registeredPeople.find(p => p.id === pid) || {}).name || pid;
+  const msg = mode === 'delete' ? `${person} kişisinin ${list.length} görevi silinsin mi?` : `${person} kişisinin ${list.length} görevi atamadan çıkarılıp "Onay Bekliyor" listesine alınsın mı?`;
+  if (!confirm(msg)) return;
+  const fields = mode === 'delete' ? { status: 'dismissed', confirmed_person_id: null } : { status: 'pending', confirmed_person_id: null };
+  for (const m of list.slice()) await persistMeetingItemFields(m, fields);
+  await refreshMeetingTodoViews();
+  showMiniToast(mode === 'delete' ? 'Görevler silindi.' : 'Görevler onay listesine geri alındı.');
+}
+
+function renderAssignedTodosPanel(cid) {
+  const box = document.getElementById(cid); if (!box) return;
+  const items = (meetingActionItemsConfirmed || []).slice().sort((a, b) => String(b.week_date).localeCompare(String(a.week_date)));
+  if (!items.length) { box.innerHTML = ''; return; }
+  const initKey = 'init:' + cid;
+  if (!pendingOpenKeys.has(initKey)) { pendingOpenKeys.add(initKey); if (assignedOuterDefault[cid]) pendingOpenKeys.add('A:' + cid); }
+  const nameOf = id => (registeredPeople.find(p => p.id === id) || {}).name || id || '—';
+  const pids = [...new Set(items.map(i => i.confirmed_person_id))].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'tr'));
+  const flt = assignedTodoFilter[cid] || '';
+  const shown = flt ? pids.filter(x => x === flt) : pids;
+  const done = items.filter(i => (i.todo_status || 'Başlamadı') === 'Tamamlandı').length;
+  const outerKey = 'A:' + cid;
+  box.innerHTML = `<details ${pendingOpenKeys.has(outerKey) ? 'open' : ''} ontoggle="togglePendingGroup('${outerKey}', this.open)" class="glass rounded-2xl shadow-xl border border-slate-800 group">
+    <summary class="cursor-pointer list-none flex items-center justify-between gap-2 px-5 py-3.5">
+      <span class="text-xs font-bold text-slate-100 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-emerald-400"></i>Toplantıdan Atanan Görevler
+        <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">${items.length}</span>
+        <span class="text-[10px] font-normal text-slate-400">${done} tamamlandı</span></span>
+      <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180"></i>
+    </summary>
+    <div class="px-5 pb-5 space-y-2">
+      <div class="flex items-center gap-2">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kişi</label>
+        <select onchange="assignedTodoFilter['${cid}']=this.value;renderAssignedTodosPanel('${cid}')" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-100">
+          <option value="">Tüm Kişiler (grup)</option>${pids.map(x => `<option value="${x}" ${x === flt ? 'selected' : ''}>${escapeHtml(nameOf(x))}</option>`).join('')}
+        </select>
+      </div>
+      ${shown.map(pid => {
+        const mine = items.filter(i => i.confirmed_person_id === pid);
+        const canAct = todoCanEdit([pid]);
+        const pKey = 'ap:' + cid + ':' + pid;
+        return `<details ${pendingOpenKeys.has(pKey) ? 'open' : ''} ontoggle="togglePendingGroup('${pKey}', this.open)" class="bg-slate-800/50 border border-slate-700/70 rounded-lg group/p">
+          <summary class="cursor-pointer list-none flex items-center justify-between gap-2 px-3 py-2">
+            <span class="text-[11px] font-semibold text-slate-200 flex items-center gap-1.5"><i data-lucide="user" class="w-3 h-3 text-indigo-300"></i>${escapeHtml(nameOf(pid))}
+              <span class="px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300 text-[9px]">${mine.length}</span></span>
+            <span class="flex items-center gap-1.5">
+              ${canAct ? `<button onclick="event.preventDefault();event.stopPropagation();bulkMeetingTodos('${pid}','undo')" class="px-2 py-1 bg-amber-600/80 hover:bg-amber-500 text-white text-[10px] font-semibold rounded-md">Hepsini geri al</button>
+              <button onclick="event.preventDefault();event.stopPropagation();bulkMeetingTodos('${pid}','delete')" class="px-2 py-1 bg-rose-600/80 hover:bg-rose-500 text-white text-[10px] font-semibold rounded-md">Hepsini sil</button>` : ''}
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 transition-transform group-open/p:rotate-180"></i>
+            </span>
+          </summary>
+          <div class="px-3 pb-2.5 space-y-1.5">
+            ${mine.map(m => { const st = m.todo_status || 'Başlamadı'; return `
+            <div class="flex flex-col md:flex-row md:items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-md p-2 ${st === 'Tamamlandı' ? 'opacity-60' : ''}">
+              <span class="text-[10px] text-slate-400 whitespace-nowrap">${formatMeetingDate(m.week_date)}</span>
+              <div class="flex-1 min-w-0 text-[11px] text-slate-100 ${st === 'Tamamlandı' ? 'line-through' : ''}">${escapeHtml(m.raw_text)}${(m.comments || []).length ? ` <span class="text-[10px] text-slate-400">💬${m.comments.length}</span>` : ''}</div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <select ${canAct ? '' : 'disabled'} onchange="setMeetingTodoStatus('${m.id}', this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-1 text-[10px] text-slate-100">${TODO_STATUSES.map(x => `<option ${x === st ? 'selected' : ''}>${x}</option>`).join('')}</select>
+                <button onclick="openTodoDetail('m', '${m.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold rounded-md">Aç / Düzenle</button>
+                ${canAct ? `<button onclick="unconfirmMeetingTodo('${m.id}')" title="Onay listesine geri al" class="px-2 py-1 bg-amber-600/80 hover:bg-amber-500 text-white text-[10px] font-semibold rounded-md">Geri al</button>
+                <button onclick="deleteMeetingTodo('${m.id}')" class="px-2 py-1 bg-rose-600/80 hover:bg-rose-500 text-white text-[10px] font-semibold rounded-md">Sil</button>` : ''}
+              </div>
+            </div>`; }).join('')}
+          </div>
+        </details>`;
+      }).join('')}
+    </div>
+  </details>`;
 }
 
 function renderSidebarTodos() {
@@ -3638,16 +3772,15 @@ function renderExcelGanttMatrix() {
         let inRange = (m >= sIdx && m <= eIdx);
         val = inRange ? (t.status === 'Tamamlandı' ? 100 : t.progress) : 0;
       }
-      let cellContent = '';
-      if (val === 100) {
-        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" oncontextmenu="event.preventDefault();toggleMonthState(${tIdx}, ${m}, -1)" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-emerald-500 text-slate-950 rounded font-bold flex items-center justify-center text-[10px] shadow" title="${translate('legend_completed')}">✓ %100</div>`;
-      } else if (val > 0) {
-        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" oncontextmenu="event.preventDefault();toggleMonthState(${tIdx}, ${m}, -1)" class="cursor-pointer hover:scale-105 transition w-full h-7 bg-indigo-600 text-white rounded font-bold flex items-center justify-center text-[10px] shadow" title="${translate('active_period')}">%${val}</div>`;
-      } else {
-        cellContent = `<div onclick="toggleMonthState(${tIdx}, ${m})" oncontextmenu="event.preventDefault();toggleMonthState(${tIdx}, ${m}, -1)" class="cursor-pointer hover:bg-slate-800 transition w-full h-7 bg-slate-900/40 text-slate-300 rounded border border-slate-800/80 flex items-center justify-center text-[10px]" title="${translate('inactive_period')}">-</div>`;
-      }
-      const undoBtn = val > 0 ? `<button onclick="toggleMonthState(${tIdx}, ${m}, -1)" title="−5% geri al" class="absolute -top-1 -right-1 w-3.5 h-3.5 leading-none rounded-full bg-slate-700 text-white text-[10px] hidden group-hover:flex items-center justify-center">−</button>` : '';
-      monthCells += `<td class="p-1 text-center w-16 h-8"><div class="relative group">${cellContent}${undoBtn}</div></td>`;
+      const tone = val === 100 ? 'bg-emerald-500 text-slate-950 shadow' : (val > 0 ? 'bg-indigo-600 text-white shadow' : 'bg-slate-900/40 text-slate-300 border border-slate-800/80');
+      const lbl = val === 100 ? '✓ %100' : (val > 0 ? '%' + val : '–');
+      const stepBtn = 'w-4 h-full flex items-center justify-center text-[11px] font-bold leading-none hover:bg-black/25 transition';
+      const cellContent = `<div class="w-full h-7 rounded overflow-hidden flex items-stretch ${tone}" title="−5 / +5">
+        <button onclick="toggleMonthState(${tIdx}, ${m}, -1)" class="${stepBtn}" ${val > 0 ? '' : 'disabled style="opacity:.3;cursor:default"'}>−</button>
+        <div class="flex-1 flex items-center justify-center text-[10px] font-bold select-none">${lbl}</div>
+        <button onclick="toggleMonthState(${tIdx}, ${m}, 1)" class="${stepBtn}">+</button>
+      </div>`;
+      monthCells += `<td class="p-1 text-center w-20 h-8">${cellContent}</td>`;
     }
 
     tr.innerHTML = `
@@ -3686,8 +3819,8 @@ async function toggleMonthState(tIdx, monthIdx, delta = 1) {
     }
   }
   let cur = t.monthProgress[monthIdx] || 0;
-  // delta: +5 (tıkla) / -5 (sağ tık veya − butonu); 100'den sonra tıklama 0'a sarar
-  let next = delta < 0 ? Math.max(0, cur - 5) : (cur >= 100 ? 0 : Math.min(100, cur + 5));
+  // delta: +5 / −5 (hücredeki + ve − düğmeleri), 0–100 arası sınırlı
+  let next = delta < 0 ? Math.max(0, cur - 5) : Math.min(100, cur + 5);
   t.monthProgress[monthIdx] = next;
   await persistTask(t);
   renderAll();
@@ -4383,6 +4516,7 @@ function updateMeetingFilterButtons() {
 async function renderMeetingsSection() {
   await loadMeetingRecords();
   renderPendingActionItemsPanel();
+  renderAssignedTodosPanel('assignedTodosMeetingsPanel');
   const container = document.getElementById('meetingWeeksContainer');
   if (!container) return;
 
