@@ -319,7 +319,7 @@
             <select id="woFilterPerson" onchange="renderWeeklyOverviewTable()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-100"></select>
             <select id="woFilterTask" onchange="renderWeeklyOverviewTable()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-100 max-w-[180px]"></select>
             <select id="woFilterStatus" onchange="renderWeeklyOverviewTable()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-100">
-              <option value="">Tüm Durumlar</option><option value="Başlamadı">Başlamadı</option><option value="Devam Ediyor">Devam Ediyor</option><option value="Tamamlandı">Tamamlandı</option>
+              <option value="__open" selected>Açık görevler</option><option value="">Tüm Durumlar (tamamlananlar dahil)</option><option value="Başlamadı">Başlamadı</option><option value="Devam Ediyor">Devam Ediyor</option><option value="Tamamlandı">Tamamlandı</option>
             </select>
             <button onclick="openWeeklyTodoModal(null)" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg flex items-center space-x-1"><i data-lucide="plus" class="w-3.5 h-3.5"></i><span>Haftalık Görev Ekle</span></button>
           </div>
@@ -2070,7 +2070,7 @@ async function renderPendingActionItemsPanel() {
     const dKey = 'd:' + date;
     return `<details ${pendingOpenKeys.has(dKey) ? 'open' : ''} ontoggle="togglePendingGroup('${dKey}', this.open)" class="bg-slate-900/50 border border-slate-800 rounded-xl group/d">
       <summary class="cursor-pointer list-none flex items-center justify-between gap-2 px-3.5 py-2.5">
-        <span class="text-xs font-bold text-slate-100">📅 ${formatMeetingDate(date)}</span>
+        <span class="text-xs font-bold text-slate-100">Toplantı · ${formatMeetingDate(date)}</span>
         <span class="flex items-center gap-2 text-[10px] text-slate-400"><span>${dItems.length} görev · ${pKeys.length} kişi</span><i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform group-open/d:rotate-180"></i></span>
       </summary>
       <div class="px-3 pb-3 space-y-2">
@@ -3250,7 +3250,7 @@ function renderWeeklyOverviewTable() {
   const prevP = fp.value, prevT = ft.value;
   fp.innerHTML = '<option value="">Tüm Kişiler</option><option value="__none">Atanmamış</option>' +
     registeredPeople.filter(p => p.active !== false).map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-  ft.innerHTML = '<option value="">Tüm Görevler</option><option value="__meeting">📅 Toplantı Görevleri</option>' + tasks.map((t, i) => `<option value="${i}">${escapeHtml(t.name)}</option>`).join('');
+  ft.innerHTML = '<option value="">Tüm Görevler</option><option value="__meeting">Toplantıdan gelen görevler</option>' + tasks.map((t, i) => `<option value="${i}">${escapeHtml(t.name)}</option>`).join('');
   fp.value = [...fp.options].some(o => o.value === prevP) ? prevP : '';
   ft.value = [...ft.options].some(o => o.value === prevT) ? prevT : '';
   const fs = document.getElementById('woFilterStatus').value;
@@ -3262,7 +3262,7 @@ function renderWeeklyOverviewTable() {
   });
   (meetingActionItemsConfirmed || []).forEach(m => rows.push({
     kind: 'm', m, ti: '__m',
-    t: { name: '📅 ' + formatMeetingDate(m.week_date) },
+    t: { name: 'Toplantı · ' + formatMeetingDate(m.week_date) },
     w: { id: m.id, assigneeIds: m.confirmed_person_id ? [m.confirmed_person_id] : [], status: m.todo_status || 'Başlamadı', priority: 'Orta', text: m.raw_text, startDate: m.week_date, endDate: '' }
   }));
   const total = rows.length, doneAll = rows.filter(r => r.w.status === 'Tamamlandı').length;
@@ -3272,7 +3272,8 @@ function renderWeeklyOverviewTable() {
     if (fp.value && fp.value !== '__none' && !ids.includes(fp.value)) return false;
     if (ft.value === '__meeting') return r.kind === 'm';
     if (ft.value !== '' && String(r.ti) !== ft.value) return false;
-    if (fs && r.w.status !== fs) return false;
+    if (fs === '__open') { if (r.w.status === 'Tamamlandı') return false; }
+    else if (fs && r.w.status !== fs) return false;
     return true;
   });
   rows.sort((a, b) => (a.w.status === 'Tamamlandı') - (b.w.status === 'Tamamlandı') || priorityWeight(b.w.priority) - priorityWeight(a.w.priority));
@@ -3458,7 +3459,7 @@ function renderTodoDetail() {
   const status = d.kind === 'w' ? (d.w.status || 'Başlamadı') : (d.m.todo_status || 'Başlamadı');
   const text = d.kind === 'w' ? (d.w.text || '') : (d.m.raw_text || '');
   document.getElementById('todoDetailKicker').innerText = names;
-  document.getElementById('todoDetailTitle').innerText = d.kind === 'w' ? d.t.name : '📅 ' + formatMeetingDate(d.m.week_date) + ' toplantısı';
+  document.getElementById('todoDetailTitle').innerText = d.kind === 'w' ? d.t.name : 'Toplantı · ' + formatMeetingDate(d.m.week_date);
   const statusOpts = TODO_STATUSES.map(x => `<option value="${x}" ${x === status ? 'selected' : ''}>${x}</option>`).join('');
   const meta = d.kind === 'w'
     ? `<div class="text-[11px] text-slate-400">Öncelik: <b class="text-slate-200">${escapeHtml(d.w.priority || '-')}</b> · ${escapeHtml(d.w.startDate || '')} ${d.w.endDate ? '→ ' + escapeHtml(d.w.endDate) : ''}${d.w.link ? ` · <a href="${escapeHtml(d.w.link)}" target="_blank" rel="noopener" class="text-indigo-400 underline">bağlantı</a>` : ''}</div>`
@@ -3701,12 +3702,13 @@ function renderSidebarTodos() {
   (meetingActionItemsConfirmed || []).forEach(m => {
     if (filterVal === 'all' || m.confirmed_person_id === targetId) {
       items.push({
-        task: '📅 ' + (typeof formatMeetingDate === 'function' ? formatMeetingDate(m.week_date) : m.week_date),
+        task: 'Toplantı · ' + (typeof formatMeetingDate === 'function' ? formatMeetingDate(m.week_date) : m.week_date),
         text: m.raw_text, priority: 'Orta', status: m.todo_status || 'Başlamadı', isMeeting: true,
         click: `openTodoDetail('m', '${m.id}')`, nComments: (m.comments || []).length
       });
     }
   });
+  items = items.filter(it => it.status !== 'Tamamlandı'); // tamamlananlar listeyi uzatmasın
   items.sort((a, b) => priorityWeight(b.priority) - priorityWeight(a.priority));
 
   if (items.length === 0) {
