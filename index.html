@@ -1966,7 +1966,7 @@ async function loadConfirmedMeetingActionItems() {
 
 async function loadPendingMeetingActionItems() {
   if (!supabaseClient) { meetingActionItemsPending = []; return; }
-  const { data, error } = await supabaseClient.from('meeting_action_items').select('*').eq('status', 'pending').order('created_at', { ascending: false });
+  const { data, error } = await supabaseClient.from('meeting_action_items').select('*').eq('status', 'pending').order('week_date', { ascending: false }).order('created_at', { ascending: true });
   if (error) { console.error('Onay bekleyen aksiyon maddeleri okunamadı:', error); meetingActionItemsPending = []; return; }
   meetingActionItemsPending = data || [];
 }
@@ -2025,6 +2025,7 @@ async function confirmMeetingActionItem(id, personId) {
   await loadConfirmedMeetingActionItems();
   renderPendingActionItemsPanel();
   renderSidebarTodos();
+  if (typeof renderMeetingsSection === 'function') renderMeetingsSection();
 }
 
 async function dismissMeetingActionItem(id) {
@@ -2133,6 +2134,7 @@ async function confirmAllSuggestedActions() {
   flushMeetingNotify();
   await loadPendingMeetingActionItems(); await loadConfirmedMeetingActionItems();
   renderPendingActionItemsPanel(); renderSidebarTodos();
+  if (typeof renderMeetingsSection === 'function') renderMeetingsSection();
 }
 
 // ---------------------------------------------------------------------
@@ -4088,7 +4090,7 @@ function todayIso() {
 function filteredMeetingWeeks() {
   const t = todayIso();
   if (meetingFilter === 'upcoming') return MEETING_WEEKS.filter(w => w.date >= t);
-  if (meetingFilter === 'past') return MEETING_WEEKS.filter(w => w.date < t);
+  if (meetingFilter === 'past') return MEETING_WEEKS.filter(w => w.date < t).slice().reverse(); // en yeni üstte
   return MEETING_WEEKS;
 }
 
@@ -4274,6 +4276,14 @@ async function renderMeetingsSection() {
               </div>
             </div>`;
           }).join('')}
+          ${(() => {
+            const done = (meetingActionItemsConfirmed || []).filter(a => a.week_date === w.date);
+            if (!done.length) return '';
+            return `<div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3.5">
+              <div class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider mb-1.5">Bu toplantıdan atanan görevler (${done.length})</div>
+              ${done.map(a => { const pp = registeredPeople.find(x => x.id === a.confirmed_person_id); return `<div class="text-[11px] text-slate-200 py-0.5"><span class="font-semibold text-emerald-300">${escHtml(pp ? pp.name : '-')}:</span> ${escHtml(a.raw_text)}</div>`; }).join('')}
+            </div>`;
+          })()}
         </div>
       </div>
     `;
