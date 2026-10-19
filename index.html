@@ -17,36 +17,22 @@
     theme: {
       extend: {
         colors: {
-          slate: {
-            50:  '#121722',
-            100: '#1C2433',
-            200: '#2A3447',
-            300: '#424F66',
-            400: '#5B6678',
-            500: '#7C8698',
-            600: '#9FA8B6',
-            700: '#C3C9D2',
-            800: '#E3E6EA',
-            900: '#F1F2F5',
-            950: '#F8F9FB'
-          },
-          indigo: { // DEMIG lacivert — ana vurgu
-            300: '#8CA0C4',
-            400: '#5D7AAB',
-            500: '#2F5088',
-            600: '#1E3A66',
-            700: '#162C4E'
-          },
-          amber: { // DEMIG altın — ikincil vurgu
-            300: '#E3C878',
-            400: '#D4B155',
-            500: '#B8943A',
-            600: '#96762C'
-          }
+          slate: { 50: 'rgb(var(--slate-50) / <alpha-value>)', 100: 'rgb(var(--slate-100) / <alpha-value>)', 200: 'rgb(var(--slate-200) / <alpha-value>)', 300: 'rgb(var(--slate-300) / <alpha-value>)', 400: 'rgb(var(--slate-400) / <alpha-value>)', 500: 'rgb(var(--slate-500) / <alpha-value>)', 600: 'rgb(var(--slate-600) / <alpha-value>)', 700: 'rgb(var(--slate-700) / <alpha-value>)', 800: 'rgb(var(--slate-800) / <alpha-value>)', 900: 'rgb(var(--slate-900) / <alpha-value>)', 950: 'rgb(var(--slate-950) / <alpha-value>)' },
+          indigo: { 300: 'rgb(var(--indigo-300) / <alpha-value>)', 400: 'rgb(var(--indigo-400) / <alpha-value>)', 500: 'rgb(var(--indigo-500) / <alpha-value>)', 600: 'rgb(var(--indigo-600) / <alpha-value>)', 700: 'rgb(var(--indigo-700) / <alpha-value>)' },
+          amber: { 300: 'rgb(var(--amber-300) / <alpha-value>)', 400: 'rgb(var(--amber-400) / <alpha-value>)', 500: 'rgb(var(--amber-500) / <alpha-value>)', 600: 'rgb(var(--amber-600) / <alpha-value>)' }
         }
       }
     }
   };
+</script>
+<script>
+  (function () {
+    try {
+      var pref = localStorage.getItem('demig_theme') || 'light';
+      var dark = pref === 'dark' || (pref === 'system' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+      if (dark) document.documentElement.classList.add('dark');
+    } catch (e) {}
+  })();
 </script>
 <script src="https://unpkg.com/lucide@latest" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
@@ -56,20 +42,25 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-  body { font-family: 'Inter', sans-serif; background-color: #F8F9FB; color: #1C2433; }
+  :root { --slate-50: 18 23 34; --slate-100: 28 36 51; --slate-200: 42 52 71; --slate-300: 66 79 102; --slate-400: 91 102 120; --slate-500: 124 134 152; --slate-600: 159 168 182; --slate-700: 195 201 210; --slate-800: 227 230 234; --slate-900: 241 242 245; --slate-950: 248 249 251; --indigo-300: 140 160 196; --indigo-400: 93 122 171; --indigo-500: 47 80 136; --indigo-600: 30 58 102; --indigo-700: 22 44 78; --amber-300: 227 200 120; --amber-400: 212 177 85; --amber-500: 184 148 58; --amber-600: 150 118 44; color-scheme: light; }
+  html.dark { --slate-50: 244 246 249; --slate-100: 230 233 239; --slate-200: 201 208 219; --slate-300: 169 179 196; --slate-400: 139 150 171; --slate-500: 107 119 143; --slate-600: 74 86 112; --slate-700: 43 53 72; --slate-800: 30 38 52; --slate-900: 21 27 38; --slate-950: 14 18 25; --indigo-300: 169 190 227; --indigo-400: 134 163 214; --indigo-500: 91 127 192; --indigo-600: 63 102 174; --indigo-700: 47 82 143; --amber-300: 227 200 120; --amber-400: 212 177 85; --amber-500: 201 164 68; --amber-600: 184 148 58; color-scheme: dark; }
+  body { font-family: 'Inter', sans-serif; background-color: rgb(var(--slate-950)); color: rgb(var(--slate-100)); }
   .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(14px); border: 1px solid rgba(28, 36, 51, 0.08); }
   .glass-card { background: rgba(241, 242, 245, 0.75); border: 1px solid rgba(28, 36, 51, 0.08); }
+  html.dark .glass { background: rgba(21, 27, 38, 0.88); border-color: rgba(255, 255, 255, 0.08); }
+  html.dark .glass-card { background: rgba(30, 38, 52, 0.75); border-color: rgba(255, 255, 255, 0.08); }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #F1F2F5; }
-  ::-webkit-scrollbar-thumb { background: #C3C9D2; border-radius: 4px; }
-  .editable-input:focus { outline: 2px solid #1E3A66; background: #E3E6EA; color: #1C2433; }
+  ::-webkit-scrollbar-track { background: rgb(var(--slate-900)); }
+  ::-webkit-scrollbar-thumb { background: rgb(var(--slate-700)); border-radius: 4px; }
+  .editable-input:focus { outline: 2px solid rgb(var(--indigo-600)); background: rgb(var(--slate-800)); color: rgb(var(--slate-100)); }
+  #chatDock { transition: height .22s ease; }
   /* Tailwind CDN bazen "flex/grid" sınıflarını "hidden" sınıfından sonra üretip onu geçersiz
      kılabiliyor; bu kural "hidden" sınıfının HER ZAMAN kazanmasını garanti eder. */
   .hidden { display: none !important; }
   /* Ayni sebeple (Tailwind CDN'nin siniflari calisma zamaninda uretme sirasi) "fixed" konumlandirma
      bazen uygulanmayabiliyor; tam ekran modallarin her zaman gercekten sabit kalmasini garanti eder. */
   #authModal, #loadingScreen, #sidebarBackdrop, #aiReportModal, #taskModal, #weeklyTodoModal,
-  #tourWelcomeModal, #tourLayer { position: fixed !important; }
+  #tourWelcomeModal, #tourLayer, #chatDock { position: fixed !important; }
   /* ---- Rapor (A4 kağıt görünümü) ---- */
   #aiReportContainer.rpt { background:#fff !important; color:#1C2433 !important; border:1px solid #C3C9D2; padding:0 !important; font-family: Georgia, 'Times New Roman', serif; }
   .rpt .rpt-page { padding: 14mm 14mm 10mm; }
@@ -253,6 +244,9 @@
         <button onclick="switchTab('meetings')" id="tab-meetings" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
           <i data-lucide="calendar-clock" class="w-4 h-4"></i><span data-i18n="nav_meetings">Toplantı Takvimi</span>
         </button>
+        <button onclick="switchTab('settings')" id="tab-settings" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
+          <i data-lucide="settings" class="w-4 h-4"></i><span data-i18n="nav_settings">Ayarlar</span>
+        </button>
         <a href="finans.html" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
           <i data-lucide="wallet" class="w-4 h-4"></i><span data-i18n="nav_finance">Finans & Talepler</span>
         </a>
@@ -266,7 +260,7 @@
           <div id="currentUserDisplay" class="text-xs font-semibold text-slate-100 truncate">...</div>
           <div id="currentEmailDisplay" class="text-[10px] text-slate-400 truncate">...</div>
         </div>
-        <button onclick="openChangePassword()" title="Şifre değiştir" class="p-1.5 text-slate-400 hover:text-slate-100 shrink-0"><i data-lucide="key-round" class="w-4 h-4"></i></button>
+        <button onclick="switchTab('settings')" title="Ayarlar" class="p-1.5 text-slate-400 hover:text-slate-100 shrink-0"><i data-lucide="settings" class="w-4 h-4"></i></button>
       <button onclick="logout()" id="logoutIconBtn" data-i18n-title="sidebar_logout_short" title="Çıkış Yap" class="p-1.5 text-slate-500 hover:text-red-500 bg-slate-900 rounded-lg hover:bg-slate-700 transition shrink-0">
           <i data-lucide="log-out" class="w-4 h-4"></i>
         </button>
@@ -283,6 +277,24 @@
 
     </div>
   </aside>
+
+  <div id="chatDock" class="fixed bottom-0 right-3 sm:right-6 z-[35] w-[calc(100vw-1.5rem)] sm:w-[380px] flex flex-col rounded-t-2xl border border-slate-800 border-b-0 shadow-2xl bg-slate-900 overflow-hidden" style="height:44px">
+    <div id="chatDockHeader" onclick="toggleChatDock()" role="button" class="h-11 shrink-0 px-4 flex items-center gap-2 bg-indigo-600 text-white text-xs font-semibold cursor-pointer select-none">
+      <i data-lucide="message-circle" class="w-4 h-4 shrink-0"></i>
+      <div id="chatHeaderLabel" class="flex items-center gap-1.5 flex-1 min-w-0 truncate"></div>
+      <span id="chatDockBadge" class="hidden bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center"></span>
+      <button onclick="event.stopPropagation();loadChatMessages()" title="Yenile" class="p-1 text-white/80 hover:text-white"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+      <i id="chatDockChevron" data-lucide="chevron-up" class="w-4 h-4 shrink-0"></i>
+    </div>
+    <div class="px-3 py-2 border-b border-slate-800 shrink-0">
+      <select id="chatTargetSelect" onchange="selectChatTarget(this.value === '__group' ? null : this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-slate-100"></select>
+    </div>
+    <div id="chatMessagesContainer" class="flex-1 min-h-0 overflow-y-auto p-3 space-y-3"></div>
+    <form onsubmit="sendChatMessage(event)" class="flex items-center space-x-2 p-3 border-t border-slate-800 shrink-0">
+      <input type="text" id="chatInput" required data-i18n-placeholder="chat_input_placeholder" placeholder="Bir mesaj yazın..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+      <button type="submit" class="p-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shrink-0"><i data-lucide="send" class="w-4 h-4"></i></button>
+    </form>
+  </div>
 
   <div id="sidebarBackdrop" onclick="closeSidebar()" class="hidden fixed inset-0 bg-black/60 z-30 md:hidden"></div>
 
@@ -554,38 +566,39 @@
       </div>
     </section>
 
-    <section id="view-chat" class="hidden space-y-6">
-      <div class="glass p-6 rounded-2xl shadow-xl flex items-center justify-between">
-        <div>
-          <h2 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
-            <i data-lucide="message-circle" class="w-5 h-5 text-indigo-400"></i><span data-i18n="chat_title">Ekip Sohbeti</span>
-          </h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="chat_subtitle">Ekip arkadaşlarınızla ortak sohbet alanı veya birebir özel mesajlaşma.</p>
-        </div>
-        <button onclick="loadChatMessages()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700" title="Yenile">
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-        </button>
+    <section id="view-settings" class="hidden space-y-5 max-w-2xl">
+      <div class="glass p-6 rounded-2xl shadow-xl">
+        <h2 class="text-lg font-bold text-slate-100 flex items-center space-x-2"><i data-lucide="settings" class="w-5 h-5 text-indigo-400"></i><span>Ayarlar</span></h2>
+        <p class="text-xs text-slate-400 mt-1">Profil bilgilerinizi, şifrenizi ve görünümü buradan yönetin.</p>
       </div>
-      <div class="glass rounded-2xl border border-slate-800 shadow-xl flex overflow-hidden" style="height: 65vh;">
-        <div class="w-48 md:w-56 shrink-0 border-r border-slate-800 overflow-y-auto">
-          <button onclick="selectChatTarget(null)" id="chatTargetBtn-group" class="w-full text-left px-3.5 py-3 text-xs font-semibold flex items-center space-x-2 border-b border-slate-800/60 transition">
-            <i data-lucide="users" class="w-3.5 h-3.5"></i><span data-i18n="chat_group_label">Grup Sohbeti</span>
-          </button>
-          <button onclick="selectChatTarget('FEEDBACK')" id="chatTargetBtn-feedback" class="w-full text-left px-3.5 py-3 text-xs font-semibold flex items-center space-x-2 border-b border-slate-800/60 transition text-red-300">
-            <i data-lucide="bug" class="w-3.5 h-3.5"></i><span data-i18n="chat_feedback_label">Hata Bildir / Öneri</span>
-          </button>
-          <div id="chatPersonList"></div>
+      <div class="glass p-6 rounded-2xl shadow-xl space-y-4">
+        <h3 class="text-sm font-bold text-slate-100">Profil</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Ad Soyad</label>
+            <input id="setName" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+          <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Unvan / Rol</label>
+            <input id="setRole" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+          <div class="sm:col-span-2"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">E-posta (giriş adresi)</label>
+            <input id="setEmail" type="email" disabled class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-400 cursor-not-allowed"></div>
         </div>
-        <div class="flex-1 flex flex-col min-w-0">
-          <div id="chatHeaderLabel" class="px-4 py-2.5 border-b border-slate-800 text-xs font-bold text-slate-100 flex items-center space-x-1.5"></div>
-          <div id="chatMessagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
-          <form onsubmit="sendChatMessage(event)" class="flex items-center space-x-2 p-3 border-t border-slate-800">
-            <input type="text" id="chatInput" required data-i18n-placeholder="chat_input_placeholder" placeholder="Bir mesaj yazın..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
-            <button type="submit" class="p-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shrink-0">
-              <i data-lucide="send" class="w-4 h-4"></i>
-            </button>
-          </form>
+        <div class="flex items-center gap-3">
+          <button onclick="saveProfile()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg">Profili Kaydet</button>
+          <span id="setProfileMsg" class="text-xs"></span>
         </div>
+      </div>
+      <div class="glass p-6 rounded-2xl shadow-xl space-y-3">
+        <h3 class="text-sm font-bold text-slate-100">Güvenlik</h3>
+        <p class="text-xs text-slate-400">Hesap şifrenizi değiştirin.</p>
+        <button onclick="openChangePassword()" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-semibold rounded-lg border border-slate-700"><i data-lucide="key-round" class="w-4 h-4"></i>Şifre Değiştir</button>
+      </div>
+      <div class="glass p-6 rounded-2xl shadow-xl space-y-3">
+        <h3 class="text-sm font-bold text-slate-100">Tema</h3>
+        <div class="flex items-center gap-2">
+          <button id="themeBtn-light" onclick="setTheme('light')" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition"><i data-lucide="sun" class="w-3.5 h-3.5"></i>Açık</button>
+          <button id="themeBtn-dark" onclick="setTheme('dark')" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition"><i data-lucide="moon" class="w-3.5 h-3.5"></i>Koyu</button>
+          <button id="themeBtn-system" onclick="setTheme('system')" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition"><i data-lucide="monitor" class="w-3.5 h-3.5"></i>Sistem</button>
+        </div>
+        <p class="text-xs text-slate-400">"Sistem" cihazınızın açık/koyu ayarını izler.</p>
       </div>
     </section>
 
@@ -1205,7 +1218,7 @@ const I18N = {
     tour_s8_title: "Katılım Takibi",
     tour_s8_desc: "Ekip üyelerinin siteye en son ne zaman girdiğini, kaç kez girdiğini ve hiç giriş yapmayanları buradan görürsünüz.",
     tour_s9_title: "Ekip Sohbeti",
-    tour_s9_desc: "\"Grup Sohbeti\" herkese açıktır; listeden bir isme tıklayarak o kişiyle birebir özel mesajlaşabilirsiniz. Size özel mesaj geldiğinde menüde kırmızı bir bildirim rozeti görünür.",
+    tour_s9_desc: "Sohbet, sağ altta açılıp küçültülebilen bir penceredir. \"Grup Sohbeti\" herkese açıktır; listeden bir isim seçerek o kişiyle birebir özel mesajlaşabilirsiniz. Size özel mesaj geldiğinde menüde kırmızı bir bildirim rozeti görünür.",
     tour_s10_title: "Hata Bildir / Öneri",
     tour_s10_desc: "Bir hatayla karşılaşırsanız ya da öneri/şikayetinizi iletmek isterseniz bu kanala yazın. Herkes görebilir, böylece aynı hata tekrar tekrar bildirilmez.",
     tour_s11_title: "Haftalık To-Do'larım",
@@ -1238,6 +1251,7 @@ const I18N = {
     chat_feedback_label: "Hata Bildir / Öneri",
     chat_feedback_placeholder: "Karşılaştığınız hatayı, önerinizi veya şikayetinizi yazın...",
     nav_meetings: "Toplantı Takvimi",
+    nav_settings: "Ayarlar",
     meetings_title: "Research Group Meeting Schedule",
     meetings_subtitle: "Her Çarşamba 17:00–19:00 · 14 Ekim – 30 Aralık, Subgroup toplantılarıyla başlar.",
     meetings_zoom_btn: "Sabit Zoom Linki",
@@ -1469,7 +1483,7 @@ const I18N = {
     tour_s8_title: "Attendance",
     tour_s8_desc: "See when each team member last logged in, how many times, and who has not logged in yet.",
     tour_s9_title: "Team Chat",
-    tour_s9_desc: "\"Group Chat\" is visible to everyone; click a name in the list to message that person privately. When you get a private message, a red badge appears in the menu.",
+    tour_s9_desc: "Chat is a window at the bottom right that you can open and minimize. \"Group Chat\" is visible to everyone; pick a name in the list to message that person privately. When you get a private message, a red badge appears in the menu.",
     tour_s10_title: "Report Bug / Suggest",
     tour_s10_desc: "If you run into a bug, or want to send a suggestion or complaint, write it in this channel. Everyone can see it, so the same bug is not reported again and again.",
     tour_s11_title: "My Weekly To-Dos",
@@ -1502,6 +1516,7 @@ const I18N = {
     chat_feedback_label: "Report Bug / Suggest",
     chat_feedback_placeholder: "Describe the bug, suggestion or complaint...",
     nav_meetings: "Meeting Schedule",
+    nav_settings: "Settings",
     meetings_title: "Research Group Meeting Schedule",
     meetings_subtitle: "Every Wednesday, 17:00–19:00 · October 14 – December 30, starting with subgroup meetings.",
     meetings_zoom_btn: "Standing Zoom Link",
@@ -1636,9 +1651,9 @@ const TOUR_STEPS = [
   { tab: 'attendance', placement: 'bottom', titleKey: 'tour_s8_title', descKey: 'tour_s8_desc',
     target: () => { const el = $id('attendanceTableBody'); return el ? el.closest('.glass') : null; } },
   { tab: 'chat', placement: 'right', titleKey: 'tour_s9_title', descKey: 'tour_s9_desc',
-    target: () => { const el = $id('chatPersonList'); return el ? el.parentElement : null; } },
+    target: () => $id('chatDock') },
   { tab: 'chat', placement: 'right', titleKey: 'tour_s10_title', descKey: 'tour_s10_desc',
-    target: () => $id('chatTargetBtn-feedback') },
+    target: () => $id('chatTargetSelect') },
   { inSidebar: true, placement: 'right', titleKey: 'tour_s11_title', descKey: 'tour_s11_desc',
     target: () => { const el = $id('sidebarPersonFilter'); return el ? el.parentElement : null; } },
   { inSidebar: true, placement: 'right', titleKey: 'tour_s12_title', descKey: 'tour_s12_desc',
@@ -1668,7 +1683,7 @@ function dismissTourWelcome() {
 }
 
 function getActiveTab() {
-  const tabs = ['diagrams', 'tasks', 'people', 'dashboard', 'attendance', 'chat'];
+  const tabs = ['diagrams', 'tasks', 'people', 'dashboard', 'attendance'];
   return tabs.find(t => { const v = $id('view-' + t); return v && !v.classList.contains('hidden'); }) || 'diagrams';
 }
 
@@ -2337,36 +2352,39 @@ async function renderAttendanceTable() {
 let currentChatTarget = null; // null = grup sohbeti, aksi halde { id, name, email }
 
 function populateChatPersonList() {
-  const list = document.getElementById('chatPersonList');
-  if (!list) return;
+  const sel = document.getElementById('chatTargetSelect');
+  if (!sel) return;
   const myEmail = currentUser ? (currentUser.email || '').trim().toLowerCase() : '';
-  list.innerHTML = registeredPeople
-    .filter(p => isChatable(p) && (p.email || '').trim().toLowerCase() !== myEmail)
-    .map(p => `
-      <button onclick='selectChatTarget(${JSON.stringify(p.id)})' id="chatTargetBtn-${p.id}" class="w-full text-left px-3.5 py-2.5 text-xs font-medium flex items-center space-x-2 border-b border-slate-800/40 transition truncate">
-        <i data-lucide="user" class="w-3.5 h-3.5 shrink-0"></i><span class="truncate">${p.name}</span>
-      </button>
-    `).join('');
-  lucide.createIcons();
+  sel.innerHTML = `<option value="__group">👥 ${translate('chat_group_label')}</option><option value="FEEDBACK">🐞 ${translate('chat_feedback_label')}</option>`
+    + '<optgroup label="Özel mesaj">' + registeredPeople
+      .filter(p => isChatable(p) && (p.email || '').trim().toLowerCase() !== myEmail)
+      .map(p => `<option value="${escHtml(p.id)}">${escHtml(p.name)}</option>`).join('') + '</optgroup>';
   highlightChatTargetButton();
 }
 
 function highlightChatTargetButton() {
-  const activeCls = "w-full text-left px-3.5 py-2.5 text-xs font-medium flex items-center space-x-2 border-b border-slate-800/40 transition truncate bg-indigo-600 text-white";
-  const inactiveCls = "w-full text-left px-3.5 py-2.5 text-xs font-medium flex items-center space-x-2 border-b border-slate-800/40 transition truncate text-slate-300 hover:bg-slate-800";
-  const activeFeedbackCls = "w-full text-left px-3.5 py-3 text-xs font-semibold flex items-center space-x-2 border-b border-slate-800/60 transition bg-red-600 text-white";
-  const inactiveFeedbackCls = "w-full text-left px-3.5 py-3 text-xs font-semibold flex items-center space-x-2 border-b border-slate-800/60 transition text-red-300 hover:bg-slate-800";
+  const sel = document.getElementById('chatTargetSelect');
+  if (!sel) return;
+  sel.value = currentChatTarget === 'FEEDBACK' ? 'FEEDBACK' : (currentChatTarget ? currentChatTarget.id : '__group');
+}
 
-  const groupBtn = document.getElementById('chatTargetBtn-group');
-  if (groupBtn) groupBtn.className = (currentChatTarget === null ? activeCls : inactiveCls).replace('px-3.5 py-2.5', 'px-3.5 py-3');
-
-  const feedbackBtn = document.getElementById('chatTargetBtn-feedback');
-  if (feedbackBtn) feedbackBtn.className = currentChatTarget === 'FEEDBACK' ? activeFeedbackCls : inactiveFeedbackCls;
-
-  registeredPeople.filter(isChatable).forEach(p => {
-    const btn = document.getElementById('chatTargetBtn-' + p.id);
-    if (btn) btn.className = (currentChatTarget && currentChatTarget !== 'FEEDBACK' && currentChatTarget.id === p.id) ? activeCls : inactiveCls;
-  });
+let chatDockOpen = false;
+function setChatDock(open) {
+  chatDockOpen = !!open;
+  const d = document.getElementById('chatDock'); if (!d) return;
+  d.style.height = chatDockOpen ? 'min(520px, calc(100vh - 4rem))' : '44px';
+  const ch = document.getElementById('chatDockChevron'); if (ch) { ch.setAttribute('data-lucide', chatDockOpen ? 'chevron-down' : 'chevron-up'); if (window.lucide) lucide.createIcons(); }
+  try { localStorage.setItem('demig_chat_open', chatDockOpen ? '1' : '0'); } catch (e) {}
+  if (chatDockOpen) {
+    populateChatPersonList(); loadChatMessages(); if (!tourActive) markChatAsRead();
+    const db = document.getElementById('chatDockBadge'); if (db) db.classList.add('hidden');
+  }
+}
+function toggleChatDock() { setChatDock(!chatDockOpen); }
+function initChatDock() {
+  populateChatPersonList(); loadChatMessages();
+  let open = false; try { open = localStorage.getItem('demig_chat_open') === '1'; } catch (e) {}
+  setChatDock(open);
 }
 
 function selectChatTarget(personId) {
@@ -2443,11 +2461,11 @@ async function loadChatMessages() {
 
   if (headerLabel) {
     if (currentChatTarget === 'FEEDBACK') {
-      headerLabel.innerHTML = `<i data-lucide="bug" class="w-3.5 h-3.5 text-red-400"></i><span class="text-red-300">${translate('chat_feedback_label')}</span>`;
+      headerLabel.innerHTML = `<span class="truncate">🐞 ${translate('chat_feedback_label')}</span>`;
     } else if (currentChatTarget) {
-      headerLabel.innerHTML = `<i data-lucide="user" class="w-3.5 h-3.5 text-indigo-400"></i><span>@${currentChatTarget.name}</span>`;
+      headerLabel.innerHTML = `<span class="truncate">@${escHtml(currentChatTarget.name)}</span>`;
     } else {
-      headerLabel.innerHTML = `<i data-lucide="users" class="w-3.5 h-3.5 text-indigo-400"></i><span>${translate('chat_group_label')}</span>`;
+      headerLabel.innerHTML = `<span class="truncate">${translate('chat_group_label')}</span>`;
     }
     lucide.createIcons();
   }
@@ -2525,7 +2543,7 @@ async function loadChatMessages() {
     return `
       ${dayDivider}
       <div class="flex ${isMine ? 'justify-end' : 'justify-start'}">
-        <div class="max-w-[75%]">
+        <div class="max-w-[85%]">
           <div class="${isMine ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-100'} rounded-2xl px-3.5 py-2">
             ${!isMine ? `<div class="text-[10px] font-bold text-indigo-300 mb-0.5">${escHtml(m.sender_name)}</div>` : ''}
             <div class="text-xs whitespace-pre-wrap break-words ${isMine ? 'text-white' : 'text-slate-100'}">${escHtml(m.text)}</div>
@@ -2575,8 +2593,7 @@ let chatPollInterval = null;
 function startChatPolling() {
   if (chatPollInterval) clearInterval(chatPollInterval);
   chatPollInterval = setInterval(() => {
-    const chatView = document.getElementById('view-chat');
-    if (chatView && !chatView.classList.contains('hidden')) {
+    if (chatDockOpen) {
       loadChatMessages();
       markChatAsRead();
     }
@@ -2773,6 +2790,7 @@ async function enterApp(email) {
   document.getElementById('app').classList.remove('hidden');
   startChatPolling();
   startUnreadPolling();
+  initChatDock();
   maybeShowTourWelcome();
 }
 
@@ -2962,8 +2980,8 @@ function renderDiagrams() {
   if (progressChartObj) progressChartObj.destroy();
   progressChartObj = new Chart(ctxProg, {
     type: 'bar',
-    data: { labels: tasks.map(t => t.id), datasets: [{ label: 'İlerleme (%)', data: tasks.map(t => t.progress), backgroundColor: tasks.map(t => t.status === 'Tamamlandı' ? '#10b981' : '#1E3A66'), borderRadius: 6 }] },
-    options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100, ticks: { color: '#64748b' }, grid: { color: '#e2e8f0' } }, x: { ticks: { color: '#64748b' }, grid: { display: false } } }, plugins: { legend: { display: false } } }
+    data: { labels: tasks.map(t => t.id), datasets: [{ label: 'İlerleme (%)', data: tasks.map(t => t.progress), backgroundColor: tasks.map(t => t.status === 'Tamamlandı' ? '#10b981' : (isDarkTheme() ? '#5B7FC0' : '#1E3A66')), borderRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100, ticks: { color: chartTick() }, grid: { color: chartGrid() } }, x: { ticks: { color: chartTick() }, grid: { display: false } } }, plugins: { legend: { display: false } } }
   });
 }
 
@@ -3369,6 +3387,8 @@ async function checkUnreadMessages() {
     if (error) { console.error('Okunmamış mesaj kontrolü başarısız:', error); return; }
 
     const count = (msgRows || []).length;
+    const db = document.getElementById('chatDockBadge');
+    if (db) { if (count > 0 && !chatDockOpen) { db.innerText = count > 9 ? '9+' : String(count); db.classList.remove('hidden'); } else db.classList.add('hidden'); }
     if (count > 0) {
       badge.innerText = count > 9 ? '9+' : String(count);
       badge.classList.remove('hidden');
@@ -3388,6 +3408,7 @@ async function markChatAsRead() {
     await supabaseClient.from('chat_reads').upsert({ person_email: myEmail, last_read_at: new Date().toISOString() });
     const badge = document.getElementById('chatUnreadBadge');
     if (badge) badge.classList.add('hidden');
+    const db2 = document.getElementById('chatDockBadge'); if (db2) db2.classList.add('hidden');
   } catch (e) {
     console.error('Okundu işareti kaydedilemedi:', e);
   }
@@ -4394,8 +4415,63 @@ function closeSidebar() {
   document.getElementById('sidebarBackdrop').classList.add('hidden');
 }
 
+// ---- TEMA
+function getThemePref() { try { return localStorage.getItem('demig_theme') || 'light'; } catch (e) { return 'light'; } }
+function isDarkTheme() { return document.documentElement.classList.contains('dark'); }
+function chartTick() { return isDarkTheme() ? '#A9B3C4' : chartTick(); }
+function chartGrid() { return isDarkTheme() ? '#2B3548' : chartGrid(); }
+function applyTheme() {
+  const pref = getThemePref();
+  const dark = pref === 'dark' || (pref === 'system' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', dark);
+  updateThemeButtons();
+}
+function updateThemeButtons() {
+  const pref = getThemePref();
+  ['light', 'dark', 'system'].forEach(t => {
+    const b = document.getElementById('themeBtn-' + t); if (!b) return;
+    b.className = 'inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition ' + (pref === t ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800');
+  });
+}
+function setTheme(p) {
+  try { localStorage.setItem('demig_theme', p); } catch (e) {}
+  applyTheme();
+  if (typeof renderAll === 'function' && currentUser) renderAll();
+}
+if (window.matchMedia) { try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (getThemePref() === 'system') { applyTheme(); if (currentUser) renderAll(); } }); } catch (e) {} }
+
+// ---- AYARLAR / PROFİL
+function renderSettings() {
+  const me = currentUser ? registeredPeople.find(p => (p.email || '').trim().toLowerCase() === (currentUser.email || '').trim().toLowerCase()) : null;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  set('setName', me ? me.name : ''); set('setRole', me ? me.role : ''); set('setEmail', currentUser ? currentUser.email : '');
+  const m = document.getElementById('setProfileMsg'); if (m) m.innerText = '';
+  updateThemeButtons();
+  if (window.lucide) lucide.createIcons();
+}
+async function saveProfile() {
+  const msg = document.getElementById('setProfileMsg');
+  const say = (t, ok) => { msg.innerText = t; msg.className = 'text-xs ' + (ok ? 'text-emerald-500' : 'text-red-400'); };
+  const me = registeredPeople.find(p => (p.email || '').trim().toLowerCase() === (currentUser.email || '').trim().toLowerCase());
+  if (!me) return say('Profil kaydı bulunamadı.');
+  const name = document.getElementById('setName').value.trim(), role = document.getElementById('setRole').value.trim();
+  if (!name) return say('Ad soyad boş olamaz.');
+  if (supabaseClient) {
+    const { data, error } = await supabaseClient.from('people').update({ name, role }).eq('id', me.id).select();
+    if (error) return say('Kaydedilemedi: ' + error.message);
+    if (!data || !data.length) return say('Kaydedilemedi: profil düzenleme yetkiniz yok (yönetici ile görüşün).');
+  }
+  me.name = name; me.role = role;
+  if (!supabaseClient) savePeople();
+  currentUser.name = name; currentUser.dept = role;
+  updateUserBadge();
+  say('Profil güncellendi.', true);
+  renderAll();
+}
+
 function switchTab(tab) {
-  ['diagrams', 'tasks', 'people', 'dashboard', 'attendance', 'chat', 'meetings'].forEach(t => {
+  if (tab === 'chat') { closeSidebar(); setChatDock(true); return; }
+  ['diagrams', 'tasks', 'people', 'dashboard', 'attendance', 'meetings', 'settings'].forEach(t => {
     document.getElementById('view-' + t).classList.add('hidden');
     document.getElementById('tab-' + t).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition";
   });
@@ -4403,8 +4479,8 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 bg-indigo-600 text-white transition";
   closeSidebar();
   if (tab === 'attendance') renderAttendanceTable();
-  if (tab === 'chat') { populateChatPersonList(); loadChatMessages(); if (!tourActive) markChatAsRead(); }
   if (tab === 'meetings') renderMeetingsSection();
+  if (tab === 'settings') renderSettings();
 }
 
 // =====================================================================
