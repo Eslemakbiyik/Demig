@@ -1,4 +1,4 @@
--- Her Perşembe 12:00 (İstanbul = 09:00 UTC) sync-drive-todos fonksiyonunu çağırır.
+-- Her Cuma 09:00 (İstanbul = 06:00 UTC) sync-drive-todos fonksiyonunu çağırır.
 -- Hazır doldurulmuş: proje ref ve anahtar dahil. Olduğu gibi çalıştırın.
 
 -- 1) Eklentileri aç (panelden açtıysanız bu satırlar zararsızdır)
@@ -14,7 +14,7 @@ end $$;
 -- 3) Zamanlama
 select cron.schedule(
   'sync-drive-todos',
-  '0 9 * * 4',
+  '0 6 * * 5',
   $$ select net.http_post(
        url := 'https://wdenbvysepcbobtebdgc.supabase.co/functions/v1/sync-drive-todos',
        headers := jsonb_build_object(

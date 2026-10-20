@@ -1,7 +1,10 @@
 // Supabase Edge Function: sync-drive-todos
-// Her Perşembe 12:00'de (İstanbul) çalışır: Çarşamba günleri güncellenen toplantı notu dosyasını
-// çeker, günlerin altındaki tabloları (kişi | yapılacaklar) okur, kişileri proje ekibiyle eşler ve
-// meeting_action_items tablosuna "pending" (onay bekliyor) olarak yazar. Aynı madde ikinci kez eklenmez.
+// Her Cuma 09:00'da (İstanbul) çalışır: toplantı notu dosyasını çeker, günlerin altındaki tabloları
+// (kişi | yapılacaklar) okur, kişileri proje ekibinin tekil isimleriyle eşler ve meeting_action_items
+// tablosuna "pending" olarak yazar (source=drive_sync). Portal bir yönetici tarafından açıldığında
+// kişisi eşleşen bu maddeler otomatik onaylanır, haftalık göreve dönüşür ve kişi başına tek mail gider.
+// Ayrıca günün toplantı notlarını (görev dışı bölümler) meeting_records'a yazar (o kayıt boşsa).
+// Aynı madde ikinci kez eklenmez.
 //
 // KURULUM:
 //   supabase functions deploy sync-drive-todos --no-verify-jwt
@@ -41,23 +44,29 @@ function parseDate(text: string, fallbackYear: number): string | null {
 }
 
 type Item = { date: string; person: string; text: string };
+const notesByDate: Record<string, string> = {};
 
 function parseHtml(html: string): Item[] {
+  for (const k of Object.keys(notesByDate)) delete notesByDate[k];
   // Doküman yapısı: <h2> "12 Ekim 2026 (Pazartesi): DEMIG Toplantı" → <h3> "Sonraki adımlar" → <h4> kişi → <li> madde
   // ve bazı toplantılarda <h3> "Görevler" altında Kim | Görev | Son tarih | Dayanak tablosu.
   const items: Item[] = [];
   const year = new Date().getFullYear();
   const body = html.replace(/^[\s\S]*?<body[^>]*>/i, "");
-  const tok = /<(h[1-6])[^>]*>([\s\S]*?)<\/\1>|<li[^>]*>([\s\S]*?)<\/li>|(<table[\s\S]*?<\/table>)/gi;
+  const tok = /<(h[1-6])[^>]*>([\s\S]*?)<\/\1>|<li[^>]*>([\s\S]*?)<\/li>|(<table[\s\S]*?<\/table>)|<p[^>]*>([\s\S]*?)<\/p>/gi;
   let date: string | null = null, section = "", person = "", m: RegExpExecArray | null;
   const wanted = (sec: string) => /sonraki ad[ıi]mlar|g[öo]revler|yap[ıi]lacaklar|aksiyon/i.test(sec);
   while ((m = tok.exec(body))) {
     if (m[1]) {
       const lvl = parseInt(m[1][1], 10), text = decode(m[2]);
       if (lvl <= 2) { date = parseDate(text, year); section = ""; person = ""; }
-      else if (lvl === 3) { section = text; person = ""; }
-      else if (lvl === 4) person = text;
+      else if (lvl === 3) { section = text; person = ""; if (date && text && !wanted(text)) notesByDate[date] = (notesByDate[date] || "") + `\n${text}\n`; }
+      else if (lvl === 4) { person = text; if (date && text && !wanted(section)) notesByDate[date] = (notesByDate[date] || "") + `${text}\n`; }
+    } else if (m[5] !== undefined) {
+      const t = decode(m[5]);
+      if (date && t && section && !wanted(section)) notesByDate[date] = (notesByDate[date] || "") + t + "\n";
     } else if (m[3] !== undefined) {
+      if (date && section && !wanted(section)) { const t0 = decode(m[3]).replace(/^[-*•\s]+/, "").trim(); if (t0) notesByDate[date] = (notesByDate[date] || "") + "• " + t0 + "\n"; }
       if (!date || !wanted(section) || !person) continue;
       const t = decode(m[3]).replace(/^[-*•\s]+/, "").trim();
       if (t.length > 3 && !/^\[?…\]?$/.test(t)) items.push({ date, person, text: t });
@@ -98,8 +107,8 @@ Deno.serve(async (req) => {
     if (!res.ok) throw new Error(`Dosya indirilemedi: ${res.status} (paylaşım ayarı 'bağlantıya sahip herkes' olmalı)`);
     const body = await res.text();
     const all = /^<|<html/i.test(body.trim()) ? parseHtml(body) : parseCsv(body);
-    // yalnızca son 10 günün toplantıları (eski toplantılar panele yığılmasın)
-    const minDate = new Date(Date.now() - 10 * 86400000).toISOString().slice(0, 10);
+    // yalnızca son 14 günün toplantıları (eski toplantılar panele yığılmasın)
+    const minDate = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
     const items = all.filter((i) => i.date >= minDate);
 
     const { data: people } = await sb.from("people").select("id, name, active, grp").eq("active", true).neq("grp", "annotator");
@@ -125,7 +134,18 @@ Deno.serve(async (req) => {
       });
       if (!error) added++;
     }
-    return new Response(JSON.stringify({ ok: true, found: items.length, added, skipped, unmatched }), { headers: { "content-type": "application/json" } });
+    // Toplantı notları: ilgili günün ilk görüşme kaydı boşsa doküman notlarını yaz
+    let notesWritten = 0;
+    for (const [d, txt] of Object.entries(notesByDate)) {
+      if (d < minDate) continue;
+      const text = txt.replace(/\n{3,}/g, "\n\n").trim().slice(0, 12000);
+      if (text.length < 20) continue;
+      const { data: ex } = await sb.from("meeting_records").select("action_text").eq("week_date", d).eq("track_id", "other_side").limit(1);
+      if (ex && ex.length && ex[0].action_text) continue;
+      const { error } = await sb.from("meeting_records").upsert({ week_date: d, track_id: "other_side", action_text: text, updated_by: "Drive senkron" }, { onConflict: "week_date,track_id" });
+      if (!error) notesWritten++;
+    }
+    return new Response(JSON.stringify({ ok: true, found: items.length, added, skipped, unmatched, notesWritten }), { headers: { "content-type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
   }

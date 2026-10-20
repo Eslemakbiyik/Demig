@@ -35,6 +35,7 @@
   })();
 </script>
 <script src="https://unpkg.com/lucide@latest" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
@@ -718,10 +719,10 @@
             <button onclick="closeMeetingModal('mtgImportModal')" class="text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
           </div>
           <div class="p-5 space-y-3">
-            <p class="text-[11px] text-slate-400">Toplantı özetindeki to-do listesini yapıştırın ya da .txt/.csv/.md yükleyin. Her satır bir madde olur; "Ad: görev", "görev - Ad" veya "@Ad" biçimindeki isimler otomatik eşleşir. Maddeler "Onay Bekleyen" sekmesine düşer.</p>
+            <p class="text-[11px] text-slate-400"><b class="text-slate-200">Zoom toplantı notu / transkript Word (.docx) dosyasını yükleyin</b>: her günün altındaki to-do tablosu (Kim | Görev) okunur, tarihleri ve kişileri otomatik eşleşir. İsterseniz metni yapıştırın ya da .txt/.csv/.md yükleyin ("Ad: görev", "görev - Ad", "@Ad"). Maddeler "Onay Bekleyen" sekmesine düşer.</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <select id="driveImportWeekSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
-              <input type="file" id="driveImportFile" accept=".txt,.csv,.md,.tsv" onchange="handleDriveImportFile(event)" class="w-full text-[11px] text-slate-400 file:mr-2 file:px-2.5 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200">
+              <input type="file" id="driveImportFile" accept=".docx,.txt,.csv,.md,.tsv" onchange="handleDriveImportFile(event)" class="w-full text-[11px] text-slate-400 file:mr-2 file:px-2.5 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200">
             </div>
             <textarea id="driveImportText" rows="6" placeholder="- Selim: Reward model testlerini tamamla&#10;- Anket taslağını gözden geçir (Ayşenur)&#10;..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100"></textarea>
             <div class="flex items-center gap-2">
@@ -2022,7 +2023,7 @@ async function flushMeetingNotify() {
     const list = groups[key];
     const p = registeredPeople.find(x => x.id === list[0].personId);
     if (!p || !p.email) { fail++; continue; }
-    const body = list.length === 1 ? list[0].text : list.map((x, i) => `${i + 1}) ${x.text}`).join('   ');
+    const body = list.length === 1 ? list[0].text : list.map((x, i) => `${i + 1}) ${x.text}`).join('\n');
     try {
       await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
         to_email: p.email, to_name: p.name,
@@ -2138,9 +2139,85 @@ async function confirmPersonGroup(date, pid) {
 // ---------------------------------------------------------------------
 // Drive'daki Zoom AI to-do listesini içe aktarma
 // ---------------------------------------------------------------------
+let docxImportItems = null;
+function driveNormName(x) { return x.toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9 ]/gi, ' ').replace(/\s+/g, ' ').trim(); }
+function driveFindPerson(txt) {
+  const people = registeredPeople.filter(isAssignable);
+  let t = driveNormName(txt || '').replace(/\(\?\)/g, '').trim();
+  if (!t) return null;
+  if (t === 'galata') t = 'ahmet utku akbıyık';
+  return people.find(p => driveNormName(p.name) === t)
+    || people.find(p => driveNormName(p.name).split(' ')[0] === t.split(' ')[0] && t.length >= 3)
+    || people.find(p => t.includes(driveNormName(p.name).split(' ')[0]) && t.length <= driveNormName(p.name).length + 6);
+}
+const TR_MONTHS = { ocak: 1, şubat: 2, subat: 2, mart: 3, nisan: 4, mayıs: 5, mayis: 5, haziran: 6, temmuz: 7, ağustos: 8, agustos: 8, eylül: 9, eylul: 9, ekim: 10, kasım: 11, kasim: 11, aralık: 12, aralik: 12 };
+function driveParseDate(text, fbYear) {
+  let m = text.match(/(\d{1,2})[./](\d{1,2})[./](\d{4})/);
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  m = text.toLocaleLowerCase('tr-TR').match(/(\d{1,2})\s+([a-zçğıöşü]+)(?:\s+(\d{4}))?/);
+  if (m && TR_MONTHS[m[2]]) return `${m[3] || fbYear}-${String(TR_MONTHS[m[2]]).padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  return null;
+}
+// Word'den çevrilen HTML: tarih başlığı → (Sonraki adımlar | Görevler) altındaki "Kim | Görev | Son tarih" tabloları ve kişi başlıklı listeler
+function parseDocxTodoHtml(html, fallbackDate) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const fbYear = parseInt(fallbackDate.slice(0, 4), 10);
+  const out = []; let date = null, section = '', person = '';
+  const wanted = sec => /sonraki ad[ıi]mlar|g[öo]revler|yap[ıi]lacaklar|aksiyon|to-?do/i.test(sec);
+  const txt = el => (el.textContent || '').replace(/\s+/g, ' ').trim();
+  doc.body.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li,table').forEach(el => {
+    const tag = el.tagName;
+    if (tag !== 'TABLE' && el.closest('table')) return;
+    if (/^H[1-6]$/.test(tag)) {
+      const lvl = parseInt(tag[1], 10), t = txt(el);
+      if (lvl <= 2) { const d = driveParseDate(t, fbYear); if (d) { date = d; section = ''; person = ''; } }
+      else if (lvl === 3) { section = t; person = ''; }
+      else person = t;
+    } else if (tag === 'P') {
+      const t = txt(el);
+      if (t.length < 90) { const d = driveParseDate(t, fbYear); if (d && /^(\S+\s*,?\s*)?\d{1,2}[ ./]/.test(t)) { date = d; section = ''; person = ''; } else if (wanted(t) && t.length < 40) section = t; }
+    } else if (tag === 'LI') {
+      if (!wanted(section) || !person) return;
+      const t = txt(el).replace(/^[-*•\s]+/, '').trim();
+      if (t.length > 3) out.push({ date: date || fallbackDate, person, text: t });
+    } else if (tag === 'TABLE') {
+      const rows = Array.from(el.querySelectorAll('tr'));
+      const head = rows[0] ? txt(rows[0].querySelector('th,td') || rows[0]) : '';
+      const hasHead = /^(kim|ki[şs]i|isim|sorumlu)/i.test(head);
+      if (!hasHead && !wanted(section)) return;
+      rows.forEach((r, ri) => {
+        const cells = Array.from(r.querySelectorAll('th,td')).map(txt);
+        if (cells.length < 2 || (ri === 0 && hasHead)) return;
+        const who = cells[0].replace(/\(\?\)/g, '').trim(), task = cells[1].trim();
+        const due = cells[2] && cells[2] !== '—' && cells[2] !== '-' ? ` (Son tarih: ${cells[2]})` : '';
+        if (who && task) out.push({ date: date || fallbackDate, person: who, text: task + due });
+      });
+    }
+  });
+  return out;
+}
+async function handleDocxImport(f) {
+  const st = document.getElementById('driveImportStatus');
+  docxImportItems = null;
+  if (!window.mammoth) { st.textContent = 'Word okuyucu yüklenemedi, sayfayı yenileyin.'; return; }
+  st.textContent = 'Word dosyası okunuyor…';
+  try {
+    const buf = await f.arrayBuffer();
+    const res = await mammoth.convertToHtml({ arrayBuffer: buf });
+    const fb = document.getElementById('driveImportWeekSelect').value;
+    const items = parseDocxTodoHtml(res.value, fb);
+    docxImportItems = items;
+    const days = new Set(items.map(i => i.date)).size;
+    const matched = items.filter(i => driveFindPerson(i.person)).length;
+    document.getElementById('driveImportText').value = items.map(i => `[${i.date}] ${i.person}: ${i.text}`).join('\n');
+    st.textContent = items.length ? `${items.length} madde, ${days} gün bulundu (${matched} tanesi kişiyle eşleşti). "Maddeleri İçe Aktar"a basın.` : 'Dosyada to-do tablosu bulunamadı.';
+  } catch (e) { console.error(e); st.textContent = 'Word dosyası okunamadı: ' + e.message; }
+}
 function handleDriveImportFile(ev) {
   const f = ev.target.files && ev.target.files[0];
   if (!f) return;
+  if (/\.docx$/i.test(f.name)) { handleDocxImport(f); return; }
+  docxImportItems = null;
   const r = new FileReader();
   r.onload = () => { document.getElementById('driveImportText').value = String(r.result || ''); };
   r.readAsText(f);
@@ -2176,15 +2253,27 @@ async function importDriveTodos() {
   const st = document.getElementById('driveImportStatus');
   const week = document.getElementById('driveImportWeekSelect').value;
   const raw = document.getElementById('driveImportText').value;
-  const items = parseDriveTodoLines(raw);
-  if (!items.length) { st.textContent = 'İçe aktarılacak madde bulunamadı.'; return; }
   if (!supabaseClient) { st.textContent = 'Sunucu bağlantısı yok.'; return; }
-  const rows = items.map(i => ({ week_date: week, raw_text: i.text, suggested_person_id: i.person ? i.person.id : null, suggested_person_name: i.person ? i.person.name : null, status: 'pending', source: 'drive_import' }));
+  let rows;
+  if (docxImportItems && docxImportItems.length) {
+    rows = docxImportItems.map(i => { const p = driveFindPerson(i.person); return { week_date: i.date, raw_text: i.text, suggested_person_id: p ? p.id : null, suggested_person_name: p ? p.name : i.person, status: 'pending', source: 'drive_import' }; });
+    // aynı gün + aynı metin daha önce eklenmişse atla
+    const dates = [...new Set(rows.map(r => r.week_date))];
+    const { data: ex } = await supabaseClient.from('meeting_action_items').select('week_date,raw_text').in('week_date', dates);
+    const have = new Set((ex || []).map(e => e.week_date + '|' + e.raw_text));
+    const before = rows.length; rows = rows.filter(r => !have.has(r.week_date + '|' + r.raw_text));
+    if (!rows.length) { st.textContent = `${before} maddenin hepsi zaten kayıtlı.`; return; }
+  } else {
+    const items = parseDriveTodoLines(raw);
+    if (!items.length) { st.textContent = 'İçe aktarılacak madde bulunamadı.'; return; }
+    rows = items.map(i => ({ week_date: week, raw_text: i.text, suggested_person_id: i.person ? i.person.id : null, suggested_person_name: i.person ? i.person.name : null, status: 'pending', source: 'drive_import' }));
+  }
   const { error } = await supabaseClient.from('meeting_action_items').insert(rows);
   if (error) { console.error(error); st.textContent = 'Kaydedilemedi: ' + error.message; return; }
   st.textContent = `${rows.length} madde eklendi (${rows.filter(r => r.suggested_person_id).length} tanesi kişiyle eşleşti). Aşağıdaki panelden onaylayıp atayın.`;
   document.getElementById('driveImportText').value = '';
   document.getElementById('driveImportFile').value = '';
+  docxImportItems = null;
   await renderPendingActionItemsPanel();
 }
 
@@ -2791,6 +2880,7 @@ async function enterApp(email) {
   startChatPolling();
   startUnreadPolling();
   initChatDock();
+  autoConfirmDriveSync().catch(e => console.error('Otomatik onay hatası:', e));
   maybeShowTourWelcome();
 }
 
@@ -3631,18 +3721,34 @@ async function createWeeklyFromMeeting(item, personId, ti) {
   return true;
 }
 
-async function confirmItemsBulk(pairs, flush) {
+async function confirmItemsBulk(pairs, flush, lock) {
   if (!supabaseClient || !pairs.length) return;
   const ti = currentTargetTaskIdx(); const touched = new Set();
   for (const { item, pid } of pairs) {
-    const { error } = await supabaseClient.from('meeting_action_items').update({ status: 'confirmed', confirmed_person_id: pid }).eq('id', item.id);
+    let q = supabaseClient.from('meeting_action_items').update({ status: 'confirmed', confirmed_person_id: pid }).eq('id', item.id);
+    if (lock) q = q.eq('status', 'pending').select();   // başka bir oturum zaten onayladıysa atla (çift mail olmasın)
+    const { data: upd, error } = await q;
     if (error) { console.error('Aksiyon onaylanamadı:', error); continue; }
+    if (lock && (!upd || !upd.length)) continue;
     if (ti !== null && await createWeeklyFromMeeting(item, pid, ti)) touched.add(ti);
     queueMeetingNotify(item, pid);
   }
   for (const i of touched) await persistTask(tasks[i]);
   if (flush) flushMeetingNotify();
   await refreshMeetingTodoViews();
+}
+
+// Cuma 09:00 senkronundan gelen (source=drive_sync), kişisi eşleşmiş maddeler otomatik onaylanır;
+// haftalık göreve dönüşür ve her kişiye (toplantı başına) tek mail gider, maddeler mailde ayrı satırlardır.
+async function autoConfirmDriveSync() {
+  if (!supabaseClient || !currentUser) return;
+  const me = registeredPeople.find(p => (p.email || '').trim().toLowerCase() === (currentUser.email || '').trim().toLowerCase());
+  if (!me || !['p1', 'p2'].includes(me.id)) return;     // yalnızca yöneticiler tetikler
+  await loadPendingMeetingActionItems();
+  const cand = meetingActionItemsPending.filter(i => i.source === 'drive_sync' && i.suggested_person_id && i.week_date >= MEETING_NOTIFY_FROM);
+  if (!cand.length) return;
+  await confirmItemsBulk(cand.map(item => ({ item, pid: item.suggested_person_id })), true, true);
+  showMiniToast(`Senkronla gelen ${cand.length} madde otomatik atandı.`);
 }
 
 async function convertLegacyTodos() {
@@ -4543,7 +4649,7 @@ async function persistMeetingRecord(weekDate, trackId) {
   const rec = meetingRecords[recKey] || {};
   if (!supabaseClient) {
     localStorage.setItem('demigproject_meetings_v1', JSON.stringify(meetingRecords));
-    return;
+    return true;
   }
   const row = {
     week_date: weekDate,
@@ -4554,14 +4660,15 @@ async function persistMeetingRecord(weekDate, trackId) {
     updated_by: currentUser ? currentUser.name : null
   };
   const { error } = await supabaseClient.from('meeting_records').upsert(row, { onConflict: 'week_date,track_id' });
-  if (error) console.error('Toplantı kaydı kaydedilemedi:', error);
+  if (error) { console.error('Toplantı kaydı kaydedilemedi:', error); return false; }
+  return true;
 }
 
 function updateMeetingField(weekDate, trackId, key, val) {
   const recKey = meetingRecordKey(weekDate, trackId);
   if (!meetingRecords[recKey]) meetingRecords[recKey] = { week_date: weekDate, track_id: trackId };
   meetingRecords[recKey][key] = val;
-  persistMeetingRecord(weekDate, trackId);
+  return persistMeetingRecord(weekDate, trackId);
 }
 
 function escHtml(s) {
@@ -4710,14 +4817,24 @@ function renderMtgList() {
   box.innerHTML = html;
 }
 
-function mtgSaveNote(date, trackId, el) {
-  updateMeetingField(date, trackId, 'action_text', el.value);
-  const ind = document.getElementById('mtgSaved'); if (ind) { ind.textContent = 'Kaydedildi ✓'; setTimeout(() => { if (ind) ind.textContent = ''; }, 2000); }
-}
 let mtgNoteTimer = null;
+function mtgSetSaveState(state) {
+  const ind = document.getElementById('mtgSaved'); if (!ind) return;
+  const t = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  const map = { dirty: ['● Kaydedilmemiş değişiklik', 'text-amber-400'], saving: ['Kaydediliyor…', 'text-slate-400'], saved: ['✓ Kaydedildi ' + t, 'text-emerald-500'], error: ['⚠ Kaydedilemedi, tekrar deneyin', 'text-red-400'], idle: ['', ''] };
+  const [msg, cls] = map[state] || map.idle;
+  ind.textContent = msg; ind.className = 'text-[10px] font-semibold ' + cls;
+}
+async function mtgSaveNote(date, trackId, el) {
+  clearTimeout(mtgNoteTimer);
+  const ta = el || document.getElementById('mtgNoteArea'); if (!ta) return;
+  mtgSetSaveState('saving');
+  const ok = await updateMeetingField(date, trackId, 'action_text', ta.value);
+  mtgSetSaveState(ok === false ? 'error' : 'saved');
+}
 function mtgNoteInput(date, trackId, el) {
-  const ind = document.getElementById('mtgSaved'); if (ind) ind.textContent = 'Yazılıyor…';
-  clearTimeout(mtgNoteTimer); mtgNoteTimer = setTimeout(() => mtgSaveNote(date, trackId, el), 1200);
+  mtgSetSaveState('dirty');
+  clearTimeout(mtgNoteTimer); mtgNoteTimer = setTimeout(() => mtgSaveNote(date, trackId, el), 1500);
 }
 
 function mtgTaskRowHTML(r, canAct) {
@@ -4757,8 +4874,8 @@ function renderMtgDetail() {
       <div class="flex flex-wrap gap-1.5 mb-3">
         ${tracks.map(t => { const r = meetingRecords[meetingRecordKey(w.date, t.id)] || {}; const has = r.action_text || r.notes_link || r.recording_link; return `<button onclick="mtgSetTrack('${t.id}')" class="px-2.5 py-1.5 rounded-lg border text-[10px] font-semibold transition ${t.id === tr.id ? 'border-indigo-500 bg-indigo-600/20 text-indigo-200' : 'border-slate-700 text-slate-300 hover:bg-slate-800'}"><span class="font-mono text-slate-500 mr-1">${t.time}</span>${escHtml(mtgTrackLabel(t))}${has ? ' <span class="text-emerald-400">●</span>' : ''}</button>`; }).join('')}
       </div>
-      <div class="flex items-center justify-between mb-1.5"><label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Notlar ve kararlar</label><span id="mtgSaved" class="text-[10px] text-emerald-400"></span></div>
-      <textarea rows="12" placeholder="Toplantıda konuşulanlar, alınan kararlar, açık sorular… (yazdıkça otomatik kaydedilir)"
+      <div class="flex items-center justify-between mb-1.5"><label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Notlar ve kararlar</label><div class="flex items-center gap-2"><span id="mtgSaved" class="text-[10px] font-semibold text-slate-400">${rec.action_text ? '✓ Kaydedildi' : ''}</span><button onclick="mtgSaveNote('${w.date}','${tr.id}')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Kaydet</button></div></div>
+      <textarea id="mtgNoteArea" rows="12" placeholder="Toplantıda konuşulanlar, alınan kararlar, açık sorular… (yazdıkça otomatik kaydedilir)"
         oninput="mtgNoteInput('${w.date}','${tr.id}',this)" onchange="mtgSaveNote('${w.date}','${tr.id}',this)"
         class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs leading-relaxed text-slate-100 focus:outline-none focus:border-indigo-500">${escHtml(rec.action_text || '')}</textarea>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
