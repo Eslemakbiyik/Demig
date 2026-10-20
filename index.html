@@ -743,8 +743,10 @@
           <div class="p-5 space-y-4">
             <div>
               <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Toplantı tarihi</label>
-              <select id="driveImportWeekSelect" onchange="applyDocxFilter()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
+              <select id="driveImportWeekSelect" onchange="applyDocxFilter();populateImportTrackSelect()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
               <p class="text-[10px] text-slate-500 mt-1">Aşağıdaki kaynaklardan ya da yüklenen dosyadan yalnızca bu tarihe ait to-do'lar alınır.</p>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-2 mb-1">Toplantı notları hangi oturuma yazılsın?</label>
+              <select id="driveImportTrackSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
             </div>
             <div class="rounded-xl border border-slate-800 p-3 space-y-2">
               <div class="flex items-center justify-between"><span class="text-[11px] font-bold text-slate-200">Drive kaynakları</span><span class="text-[10px] text-slate-500">Her Cuma 09:00'da otomatik çekilir</span></div>
@@ -2275,13 +2277,20 @@ function parseDocxNotes(html, fallbackDate) {
 async function importDocxNotes(week) {
   if (!docxHtml) return '';
   const text = ((parseDocxNotes(docxHtml, week) || {})[week] || '').replace(/\n{3,}/g, '\n\n').trim().slice(0, 12000);
-  if (text.length < 20) return '';
+  if (text.length < 20) return ' Dosyada bu tarihe ait toplantı notu bölümü (Hızlı özet vb.) bulunamadı.';
   const w = MEETING_WEEKS.find(x => x.date === week); if (!w) return '';
   const tracks = MEETING_TRACKS[w.type] || [];
-  const free = tracks.find(t => !((meetingRecords[meetingRecordKey(week, t.id)] || {}).action_text || '').trim());
-  if (!free) return ' Toplantı notları dosyada var ama tüm oturumların notu dolu olduğu için yazılmadı.';
-  await updateMeetingField(week, free.id, 'action_text', text);
-  return ` Toplantı notları "${free.time} ${translate(free.labelKey)}" oturumuna yazıldı.`;
+  const txtOf = t => ((meetingRecords[meetingRecordKey(week, t.id)] || {}).action_text || '').trim();
+  const probe = text.slice(0, 60);
+  if (tracks.some(t => txtOf(t).includes(probe))) return ' Toplantı notları zaten kayıtlı.';
+  const pick = (document.getElementById('driveImportTrackSelect') || {}).value || '__auto';
+  let target = pick !== '__auto' ? tracks.find(t => t.id === pick) : tracks.find(t => !txtOf(t));
+  let append = false;
+  if (!target) { target = tracks[0]; append = true; }       // seçili oturumda ya da hepsinde not varsa altına ekle
+  if (pick !== '__auto' && txtOf(target)) append = true;
+  const newText = append ? txtOf(target) + '\n\n— Toplantı notları (doküman) —\n' + text : text;
+  await updateMeetingField(week, target.id, 'action_text', newText);
+  return ` Toplantı notları "${target.time} ${translate(target.labelKey)}" oturumuna ${append ? 'eklendi (mevcut notun altına)' : 'yazıldı'}.`;
 }
 async function handleDocxImport(f) {
   const st = document.getElementById('driveImportStatus');
@@ -2385,10 +2394,16 @@ async function importDriveTodos() {
     rows = docxImportItems.map(i => { const p = driveFindPerson(i.person); return { week_date: i.date, raw_text: i.text, suggested_person_id: p ? p.id : null, suggested_person_name: p ? p.name : i.person, status: 'pending', source: 'drive_import' }; });
     // aynı gün + aynı metin daha önce eklenmişse atla
     const dates = [...new Set(rows.map(r => r.week_date))];
-    const { data: ex } = await supabaseClient.from('meeting_action_items').select('week_date,raw_text').in('week_date', dates);
+    const { data: ex } = await supabaseClient.from('meeting_action_items').select('week_date,raw_text,status').in('week_date', dates);
     const have = new Set((ex || []).map(e => e.week_date + '|' + e.raw_text));
-    const before = rows.length; rows = rows.filter(r => !have.has(r.week_date + '|' + r.raw_text));
-    if (!rows.length) { st.textContent = `${before} maddenin hepsi zaten kayıtlı.` + noteMsg; renderMtg(); return; }
+    const before = rows.length; const dupes = rows.filter(r => have.has(r.week_date + '|' + r.raw_text));
+    rows = rows.filter(r => !have.has(r.week_date + '|' + r.raw_text));
+    if (!rows.length) {
+      const cnt = { pending: 0, confirmed: 0, dismissed: 0 };
+      dupes.forEach(d => { const e = (ex || []).find(x => x.week_date === d.week_date && x.raw_text === d.raw_text); if (e) cnt[e.status] = (cnt[e.status] || 0) + 1; });
+      st.innerHTML = `${before} madde bu tarih için daha önce eklenmiş: ${cnt.pending} onay bekliyor, ${cnt.confirmed} atanmış, ${cnt.dismissed} yoksayılmış.` + (cnt.dismissed ? ` <button onclick="restoreDismissedItems('${week}')" class="underline text-indigo-400">Yoksayılanları tekrar onay bekleyene al</button>` : '') + escHtml(noteMsg);
+      renderMtg(); return;
+    }
   } else {
     const items = parseDriveTodoLines(raw);
     if (!items.length) { st.textContent = 'İçe aktarılacak madde bulunamadı.'; return; }
@@ -2403,6 +2418,14 @@ async function importDriveTodos() {
   await renderPendingActionItemsPanel();
 }
 
+async function restoreDismissedItems(date) {
+  const { error } = await supabaseClient.from('meeting_action_items').update({ status: 'pending' }).eq('week_date', date).eq('status', 'dismissed');
+  const st = document.getElementById('driveImportStatus');
+  if (error) { st.textContent = 'Geri alınamadı: ' + error.message; return; }
+  st.textContent = 'Yoksayılan maddeler onay bekleyene alındı.';
+  await refreshMeetingTodoViews();
+}
+
 async function confirmAllSuggestedActions() {
   const items = meetingActionItemsPending.filter(i => i.suggested_person_id);
   if (!items.length) return;
@@ -2412,12 +2435,21 @@ async function confirmAllSuggestedActions() {
 // ---------------------------------------------------------------------
 // Manuel Transkript Yükleme (Zoom'dan indirip siteye yapıştırma/yükleme)
 // ---------------------------------------------------------------------
+function populateImportTrackSelect() {
+  const sel = document.getElementById('driveImportTrackSelect'); if (!sel) return;
+  const wk = document.getElementById('driveImportWeekSelect');
+  const w = wk ? MEETING_WEEKS.find(x => x.date === wk.value) : null;
+  const tracks = w ? (MEETING_TRACKS[w.type] || []) : [];
+  const cur = sel.value;
+  sel.innerHTML = '<option value="__auto">Otomatik (ilk boş oturum, hepsi doluysa ilkinin altına ekle)</option>' + tracks.map(t => `<option value="${t.id}">${t.time} — ${escHtml(translate(t.labelKey))}</option>`).join('');
+  if (cur && [...sel.options].some(o => o.value === cur)) sel.value = cur;
+}
 function populateMeetingUploadWeekSelect() {
   const opts = MEETING_WEEKS.map(w => `<option value="${w.date}">${formatMeetingDate(w.date)}</option>`).join('');
   const t = todayIso();
   const latestPast = MEETING_WEEKS.filter(w => w.date <= t).map(w => w.date).pop() || MEETING_WEEKS[0].date;
   const dsel = document.getElementById('driveImportWeekSelect');
-  if (dsel) { const dc = dsel.value; dsel.innerHTML = opts; dsel.value = (dc && MEETING_WEEKS.some(w => w.date === dc)) ? dc : latestPast; }
+  if (dsel) { const dc = dsel.value; dsel.innerHTML = opts; dsel.value = (dc && MEETING_WEEKS.some(w => w.date === dc)) ? dc : latestPast; populateImportTrackSelect(); }
   const sel = document.getElementById('meetingUploadWeekSelect');
   if (sel) { const cur = sel.value; sel.innerHTML = opts; if (cur && MEETING_WEEKS.some(w => w.date === cur)) sel.value = cur; populateMeetingUploadTrackSelect(); }
 }

@@ -99,6 +99,8 @@ function parseCsv(csv: string): Item[] {
   return items;
 }
 
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type", "Access-Control-Allow-Methods": "POST, OPTIONS" };
+const JSON_HEADERS = { "content-type": "application/json", ...CORS };
 const DEFAULT_URL = "https://docs.google.com/document/d/1j7LOlgUqwCC1Of001aciPP8Z0eWIkLQa/edit";
 
 async function processSource(url: string, onlyDate: string | null, source: string, people: any[]) {
@@ -150,6 +152,7 @@ async function processSource(url: string, onlyDate: string | null, source: strin
 // POST gövdesi (hepsi isteğe bağlı): { date: "YYYY-MM-DD" } yalnızca o günü çeker (manuel, maddeler onay bekler),
 // { url: "..." } yalnızca o kaynağı kullanır. Boş gövde = Cuma otomatik çalışması (meeting_sources tablosundaki tüm aktif kaynaklar).
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   try {
     let b: any = {}; try { b = await req.json(); } catch (_) { /* boş gövde */ }
     const onlyDate: string | null = b && b.date ? String(b.date) : null;
@@ -170,8 +173,8 @@ Deno.serve(async (req) => {
         (Object.keys(total) as (keyof typeof total)[]).forEach((k) => { total[k] += r[k]; });
       } catch (e) { errors.push(String(e)); }
     }
-    return new Response(JSON.stringify({ ok: errors.length < urls.length, sources: urls.length, ...total, errors }), { headers: { "content-type": "application/json" } });
+    return new Response(JSON.stringify({ ok: errors.length < urls.length, sources: urls.length, ...total, errors }), { headers: JSON_HEADERS });
   } catch (e) {
-    return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
+    return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500, headers: JSON_HEADERS });
   }
 });
