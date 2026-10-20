@@ -99,53 +99,78 @@ function parseCsv(csv: string): Item[] {
   return items;
 }
 
+const DEFAULT_URL = "https://docs.google.com/document/d/1j7LOlgUqwCC1Of001aciPP8Z0eWIkLQa/edit";
+
+async function processSource(url: string, onlyDate: string | null, source: string, people: any[]) {
+  const res = await fetch(exportUrl(url));
+  if (!res.ok) throw new Error(`Dosya indirilemedi: ${res.status} (paylaşım ayarı 'bağlantıya sahip herkes' olmalı) — ${url}`);
+  const body = await res.text();
+  const all = /^<|<html/i.test(body.trim()) ? parseHtml(body) : parseCsv(body);
+  // Manuel çekimde yalnızca seçilen tarih; otomatikte son 14 günün toplantıları
+  const minDate = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
+  const keep = (d: string) => (onlyDate ? d === onlyDate : d >= minDate);
+  const items = all.filter((i) => keep(i.date));
+
+  const find = (n: string) => {
+    let t = norm(n); if (!t) return null;
+    if (t === "galata") t = "ahmet utku akbıyık"; // Zoom'da Ahmet Utku Akbıyık "Galata" olarak geçiyor
+    return people.find((p: any) => norm(p.name) === t)
+      || people.find((p: any) => norm(p.name).startsWith(t + " ") && t.includes(" "))
+      || people.find((p: any) => norm(p.name).split(" ")[0] === t.split(" ")[0])
+      || people.find((p: any) => t.includes(norm(p.name).split(" ")[0]));
+  };
+
+  let added = 0, skipped = 0, unmatched = 0;
+  for (const it of items) {
+    const { data: ex } = await sb.from("meeting_action_items").select("id").eq("week_date", it.date).eq("raw_text", it.text).limit(1);
+    if (ex && ex.length) { skipped++; continue; }
+    const p = find(it.person);
+    if (!p) unmatched++;
+    const { error } = await sb.from("meeting_action_items").insert({
+      week_date: it.date, raw_text: it.text,
+      suggested_person_id: p ? p.id : null, suggested_person_name: p ? p.name : it.person,
+      status: "pending", source,
+    });
+    if (!error) added++;
+  }
+  // Toplantı notları: ilgili günün ilk görüşme kaydı boşsa doküman notlarını yaz
+  let notesWritten = 0;
+  for (const [d, txt] of Object.entries(notesByDate)) {
+    if (!keep(d)) continue;
+    const text = txt.replace(/\n{3,}/g, "\n\n").trim().slice(0, 12000);
+    if (text.length < 20) continue;
+    const { data: ex } = await sb.from("meeting_records").select("action_text").eq("week_date", d).eq("track_id", "other_side").limit(1);
+    if (ex && ex.length && ex[0].action_text) continue;
+    const { error } = await sb.from("meeting_records").upsert({ week_date: d, track_id: "other_side", action_text: text, updated_by: "Drive senkron" }, { onConflict: "week_date,track_id" });
+    if (!error) notesWritten++;
+  }
+  return { found: items.length, added, skipped, unmatched, notesWritten };
+}
+
+// POST gövdesi (hepsi isteğe bağlı): { date: "YYYY-MM-DD" } yalnızca o günü çeker (manuel, maddeler onay bekler),
+// { url: "..." } yalnızca o kaynağı kullanır. Boş gövde = Cuma otomatik çalışması (meeting_sources tablosundaki tüm aktif kaynaklar).
 Deno.serve(async (req) => {
   try {
-    const url = Deno.env.get("MEETING_NOTES_URL") || "https://docs.google.com/document/d/1j7LOlgUqwCC1Of001aciPP8Z0eWIkLQa/edit";
-    if (!url) return new Response(JSON.stringify({ ok: false, error: "MEETING_NOTES_URL tanımlı değil" }), { status: 500 });
-    const res = await fetch(exportUrl(url));
-    if (!res.ok) throw new Error(`Dosya indirilemedi: ${res.status} (paylaşım ayarı 'bağlantıya sahip herkes' olmalı)`);
-    const body = await res.text();
-    const all = /^<|<html/i.test(body.trim()) ? parseHtml(body) : parseCsv(body);
-    // yalnızca son 14 günün toplantıları (eski toplantılar panele yığılmasın)
-    const minDate = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
-    const items = all.filter((i) => i.date >= minDate);
-
+    let b: any = {}; try { b = await req.json(); } catch (_) { /* boş gövde */ }
+    const onlyDate: string | null = b && b.date ? String(b.date) : null;
+    const source = onlyDate ? "drive_manual" : "drive_sync";
+    let urls: string[] = [];
+    if (b && b.url) urls = [String(b.url)];
+    else {
+      const { data: src } = await sb.from("meeting_sources").select("url").eq("active", true);
+      urls = (src || []).map((r: any) => r.url).filter(Boolean);
+      if (!urls.length) urls = [Deno.env.get("MEETING_NOTES_URL") || DEFAULT_URL];
+    }
     const { data: people } = await sb.from("people").select("id, name, active, grp").eq("active", true).neq("grp", "annotator");
-    const find = (n: string) => {
-      let t = norm(n); if (!t) return null;
-      if (t === "galata") t = "ahmet utku akbıyık"; // Zoom'da Ahmet Utku Akbıyık "Galata" olarak geçiyor
-      return (people || []).find((p: any) => norm(p.name) === t)
-        || (people || []).find((p: any) => norm(p.name).startsWith(t + " ") && t.includes(" "))
-        || (people || []).find((p: any) => norm(p.name).split(" ")[0] === t.split(" ")[0])
-        || (people || []).find((p: any) => t.includes(norm(p.name).split(" ")[0]));
-    };
-
-    let added = 0, skipped = 0, unmatched = 0;
-    for (const it of items) {
-      const { data: ex } = await sb.from("meeting_action_items").select("id").eq("week_date", it.date).eq("raw_text", it.text).limit(1);
-      if (ex && ex.length) { skipped++; continue; }
-      const p = find(it.person);
-      if (!p) unmatched++;
-      const { error } = await sb.from("meeting_action_items").insert({
-        week_date: it.date, raw_text: it.text,
-        suggested_person_id: p ? p.id : null, suggested_person_name: p ? p.name : it.person,
-        status: "pending", source: "drive_sync",
-      });
-      if (!error) added++;
+    const total = { found: 0, added: 0, skipped: 0, unmatched: 0, notesWritten: 0 };
+    const errors: string[] = [];
+    for (const u of urls) {
+      try {
+        const r = await processSource(u, onlyDate, source, people || []);
+        (Object.keys(total) as (keyof typeof total)[]).forEach((k) => { total[k] += r[k]; });
+      } catch (e) { errors.push(String(e)); }
     }
-    // Toplantı notları: ilgili günün ilk görüşme kaydı boşsa doküman notlarını yaz
-    let notesWritten = 0;
-    for (const [d, txt] of Object.entries(notesByDate)) {
-      if (d < minDate) continue;
-      const text = txt.replace(/\n{3,}/g, "\n\n").trim().slice(0, 12000);
-      if (text.length < 20) continue;
-      const { data: ex } = await sb.from("meeting_records").select("action_text").eq("week_date", d).eq("track_id", "other_side").limit(1);
-      if (ex && ex.length && ex[0].action_text) continue;
-      const { error } = await sb.from("meeting_records").upsert({ week_date: d, track_id: "other_side", action_text: text, updated_by: "Drive senkron" }, { onConflict: "week_date,track_id" });
-      if (!error) notesWritten++;
-    }
-    return new Response(JSON.stringify({ ok: true, found: items.length, added, skipped, unmatched, notesWritten }), { headers: { "content-type": "application/json" } });
+    return new Response(JSON.stringify({ ok: errors.length < urls.length, sources: urls.length, ...total, errors }), { headers: { "content-type": "application/json" } });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false, error: String(e) }), { status: 500 });
   }

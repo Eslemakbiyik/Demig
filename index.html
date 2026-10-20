@@ -715,20 +715,40 @@
       <div id="mtgImportModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onclick="if(event.target===this)closeMeetingModal('mtgImportModal')">
         <div class="glass rounded-2xl w-full max-w-xl border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
           <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800">
-            <h3 class="text-sm font-bold text-slate-100">Toplantı To-Do Listesini İçe Aktar</h3>
+            <h3 class="text-sm font-bold text-slate-100">Toplantı To-Do'larını İçe Aktar</h3>
             <button onclick="closeMeetingModal('mtgImportModal')" class="text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
           </div>
-          <div class="p-5 space-y-3">
-            <p class="text-[11px] text-slate-400"><b class="text-slate-200">Zoom toplantı notu / transkript Word (.docx) dosyasını yükleyin</b>: her günün altındaki to-do tablosu (Kim | Görev) okunur, tarihleri ve kişileri otomatik eşleşir. İsterseniz metni yapıştırın ya da .txt/.csv/.md yükleyin ("Ad: görev", "görev - Ad", "@Ad"). Maddeler "Onay Bekleyen" sekmesine düşer.</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <select id="driveImportWeekSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
-              <input type="file" id="driveImportFile" accept=".docx,.txt,.csv,.md,.tsv" onchange="handleDriveImportFile(event)" class="w-full text-[11px] text-slate-400 file:mr-2 file:px-2.5 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200">
+          <div class="p-5 space-y-4">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Toplantı tarihi</label>
+              <select id="driveImportWeekSelect" onchange="applyDocxFilter()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
+              <p class="text-[10px] text-slate-500 mt-1">Aşağıdaki kaynaklardan ya da yüklenen dosyadan yalnızca bu tarihe ait to-do'lar alınır.</p>
             </div>
-            <textarea id="driveImportText" rows="6" placeholder="- Selim: Reward model testlerini tamamla&#10;- Anket taslağını gözden geçir (Ayşenur)&#10;..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100"></textarea>
-            <div class="flex items-center gap-2">
-              <button onclick="importDriveTodos()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Maddeleri İçe Aktar</button>
-              <span id="driveImportStatus" class="text-[11px] text-slate-400"></span>
+            <div class="rounded-xl border border-slate-800 p-3 space-y-2">
+              <div class="flex items-center justify-between"><span class="text-[11px] font-bold text-slate-200">Drive kaynakları</span><span class="text-[10px] text-slate-500">Her Cuma 09:00'da otomatik çekilir</span></div>
+              <div id="mtgSourcesList" class="space-y-1.5"></div>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input id="mtgSrcLabel" type="text" placeholder="Ad (ör. Toplantı Notları)" class="sm:w-40 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100">
+                <input id="mtgSrcUrl" type="url" placeholder="Google Doc / Sheet linki" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100">
+                <button onclick="addMeetingSource()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-100 text-[11px] font-semibold rounded-lg border border-slate-700">Ekle</button>
+              </div>
+              <div class="flex items-center gap-2 pt-1">
+                <button id="mtgSyncBtn" onclick="syncSelectedDate()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Seçili tarihi şimdi çek</button>
+                <span id="mtgSyncStatus" class="text-[11px] text-slate-400"></span>
+              </div>
+              <p class="text-[10px] text-slate-500">Linkin paylaşım ayarı "bağlantıya sahip herkes görüntüleyebilir" olmalı. Elle çekilen maddeler "Onay Bekleyen"e düşer; Cuma otomatik çekilenler eşleşen kişiye kendiliğinden atanır.</p>
             </div>
+            <details class="rounded-xl border border-slate-800 p-3">
+              <summary class="text-[11px] font-bold text-slate-200 cursor-pointer">Dosya yükle veya metin yapıştır</summary>
+              <div class="space-y-2 mt-3">
+                <input type="file" id="driveImportFile" accept=".docx,.txt,.csv,.md,.tsv" onchange="handleDriveImportFile(event)" class="w-full text-[11px] text-slate-400 file:mr-2 file:px-2.5 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200">
+                <textarea id="driveImportText" rows="5" placeholder="- Selim: Reward model testlerini tamamla&#10;- Anket taslağını gözden geçir (Ayşenur)&#10;..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100"></textarea>
+                <div class="flex items-center gap-2">
+                  <button onclick="importDriveTodos()" class="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-100 text-[11px] font-semibold rounded-lg border border-slate-700">Maddeleri İçe Aktar</button>
+                  <span id="driveImportStatus" class="text-[11px] text-slate-400"></span>
+                </div>
+              </div>
+            </details>
           </div>
         </div>
       </div>
@@ -2139,7 +2159,18 @@ async function confirmPersonGroup(date, pid) {
 // ---------------------------------------------------------------------
 // Drive'daki Zoom AI to-do listesini içe aktarma
 // ---------------------------------------------------------------------
-let docxImportItems = null;
+let docxImportItems = null, docxParsedAll = null;
+function applyDocxFilter() {
+  if (!docxParsedAll) return;
+  const st = document.getElementById('driveImportStatus');
+  const sel = document.getElementById('driveImportWeekSelect').value;
+  const items = docxParsedAll.filter(i => i.date === sel);
+  docxImportItems = items;
+  const matched = items.filter(i => driveFindPerson(i.person)).length;
+  document.getElementById('driveImportText').value = items.map(i => `${i.person}: ${i.text}`).join('\n');
+  const others = docxParsedAll.length - items.length;
+  st.textContent = items.length ? `${formatMeetingDate(sel)}: ${items.length} madde (${matched} tanesi kişiyle eşleşti)` + (others ? `; diğer tarihlerdeki ${others} madde atlandı` : '') + '. "Maddeleri İçe Aktar"a basın.' : (docxParsedAll.length ? `Dosyada ${formatMeetingDate(sel)} tarihine ait madde yok (dosyada ${new Set(docxParsedAll.map(i => i.date)).size} farklı gün var).` : 'Dosyada to-do tablosu bulunamadı.');
+}
 function driveNormName(x) { return x.toLocaleLowerCase('tr-TR').replace(/[^a-zçğıöşü0-9 ]/gi, ' ').replace(/\s+/g, ' ').trim(); }
 function driveFindPerson(txt) {
   const people = registeredPeople.filter(isAssignable);
@@ -2198,29 +2229,62 @@ function parseDocxTodoHtml(html, fallbackDate) {
 }
 async function handleDocxImport(f) {
   const st = document.getElementById('driveImportStatus');
-  docxImportItems = null;
+  docxImportItems = null; docxParsedAll = null;
   if (!window.mammoth) { st.textContent = 'Word okuyucu yüklenemedi, sayfayı yenileyin.'; return; }
   st.textContent = 'Word dosyası okunuyor…';
   try {
     const buf = await f.arrayBuffer();
     const res = await mammoth.convertToHtml({ arrayBuffer: buf });
     const fb = document.getElementById('driveImportWeekSelect').value;
-    const parsed = parseDocxTodoHtml(res.value, fb);
-    const valid = new Set(MEETING_WEEKS.map(w => w.date));   // yalnızca listedeki toplantı tarihleri
-    const items = parsed.filter(i => valid.has(i.date));
-    const skippedN = parsed.length - items.length;
-    docxImportItems = items;
-    const days = new Set(items.map(i => i.date)).size;
-    const matched = items.filter(i => driveFindPerson(i.person)).length;
-    document.getElementById('driveImportText').value = items.map(i => `[${i.date}] ${i.person}: ${i.text}`).join('\n');
-    st.textContent = items.length ? `${items.length} madde, ${days} gün bulundu (${matched} tanesi kişiyle eşleşti)` + (skippedN ? `; listede olmayan tarihlerdeki ${skippedN} madde atlandı` : '') + '. "Maddeleri İçe Aktar"a basın.' : (parsed.length ? `Dosyadaki ${parsed.length} madde toplantı listesindeki tarihlerle eşleşmedi.` : 'Dosyada to-do tablosu bulunamadı.');
+    docxParsedAll = parseDocxTodoHtml(res.value, fb);
+    applyDocxFilter();
   } catch (e) { console.error(e); st.textContent = 'Word dosyası okunamadı: ' + e.message; }
 }
+// ---- Drive kaynakları (meeting_sources) ve manuel çekim
+let meetingSources = [];
+async function loadMeetingSources() {
+  const box = document.getElementById('mtgSourcesList'); if (!box) return;
+  if (!supabaseClient) { box.innerHTML = ''; return; }
+  const { data, error } = await supabaseClient.from('meeting_sources').select('*').order('created_at', { ascending: true });
+  if (error) { box.innerHTML = '<div class="text-[11px] text-amber-400">Kaynak tablosu bulunamadı: meeting_sources.sql dosyasını Supabase SQL Editor\'de çalıştırın.</div>'; meetingSources = []; return; }
+  meetingSources = data || [];
+  box.innerHTML = meetingSources.length ? meetingSources.map(r => `<div class="flex items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-lg px-2.5 py-1.5">
+      <input type="checkbox" ${r.active ? 'checked' : ''} onchange="toggleMeetingSource('${r.id}', this.checked)" title="Cuma otomatik çekimine dahil">
+      <div class="flex-1 min-w-0"><div class="text-[11px] font-semibold text-slate-100 truncate">${escHtml(r.label || 'Kaynak')}</div><a href="${escHtml(r.url)}" target="_blank" rel="noopener" class="text-[10px] text-indigo-400 truncate block">${escHtml(r.url)}</a></div>
+      <button onclick="removeMeetingSource('${r.id}')" title="Kaynağı sil" class="text-red-400 hover:text-red-300 text-[11px] font-bold px-1">✕</button></div>`).join('') : '<div class="text-[11px] text-slate-500">Henüz kaynak yok. Aşağıdan bir Google Doc linki ekleyin.</div>';
+}
+async function addMeetingSource() {
+  const url = document.getElementById('mtgSrcUrl').value.trim(), label = document.getElementById('mtgSrcLabel').value.trim();
+  const st = document.getElementById('mtgSyncStatus');
+  if (!/^https?:\/\/docs\.google\.com\/(document|spreadsheets)\/d\//.test(url)) { st.textContent = 'Geçerli bir Google Doc / Sheet linki girin.'; return; }
+  const { error } = await supabaseClient.from('meeting_sources').insert({ url, label: label || 'Kaynak', active: true });
+  if (error) { st.textContent = error.code === '23505' ? 'Bu link zaten ekli.' : 'Eklenemedi: ' + error.message; return; }
+  document.getElementById('mtgSrcUrl').value = ''; document.getElementById('mtgSrcLabel').value = ''; st.textContent = 'Kaynak eklendi.';
+  loadMeetingSources();
+}
+async function removeMeetingSource(id) { if (!confirm('Bu kaynak silinsin mi?')) return; await supabaseClient.from('meeting_sources').delete().eq('id', id); loadMeetingSources(); }
+async function toggleMeetingSource(id, on) { await supabaseClient.from('meeting_sources').update({ active: on }).eq('id', id); }
+async function syncSelectedDate() {
+  const st = document.getElementById('mtgSyncStatus'), btn = document.getElementById('mtgSyncBtn');
+  const date = document.getElementById('driveImportWeekSelect').value;
+  if (!supabaseClient) { st.textContent = 'Sunucu bağlantısı yok.'; return; }
+  btn.disabled = true; st.textContent = 'Kaynaklar okunuyor…';
+  try {
+    const { data, error } = await supabaseClient.functions.invoke('sync-drive-todos', { body: { date, manual: true } });
+    if (error) throw error;
+    if (!data || data.ok === false) throw new Error((data && (data.errors && data.errors[0] || data.error)) || 'Bilinmeyen hata');
+    st.textContent = data.found ? `${formatMeetingDate(date)}: ${data.added} yeni madde eklendi, ${data.skipped} zaten kayıtlıydı, ${data.unmatched} kişi eşleşmedi` + (data.notesWritten ? '; toplantı notu yazıldı' : '') + '.' : `Kaynaklarda ${formatMeetingDate(date)} tarihine ait to-do bulunamadı.`;
+    await refreshMeetingTodoViews();
+    await loadMeetingRecords(); renderMtg();
+  } catch (e) { console.error(e); st.textContent = 'Çekilemedi: ' + (e.message || e); }
+  finally { btn.disabled = false; }
+}
+
 function handleDriveImportFile(ev) {
   const f = ev.target.files && ev.target.files[0];
   if (!f) return;
   if (/\.docx$/i.test(f.name)) { handleDocxImport(f); return; }
-  docxImportItems = null;
+  docxImportItems = null; docxParsedAll = null;
   const r = new FileReader();
   r.onload = () => { document.getElementById('driveImportText').value = String(r.result || ''); };
   r.readAsText(f);
@@ -2276,7 +2340,7 @@ async function importDriveTodos() {
   st.textContent = `${rows.length} madde eklendi (${rows.filter(r => r.suggested_person_id).length} tanesi kişiyle eşleşti). Aşağıdaki panelden onaylayıp atayın.`;
   document.getElementById('driveImportText').value = '';
   document.getElementById('driveImportFile').value = '';
-  docxImportItems = null;
+  docxImportItems = null; docxParsedAll = null;
   await renderPendingActionItemsPanel();
 }
 
@@ -4696,7 +4760,7 @@ const mtgState = { sel: null, sub: 'notes', track: null, tab: 'meetings', filter
 const MTG_PAGE_SIZE = 12;
 const TAB_ON = 'bg-indigo-600 text-white', TAB_OFF = 'text-slate-300 hover:bg-slate-800';
 
-function openMeetingModal(id) { document.getElementById(id).classList.remove('hidden'); if (id === 'mtgImportModal') populateMeetingUploadWeekSelect(); if (window.lucide) lucide.createIcons(); }
+function openMeetingModal(id) { document.getElementById(id).classList.remove('hidden'); if (id === 'mtgImportModal') { populateMeetingUploadWeekSelect(); loadMeetingSources(); } if (window.lucide) lucide.createIcons(); }
 function closeMeetingModal(id) { document.getElementById(id).classList.add('hidden'); }
 
 function mtgWeekday(iso, long) { return new Date(iso + 'T12:00:00').toLocaleDateString('tr-TR', { weekday: long ? 'long' : 'short' }); }
