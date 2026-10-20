@@ -101,6 +101,27 @@
 </head>
 <body class="min-h-screen flex bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
 
+<div id="addPersonModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onclick="if(event.target===this)closeAddPerson()">
+  <div class="glass p-6 rounded-2xl w-full max-w-md border border-slate-700 shadow-2xl space-y-3">
+    <h3 class="text-sm font-bold text-slate-100">Projeye Kişi Ekle</h3>
+    <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Ad Soyad</label><input id="apName" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100"></div>
+    <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Unvan / Rol</label><input id="apRole" type="text" placeholder="ör. Researcher" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100"></div>
+    <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">E-posta</label><input id="apEmail" type="email" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100"></div>
+    <div class="grid grid-cols-2 gap-3">
+      <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Grup</label>
+        <select id="apGroup" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"><option value="main">Ana Proje Ekibi</option><option value="service">Hizmet Alımı (Hukuk &amp; Yazılım)</option><option value="annotator">Etiketleme (Anotatör)</option></select></div>
+      <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Başlangıç</label><input id="apStart" type="date" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></div>
+    </div>
+    <label class="flex items-center gap-2 text-[11px] text-slate-300"><input id="apLogin" type="checkbox" checked> Sisteme giriş yetkisi olsun (görev atanabilir, sohbet edebilir)</label>
+    <p class="text-[10px] text-slate-500">Giriş yetkisi verirseniz kişi, ekip koduyla "İlk Kez Giriş" yaparak hesabını oluşturur.</p>
+    <p id="apMsg" class="text-xs"></p>
+    <div class="flex justify-end space-x-3 pt-2 border-t border-slate-800">
+      <button onclick="closeAddPerson()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg">İptal</button>
+      <button onclick="saveNewPerson()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg">Ekle</button>
+    </div>
+  </div>
+</div>
+
 <div id="chgPwModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
   <div class="glass p-6 rounded-2xl w-full max-w-sm border border-slate-700 shadow-2xl space-y-3">
     <h3 class="text-sm font-bold text-slate-100">Şifre Değiştir</h3>
@@ -447,6 +468,7 @@
           <p class="text-xs text-slate-400 mt-1">Her kişinin yanındaki ON/OFF düğmesi çalışma durumunu belirler. OFF olan kişilere görev atanamaz, sohbette mesaj gönderilemez ve sisteme giriş yapamaz. Durum değişiklikleri tarihleriyle kaydedilir.</p>
         </div>
         <div class="flex gap-2 shrink-0">
+          <button onclick="openAddPerson()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg flex items-center space-x-1"><i data-lucide="user-plus" class="w-4 h-4"></i><span>Kişi Ekle</span></button>
           <button onclick="openStatusHistory()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-semibold rounded-lg border border-slate-700 flex items-center space-x-1"><i data-lucide="history" class="w-4 h-4"></i><span>Durum Geçmişi</span></button>
           <button onclick="exportPeopleExcel()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg flex items-center space-x-1"><i data-lucide="download" class="w-4 h-4"></i><span>Excel'e Aktar</span></button>
         </div>
@@ -2779,6 +2801,37 @@ function savePeople() {
   localStorage.setItem('demigproject_people_v6', JSON.stringify(registeredPeople));
 }
 
+function openAddPerson() {
+  ['apName', 'apRole', 'apEmail'].forEach(i => { document.getElementById(i).value = ''; });
+  document.getElementById('apStart').value = todayIso();
+  document.getElementById('apGroup').value = 'main'; document.getElementById('apLogin').checked = true;
+  document.getElementById('apMsg').innerText = '';
+  document.getElementById('addPersonModal').classList.remove('hidden');
+}
+function closeAddPerson() { document.getElementById('addPersonModal').classList.add('hidden'); }
+async function saveNewPerson() {
+  const msg = document.getElementById('apMsg');
+  const say = (t, ok) => { msg.innerText = t; msg.className = 'text-xs ' + (ok ? 'text-emerald-500' : 'text-red-400'); };
+  const name = document.getElementById('apName').value.trim(), role = document.getElementById('apRole').value.trim();
+  const email = document.getElementById('apEmail').value.trim(), grp = document.getElementById('apGroup').value;
+  if (!name) return say('Ad soyad gerekli.');
+  if (email && !/^\S+@\S+\.\S+$/.test(email)) return say('E-posta geçerli değil.');
+  if (email && registeredPeople.some(p => (p.email || '').trim().toLowerCase() === email.toLowerCase())) return say('Bu e-posta başka bir kişide kayıtlı.');
+  const nums = registeredPeople.map(p => { const m = /^p(\d+)$/.exec(p.id); return m ? parseInt(m[1], 10) : 0; });
+  const person = { id: 'p' + (Math.max(0, ...nums) + 1), name, role, dept: null, email, isPure: grp === 'annotator', active: true, grp,
+    canLogin: document.getElementById('apLogin').checked && !!email, startDate: document.getElementById('apStart').value || '', endDate: '', endReason: '' };
+  if (supabaseClient) {
+    const { error } = await supabaseClient.from('people').insert(personToRow(person));
+    if (error) return say('Eklenemedi: ' + error.message);
+  }
+  registeredPeople.push(person);
+  if (!supabaseClient) savePeople();
+  closeAddPerson();
+  renderAll();
+  if (typeof populateChatPersonList === 'function') populateChatPersonList();
+  showMiniToast(`${name} projeye eklendi.`);
+}
+
 async function updatePersonEmail(id, newEmail) {
   const p = registeredPeople.find(x => x.id === id);
   if (!p) return;
@@ -3451,7 +3504,8 @@ function renderWeeklyOverviewTable() {
     else if (fs && r.w.status !== fs) return false;
     return true;
   });
-  rows.sort((a, b) => (a.w.status === 'Tamamlandı') - (b.w.status === 'Tamamlandı') || priorityWeight(b.w.priority) - priorityWeight(a.w.priority));
+  const rowDate = r => r.kind === 'm' ? r.m.week_date : (r.w.meetingDate || '');
+  rows.sort((a, b) => (a.w.status === 'Tamamlandı') - (b.w.status === 'Tamamlandı') || priorityWeight(b.w.priority) - priorityWeight(a.w.priority) || String(rowDate(b)).localeCompare(String(rowDate(a))));
   const sum = document.getElementById('weeklyOverviewSummary');
   if (sum) sum.innerText = `${total} görev maddesi · ${doneAll} tamamlandı · ${total - doneAll} açık` + (rows.length !== total ? ` · filtrede ${rows.length}` : '');
 
@@ -3472,7 +3526,7 @@ function renderWeeklyOverviewTable() {
     tr.innerHTML = `
       <td class="p-1.5">${personCell}</td>
       <td class="p-1.5 text-slate-300 truncate max-w-[160px]" title="${escapeHtml(t.name)}">${escapeHtml(t.name)}</td>
-      <td class="p-1.5 text-slate-300 max-w-[320px]" title="${escapeHtml(w.text || '')}"><div class="line-clamp-2 ${done ? 'line-through' : ''}">${escapeHtml(w.text) || '-'}</div></td>
+      <td class="p-1.5 text-slate-300 max-w-[320px]" title="${escapeHtml(w.text || '')}"><div class="line-clamp-2 ${done ? 'line-through' : ''}">${(kind === 'm' || w.meetingDate) ? `<span class="inline-block mr-1 px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 text-[9px] font-bold align-middle whitespace-nowrap" title="Toplantıdan geldi">🗓 ${escapeHtml(formatMeetingDate(kind === 'm' ? m.week_date : w.meetingDate))}</span>` : ''}${escapeHtml(w.text) || '-'}</div></td>
       <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold border whitespace-nowrap ${priorityBadgeClass(w.priority)}">${w.priority}</span></td>
       <td class="p-1.5"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold border whitespace-nowrap ${statusBadgeClass(w.status)}">${w.status}</span></td>
       <td class="p-1.5 font-mono text-[10px] text-slate-400 whitespace-nowrap">${w.startDate || '?'} → ${w.endDate || '?'}</td>
