@@ -17,36 +17,22 @@
     theme: {
       extend: {
         colors: {
-          slate: {
-            50:  '#121722',
-            100: '#1C2433',
-            200: '#2A3447',
-            300: '#424F66',
-            400: '#5B6678',
-            500: '#7C8698',
-            600: '#9FA8B6',
-            700: '#C3C9D2',
-            800: '#E3E6EA',
-            900: '#F1F2F5',
-            950: '#F8F9FB'
-          },
-          indigo: { // DEMIG lacivert — ana vurgu
-            300: '#8CA0C4',
-            400: '#5D7AAB',
-            500: '#2F5088',
-            600: '#1E3A66',
-            700: '#162C4E'
-          },
-          amber: { // DEMIG altın — ikincil vurgu
-            300: '#E3C878',
-            400: '#D4B155',
-            500: '#B8943A',
-            600: '#96762C'
-          }
+          slate: { 50: 'rgb(var(--slate-50) / <alpha-value>)', 100: 'rgb(var(--slate-100) / <alpha-value>)', 200: 'rgb(var(--slate-200) / <alpha-value>)', 300: 'rgb(var(--slate-300) / <alpha-value>)', 400: 'rgb(var(--slate-400) / <alpha-value>)', 500: 'rgb(var(--slate-500) / <alpha-value>)', 600: 'rgb(var(--slate-600) / <alpha-value>)', 700: 'rgb(var(--slate-700) / <alpha-value>)', 800: 'rgb(var(--slate-800) / <alpha-value>)', 900: 'rgb(var(--slate-900) / <alpha-value>)', 950: 'rgb(var(--slate-950) / <alpha-value>)' },
+          indigo: { 300: 'rgb(var(--indigo-300) / <alpha-value>)', 400: 'rgb(var(--indigo-400) / <alpha-value>)', 500: 'rgb(var(--indigo-500) / <alpha-value>)', 600: 'rgb(var(--indigo-600) / <alpha-value>)', 700: 'rgb(var(--indigo-700) / <alpha-value>)' },
+          amber: { 300: 'rgb(var(--amber-300) / <alpha-value>)', 400: 'rgb(var(--amber-400) / <alpha-value>)', 500: 'rgb(var(--amber-500) / <alpha-value>)', 600: 'rgb(var(--amber-600) / <alpha-value>)' }
         }
       }
     }
   };
+</script>
+<script>
+  (function () {
+    try {
+      var pref = localStorage.getItem('demig_theme') || 'light';
+      var dark = pref === 'dark' || (pref === 'system' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+      if (dark) document.documentElement.classList.add('dark');
+    } catch (e) {}
+  })();
 </script>
 <script src="https://unpkg.com/lucide@latest" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
@@ -56,20 +42,25 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-  body { font-family: 'Inter', sans-serif; background-color: #F8F9FB; color: #1C2433; }
+  :root { --slate-50: 18 23 34; --slate-100: 28 36 51; --slate-200: 42 52 71; --slate-300: 66 79 102; --slate-400: 91 102 120; --slate-500: 124 134 152; --slate-600: 159 168 182; --slate-700: 195 201 210; --slate-800: 227 230 234; --slate-900: 241 242 245; --slate-950: 248 249 251; --indigo-300: 140 160 196; --indigo-400: 93 122 171; --indigo-500: 47 80 136; --indigo-600: 30 58 102; --indigo-700: 22 44 78; --amber-300: 227 200 120; --amber-400: 212 177 85; --amber-500: 184 148 58; --amber-600: 150 118 44; color-scheme: light; }
+  html.dark { --slate-50: 244 246 249; --slate-100: 230 233 239; --slate-200: 201 208 219; --slate-300: 169 179 196; --slate-400: 139 150 171; --slate-500: 107 119 143; --slate-600: 74 86 112; --slate-700: 43 53 72; --slate-800: 30 38 52; --slate-900: 21 27 38; --slate-950: 14 18 25; --indigo-300: 169 190 227; --indigo-400: 134 163 214; --indigo-500: 91 127 192; --indigo-600: 63 102 174; --indigo-700: 47 82 143; --amber-300: 227 200 120; --amber-400: 212 177 85; --amber-500: 201 164 68; --amber-600: 184 148 58; color-scheme: dark; }
+  body { font-family: 'Inter', sans-serif; background-color: rgb(var(--slate-950)); color: rgb(var(--slate-100)); }
   .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(14px); border: 1px solid rgba(28, 36, 51, 0.08); }
   .glass-card { background: rgba(241, 242, 245, 0.75); border: 1px solid rgba(28, 36, 51, 0.08); }
+  html.dark .glass { background: rgba(21, 27, 38, 0.88); border-color: rgba(255, 255, 255, 0.08); }
+  html.dark .glass-card { background: rgba(30, 38, 52, 0.75); border-color: rgba(255, 255, 255, 0.08); }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: #F1F2F5; }
-  ::-webkit-scrollbar-thumb { background: #C3C9D2; border-radius: 4px; }
-  .editable-input:focus { outline: 2px solid #1E3A66; background: #E3E6EA; color: #1C2433; }
+  ::-webkit-scrollbar-track { background: rgb(var(--slate-900)); }
+  ::-webkit-scrollbar-thumb { background: rgb(var(--slate-700)); border-radius: 4px; }
+  .editable-input:focus { outline: 2px solid rgb(var(--indigo-600)); background: rgb(var(--slate-800)); color: rgb(var(--slate-100)); }
+  #chatDock { transition: height .22s ease; }
   /* Tailwind CDN bazen "flex/grid" sınıflarını "hidden" sınıfından sonra üretip onu geçersiz
      kılabiliyor; bu kural "hidden" sınıfının HER ZAMAN kazanmasını garanti eder. */
   .hidden { display: none !important; }
   /* Ayni sebeple (Tailwind CDN'nin siniflari calisma zamaninda uretme sirasi) "fixed" konumlandirma
      bazen uygulanmayabiliyor; tam ekran modallarin her zaman gercekten sabit kalmasini garanti eder. */
   #authModal, #loadingScreen, #sidebarBackdrop, #aiReportModal, #taskModal, #weeklyTodoModal,
-  #tourWelcomeModal, #tourLayer { position: fixed !important; }
+  #tourWelcomeModal, #tourLayer, #chatDock { position: fixed !important; }
   /* ---- Rapor (A4 kağıt görünümü) ---- */
   #aiReportContainer.rpt { background:#fff !important; color:#1C2433 !important; border:1px solid #C3C9D2; padding:0 !important; font-family: Georgia, 'Times New Roman', serif; }
   .rpt .rpt-page { padding: 14mm 14mm 10mm; }
@@ -253,6 +244,9 @@
         <button onclick="switchTab('meetings')" id="tab-meetings" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
           <i data-lucide="calendar-clock" class="w-4 h-4"></i><span data-i18n="nav_meetings">Toplantı Takvimi</span>
         </button>
+        <button onclick="switchTab('settings')" id="tab-settings" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
+          <i data-lucide="settings" class="w-4 h-4"></i><span data-i18n="nav_settings">Ayarlar</span>
+        </button>
         <a href="finans.html" class="w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition">
           <i data-lucide="wallet" class="w-4 h-4"></i><span data-i18n="nav_finance">Finans & Talepler</span>
         </a>
@@ -266,7 +260,7 @@
           <div id="currentUserDisplay" class="text-xs font-semibold text-slate-100 truncate">...</div>
           <div id="currentEmailDisplay" class="text-[10px] text-slate-400 truncate">...</div>
         </div>
-        <button onclick="openChangePassword()" title="Şifre değiştir" class="p-1.5 text-slate-400 hover:text-slate-100 shrink-0"><i data-lucide="key-round" class="w-4 h-4"></i></button>
+        <button onclick="switchTab('settings')" title="Ayarlar" class="p-1.5 text-slate-400 hover:text-slate-100 shrink-0"><i data-lucide="settings" class="w-4 h-4"></i></button>
       <button onclick="logout()" id="logoutIconBtn" data-i18n-title="sidebar_logout_short" title="Çıkış Yap" class="p-1.5 text-slate-500 hover:text-red-500 bg-slate-900 rounded-lg hover:bg-slate-700 transition shrink-0">
           <i data-lucide="log-out" class="w-4 h-4"></i>
         </button>
@@ -283,6 +277,24 @@
 
     </div>
   </aside>
+
+  <div id="chatDock" class="fixed bottom-0 right-3 sm:right-6 z-[35] w-[calc(100vw-1.5rem)] sm:w-[380px] flex flex-col rounded-t-2xl border border-slate-800 border-b-0 shadow-2xl bg-slate-900 overflow-hidden" style="height:44px">
+    <div id="chatDockHeader" onclick="toggleChatDock()" role="button" class="h-11 shrink-0 px-4 flex items-center gap-2 bg-indigo-600 text-white text-xs font-semibold cursor-pointer select-none">
+      <i data-lucide="message-circle" class="w-4 h-4 shrink-0"></i>
+      <div id="chatHeaderLabel" class="flex items-center gap-1.5 flex-1 min-w-0 truncate"></div>
+      <span id="chatDockBadge" class="hidden bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[20px] h-5 px-1 flex items-center justify-center"></span>
+      <button onclick="event.stopPropagation();loadChatMessages()" title="Yenile" class="p-1 text-white/80 hover:text-white"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+      <i id="chatDockChevron" data-lucide="chevron-up" class="w-4 h-4 shrink-0"></i>
+    </div>
+    <div class="px-3 py-2 border-b border-slate-800 shrink-0">
+      <select id="chatTargetSelect" onchange="selectChatTarget(this.value === '__group' ? null : this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-slate-100"></select>
+    </div>
+    <div id="chatMessagesContainer" class="flex-1 min-h-0 overflow-y-auto p-3 space-y-3"></div>
+    <form onsubmit="sendChatMessage(event)" class="flex items-center space-x-2 p-3 border-t border-slate-800 shrink-0">
+      <input type="text" id="chatInput" required data-i18n-placeholder="chat_input_placeholder" placeholder="Bir mesaj yazın..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
+      <button type="submit" class="p-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shrink-0"><i data-lucide="send" class="w-4 h-4"></i></button>
+    </form>
+  </div>
 
   <div id="sidebarBackdrop" onclick="closeSidebar()" class="hidden fixed inset-0 bg-black/60 z-30 md:hidden"></div>
 
@@ -554,65 +566,116 @@
       </div>
     </section>
 
-    <section id="view-chat" class="hidden space-y-6">
-      <div class="glass p-6 rounded-2xl shadow-xl flex items-center justify-between">
-        <div>
-          <h2 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
-            <i data-lucide="message-circle" class="w-5 h-5 text-indigo-400"></i><span data-i18n="chat_title">Ekip Sohbeti</span>
-          </h2>
-          <p class="text-xs text-slate-400 mt-1" data-i18n="chat_subtitle">Ekip arkadaşlarınızla ortak sohbet alanı veya birebir özel mesajlaşma.</p>
-        </div>
-        <button onclick="loadChatMessages()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700" title="Yenile">
-          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-        </button>
+    <section id="view-settings" class="hidden space-y-5 max-w-2xl">
+      <div class="glass p-6 rounded-2xl shadow-xl">
+        <h2 class="text-lg font-bold text-slate-100 flex items-center space-x-2"><i data-lucide="settings" class="w-5 h-5 text-indigo-400"></i><span>Ayarlar</span></h2>
+        <p class="text-xs text-slate-400 mt-1">Profil bilgilerinizi, şifrenizi ve görünümü buradan yönetin.</p>
       </div>
-      <div class="glass rounded-2xl border border-slate-800 shadow-xl flex overflow-hidden" style="height: 65vh;">
-        <div class="w-48 md:w-56 shrink-0 border-r border-slate-800 overflow-y-auto">
-          <button onclick="selectChatTarget(null)" id="chatTargetBtn-group" class="w-full text-left px-3.5 py-3 text-xs font-semibold flex items-center space-x-2 border-b border-slate-800/60 transition">
-            <i data-lucide="users" class="w-3.5 h-3.5"></i><span data-i18n="chat_group_label">Grup Sohbeti</span>
-          </button>
-          <button onclick="selectChatTarget('FEEDBACK')" id="chatTargetBtn-feedback" class="w-full text-left px-3.5 py-3 text-xs font-semibold flex items-center space-x-2 border-b border-slate-800/60 transition text-red-300">
-            <i data-lucide="bug" class="w-3.5 h-3.5"></i><span data-i18n="chat_feedback_label">Hata Bildir / Öneri</span>
-          </button>
-          <div id="chatPersonList"></div>
+      <div class="glass p-6 rounded-2xl shadow-xl space-y-4">
+        <h3 class="text-sm font-bold text-slate-100">Profil</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Ad Soyad</label>
+            <input id="setName" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+          <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Unvan / Rol</label>
+            <input id="setRole" type="text" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500"></div>
+          <div class="sm:col-span-2"><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">E-posta (giriş adresi)</label>
+            <input id="setEmail" type="email" disabled class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-400 cursor-not-allowed"></div>
         </div>
-        <div class="flex-1 flex flex-col min-w-0">
-          <div id="chatHeaderLabel" class="px-4 py-2.5 border-b border-slate-800 text-xs font-bold text-slate-100 flex items-center space-x-1.5"></div>
-          <div id="chatMessagesContainer" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
-          <form onsubmit="sendChatMessage(event)" class="flex items-center space-x-2 p-3 border-t border-slate-800">
-            <input type="text" id="chatInput" required data-i18n-placeholder="chat_input_placeholder" placeholder="Bir mesaj yazın..." class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-indigo-500">
-            <button type="submit" class="p-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg shrink-0">
-              <i data-lucide="send" class="w-4 h-4"></i>
-            </button>
-          </form>
+        <div class="flex items-center gap-3">
+          <button onclick="saveProfile()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg">Profili Kaydet</button>
+          <span id="setProfileMsg" class="text-xs"></span>
         </div>
+      </div>
+      <div class="glass p-6 rounded-2xl shadow-xl space-y-3">
+        <h3 class="text-sm font-bold text-slate-100">Güvenlik</h3>
+        <p class="text-xs text-slate-400">Hesap şifrenizi değiştirin.</p>
+        <button onclick="openChangePassword()" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-semibold rounded-lg border border-slate-700"><i data-lucide="key-round" class="w-4 h-4"></i>Şifre Değiştir</button>
+      </div>
+      <div class="glass p-6 rounded-2xl shadow-xl space-y-3">
+        <h3 class="text-sm font-bold text-slate-100">Tema</h3>
+        <div class="flex items-center gap-2">
+          <button id="themeBtn-light" onclick="setTheme('light')" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition"><i data-lucide="sun" class="w-3.5 h-3.5"></i>Açık</button>
+          <button id="themeBtn-dark" onclick="setTheme('dark')" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition"><i data-lucide="moon" class="w-3.5 h-3.5"></i>Koyu</button>
+          <button id="themeBtn-system" onclick="setTheme('system')" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition"><i data-lucide="monitor" class="w-3.5 h-3.5"></i>Sistem</button>
+        </div>
+        <p class="text-xs text-slate-400">"Sistem" cihazınızın açık/koyu ayarını izler.</p>
       </div>
     </section>
 
-    <section id="view-meetings" class="hidden space-y-6">
-      <div class="glass p-6 rounded-2xl shadow-xl">
-        <h2 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
-          <i data-lucide="calendar-clock" class="w-5 h-5 text-indigo-400"></i><span data-i18n="meetings_title">Research Group Meeting Schedule</span>
-        </h2>
-        <p class="text-xs text-slate-400 mt-1" data-i18n="meetings_subtitle">Her Çarşamba 17:00–19:00 · 14 Ekim – 30 Aralık, Subgroup toplantılarıyla başlar.</p>
-        <div class="mt-4 flex flex-wrap items-center gap-3 text-xs">
-          <a href="https://sabanciuniv.zoom.us/j/96437394095" target="_blank" rel="noopener" class="inline-flex items-center space-x-2 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold transition">
-            <i data-lucide="video" class="w-4 h-4"></i><span data-i18n="meetings_zoom_btn">Sabit Zoom Linki</span>
-          </a>
-                  </div>
-        <div class="mt-3 flex items-start space-x-2 text-[11px] text-slate-400">
-          <i data-lucide="info" class="w-4 h-4 shrink-0 mt-0.5"></i>
-          <span data-i18n="meetings_agenda_note">Eslem, Çarşamba sabahları toplantı gündem maddelerini toplar ve o gün hangi "ihtiyaç halinde" toplantılarının yapılacağıyla birlikte ekiple paylaşır.</span>
+    <section id="view-meetings" class="hidden space-y-4">
+      <!-- Üst çubuk -->
+      <div class="glass p-4 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3">
+        <div class="min-w-0">
+          <h2 class="text-base font-bold text-slate-100 flex items-center space-x-2">
+            <i data-lucide="calendar-clock" class="w-5 h-5 text-indigo-400"></i><span>Toplantılar</span>
+          </h2>
+          <p class="text-[11px] text-slate-400 mt-0.5" data-i18n="meetings_subtitle">Her Çarşamba 17:00–19:00 · 14 Ekim – 30 Aralık, Subgroup toplantılarıyla başlar.</p>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <a href="https://sabanciuniv.zoom.us/j/96437394095" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold transition"><i data-lucide="video" class="w-3.5 h-3.5"></i>Zoom'a katıl</a>
+          <button onclick="openMeetingModal('mtgScheduleModal')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold transition"><i data-lucide="clock" class="w-3.5 h-3.5"></i>Saat planı</button>
+          <button onclick="openMeetingModal('mtgImportModal')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold transition"><i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i>To-do içe aktar</button>
         </div>
       </div>
 
-      <details open class="glass rounded-2xl shadow-xl border border-slate-800 group">
-        <summary class="cursor-pointer list-none flex items-center justify-between px-5 py-3.5">
-          <span class="text-xs font-bold text-slate-100 flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i>Haftalık Saat Planı</span>
-          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180"></i>
-        </summary>
-      <div class="border-t border-slate-800">
-        <div class="overflow-x-auto">
+      <!-- Sekmeler -->
+      <div class="inline-flex items-center gap-1 bg-slate-900/80 border border-slate-800 rounded-xl p-1 text-[11px] font-semibold">
+        <button id="mtgTabBtn-meetings" onclick="mtgSetTab('meetings')" class="px-3.5 py-1.5 rounded-lg transition">Toplantılar</button>
+        <button id="mtgTabBtn-tasks" onclick="mtgSetTab('tasks')" class="px-3.5 py-1.5 rounded-lg transition">Görev Listesi <span id="mtgTasksCount" class="ml-1 px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-200 text-[9px]"></span></button>
+        <button id="mtgTabBtn-pending" onclick="mtgSetTab('pending')" class="px-3.5 py-1.5 rounded-lg transition">Onay Bekleyen <span id="mtgPendingBadge" class="ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/25 text-amber-300 text-[9px]"></span></button>
+      </div>
+
+      <!-- 1) Toplantılar: liste + detay -->
+      <div id="mtgView-meetings" class="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4 items-start">
+        <div class="glass rounded-2xl shadow-xl overflow-hidden flex flex-col lg:h-[calc(100vh-17rem)] min-h-[420px]">
+          <div class="p-3 border-b border-slate-800 space-y-2">
+            <input id="mtgSearch" type="search" oninput="mtgState.q=this.value;renderMtgList()" placeholder="Ara: tarih, not, kişi…" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100">
+            <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg overflow-hidden text-[11px] font-semibold">
+              <button id="mtgFilterBtn-upcoming" onclick="mtgSetFilter('upcoming')" class="flex-1 px-2 py-1.5 transition">Yaklaşan</button>
+              <button id="mtgFilterBtn-past" onclick="mtgSetFilter('past')" class="flex-1 px-2 py-1.5 transition">Geçmiş</button>
+              <button id="mtgFilterBtn-all" onclick="mtgSetFilter('all')" class="flex-1 px-2 py-1.5 transition">Tümü</button>
+            </div>
+          </div>
+          <div id="mtgList" class="flex-1 overflow-y-auto"></div>
+        </div>
+        <div id="mtgDetail" class="glass rounded-2xl shadow-xl lg:h-[calc(100vh-17rem)] min-h-[420px] overflow-y-auto"></div>
+      </div>
+
+      <!-- 2) Görev listesi -->
+      <div id="mtgView-tasks" class="hidden glass rounded-2xl shadow-xl p-4 space-y-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <select id="mtgTfPerson" onchange="mtgState.tf.person=this.value;mtgState.page=0;renderMtgTasks()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-100"></select>
+          <select id="mtgTfStatus" onchange="mtgState.tf.status=this.value;mtgState.page=0;renderMtgTasks()" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-100">
+            <option value="__open">Açık görevler</option><option value="">Tümü</option><option value="Başlamadı">Başlamadı</option><option value="Devam Ediyor">Devam Ediyor</option><option value="Tamamlandı">Tamamlandı</option>
+          </select>
+          <input type="search" oninput="mtgState.tf.q=this.value;mtgState.page=0;renderMtgTasks()" placeholder="Görev ara…" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 w-44">
+          <span id="mtgTasksSummary" class="text-[11px] text-slate-400 ml-auto"></span>
+        </div>
+        <div id="mtgTasksBox"></div>
+      </div>
+
+      <!-- 3) Onay bekleyen -->
+      <div id="mtgView-pending" class="hidden glass rounded-2xl shadow-xl border border-amber-500/30 p-4">
+        <div id="meetingPendingActionsWrap">
+          <p class="text-[11px] text-slate-400 mb-3">İçe aktarılan ya da senkronla gelen maddeler burada bekler. Kişi seçip onaylarsanız aşağıdaki "Görev / Adım" altında haftalık to-do olarak açılır.</p>
+          <div class="flex items-center gap-2 flex-wrap mb-3 text-[11px] text-slate-300">
+            <label class="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Aktarılacak Görev / Adım</label>
+            <select class="target-task-select bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-100 max-w-[260px]" onchange="setPendingTargetTask(this.value)"></select>
+            <button onclick="confirmAllSuggestedActions()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold rounded-lg">Önerilen kişiyle eşleşenlerin hepsini onayla</button>
+            <span id="meetingPendingCount" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold"></span>
+          </div>
+          <div id="meetingPendingActionsContainer" class="space-y-2 max-h-[calc(100vh-20rem)] min-h-[200px] overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <!-- Saat planı penceresi -->
+      <div id="mtgScheduleModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onclick="if(event.target===this)closeMeetingModal('mtgScheduleModal')">
+        <div class="glass rounded-2xl w-full max-w-3xl border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+            <h3 class="text-sm font-bold text-slate-100">Haftalık Saat Planı</h3>
+            <button onclick="closeMeetingModal('mtgScheduleModal')" class="text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
+          </div>
+          <div class="overflow-x-auto">
           <table class="w-full text-left text-xs text-slate-300">
             <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider border-b border-slate-800">
               <tr>
@@ -643,70 +706,29 @@
             </tbody>
           </table>
         </div>
-      </div>
-      </details>
-
-      <details open class="glass rounded-2xl shadow-xl border border-slate-800 group">
-        <summary class="cursor-pointer list-none flex items-center justify-between px-5 py-3.5"><span class="text-xs font-bold text-slate-100 flex items-center gap-2"><i data-lucide="clipboard-paste" class="w-4 h-4 text-indigo-400"></i>Toplantı To-Do Listesini İçe Aktar</span><i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180"></i></summary>
-        <div class="px-5 pb-5">
-        <p class="text-[11px] text-slate-400 mb-3">Toplantı notlarındaki to-do listesinin içeriğini (Drive/Zoom AI) buraya yapıştırın veya .txt/.csv/.md olarak yükleyin. Her satır bir madde olur; "Ad: görev", "görev - Ad" ya da "@Ad" biçimindeki isimler otomatik eşleştirilir. Maddeler aşağıdaki "Onay Bekliyor" panelinde çıkar; oradan doğrudan kişiye atarsınız.</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
-          <select id="driveImportWeekSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
-          <input type="file" id="driveImportFile" accept=".txt,.csv,.md,.tsv" onchange="handleDriveImportFile(event)" class="w-full text-[11px] text-slate-400 file:mr-2 file:px-2.5 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200 file:text-[11px] file:font-semibold">
-        </div>
-        <textarea id="driveImportText" rows="4" placeholder="- Selim: Reward model testlerini tamamla&#10;- Anket taslağını gözden geçir (Ayşenur)&#10;..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 focus:outline-none focus:border-indigo-500"></textarea>
-        <div class="flex items-center gap-2 mt-2">
-          <button onclick="importDriveTodos()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Maddeleri İçe Aktar</button>
-          <span id="driveImportStatus" class="text-[11px] text-slate-400"></span>
+          <p class="px-5 py-3 text-[11px] text-slate-400 border-t border-slate-800" data-i18n="meetings_agenda_note">Eslem, Çarşamba sabahları toplantı gündem maddelerini toplar ve o gün hangi "ihtiyaç halinde" toplantılarının yapılacağıyla birlikte ekiple paylaşır.</p>
         </div>
       </div>
-      </details>
 
-      <details id="meetingPendingActionsWrap" class="hidden glass rounded-2xl shadow-xl border border-amber-500/30 group">
-        <summary class="cursor-pointer list-none flex items-center justify-between gap-2 p-5">
-          <span class="text-sm font-bold text-slate-100 flex items-center space-x-2">
-            <i data-lucide="sparkles" class="w-4 h-4 text-amber-300"></i><span data-i18n="meetings_pending_title">Toplantıdan Çıkarılan Aksiyonlar — Onay Bekliyor</span>
-            <span id="meetingPendingCount" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold"></span>
-          </span>
-          <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180"></i>
-        </summary>
-        <div class="px-5 pb-5">
-          <p class="text-[11px] text-slate-400 mb-3" data-i18n="meetings_pending_subtitle">Sorumlu kişiyi seçip onaylarsanız, o kişinin sol bardaki to-do listesine ve ilgili toplantı kartına eklenir.</p>
-          <div class="mb-2"><button onclick="confirmAllSuggestedActions()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold rounded-lg">Önerilen kişiyle eşleşenlerin hepsini onayla</button></div>
-          <div id="meetingPendingActionsContainer" class="space-y-2 max-h-[28rem] overflow-y-auto pr-1"></div>
-        </div>
-      </details>
-
-      <div id="assignedTodosMeetingsPanel"></div>
-
-      <div class="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-4 items-start">
-        <div class="glass p-4 rounded-2xl shadow-xl">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-xs font-bold text-slate-100 flex items-center space-x-1.5">
-              <i data-lucide="calendar-days" class="w-4 h-4 text-indigo-400"></i><span data-i18n="meetings_calendar_title">Toplantı Takvimi</span>
-            </h3>
-            <div class="flex items-center space-x-1">
-              <button onclick="shiftMeetingCalendarMonth(-1)" class="p-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300"><i data-lucide="chevron-left" class="w-3.5 h-3.5"></i></button>
-              <span id="meetingCalendarMonthLabel" class="text-[11px] font-semibold text-slate-200 w-[84px] text-center"></span>
-              <button onclick="shiftMeetingCalendarMonth(1)" class="p-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300"><i data-lucide="chevron-right" class="w-3.5 h-3.5"></i></button>
+      <!-- İçe aktarma penceresi -->
+      <div id="mtgImportModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onclick="if(event.target===this)closeMeetingModal('mtgImportModal')">
+        <div class="glass rounded-2xl w-full max-w-xl border border-slate-700 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-slate-800">
+            <h3 class="text-sm font-bold text-slate-100">Toplantı To-Do Listesini İçe Aktar</h3>
+            <button onclick="closeMeetingModal('mtgImportModal')" class="text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
+          </div>
+          <div class="p-5 space-y-3">
+            <p class="text-[11px] text-slate-400">Toplantı özetindeki to-do listesini yapıştırın ya da .txt/.csv/.md yükleyin. Her satır bir madde olur; "Ad: görev", "görev - Ad" veya "@Ad" biçimindeki isimler otomatik eşleşir. Maddeler "Onay Bekleyen" sekmesine düşer.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <select id="driveImportWeekSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-slate-100"></select>
+              <input type="file" id="driveImportFile" accept=".txt,.csv,.md,.tsv" onchange="handleDriveImportFile(event)" class="w-full text-[11px] text-slate-400 file:mr-2 file:px-2.5 file:py-1.5 file:rounded-lg file:border-0 file:bg-slate-800 file:text-slate-200">
+            </div>
+            <textarea id="driveImportText" rows="6" placeholder="- Selim: Reward model testlerini tamamla&#10;- Anket taslağını gözden geçir (Ayşenur)&#10;..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100"></textarea>
+            <div class="flex items-center gap-2">
+              <button onclick="importDriveTodos()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Maddeleri İçe Aktar</button>
+              <span id="driveImportStatus" class="text-[11px] text-slate-400"></span>
             </div>
           </div>
-          <div id="meetingCalendarGrid"></div>
-          <div class="mt-3 flex flex-col gap-1.5 text-[10px] text-slate-400">
-            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-indigo-400 inline-block"></span><span data-i18n="meetings_week_subgroup_badge">Subgroup Hafta</span></span>
-            <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span><span data-i18n="meetings_week_fullgroup_badge">Full Group Hafta</span></span>
-          </div>
-        </div>
-
-        <div class="space-y-3">
-          <div class="glass p-3 rounded-2xl shadow-xl flex items-center">
-            <div class="flex items-center bg-slate-800 border border-slate-700 rounded-lg overflow-hidden text-[11px] font-semibold">
-              <button onclick="setMeetingFilter('upcoming')" id="meetingFilterBtn-upcoming" class="px-3 py-1.5 transition" data-i18n="meetings_filter_upcoming">Yaklaşan</button>
-              <button onclick="setMeetingFilter('past')" id="meetingFilterBtn-past" class="px-3 py-1.5 transition" data-i18n="meetings_filter_past">Geçmiş</button>
-              <button onclick="setMeetingFilter('all')" id="meetingFilterBtn-all" class="px-3 py-1.5 transition" data-i18n="meetings_filter_all">Tümü</button>
-            </div>
-          </div>
-          <div id="meetingWeeksContainer" class="space-y-3"></div>
         </div>
       </div>
     </section>
@@ -1196,7 +1218,7 @@ const I18N = {
     tour_s8_title: "Katılım Takibi",
     tour_s8_desc: "Ekip üyelerinin siteye en son ne zaman girdiğini, kaç kez girdiğini ve hiç giriş yapmayanları buradan görürsünüz.",
     tour_s9_title: "Ekip Sohbeti",
-    tour_s9_desc: "\"Grup Sohbeti\" herkese açıktır; listeden bir isme tıklayarak o kişiyle birebir özel mesajlaşabilirsiniz. Size özel mesaj geldiğinde menüde kırmızı bir bildirim rozeti görünür.",
+    tour_s9_desc: "Sohbet, sağ altta açılıp küçültülebilen bir penceredir. \"Grup Sohbeti\" herkese açıktır; listeden bir isim seçerek o kişiyle birebir özel mesajlaşabilirsiniz. Size özel mesaj geldiğinde menüde kırmızı bir bildirim rozeti görünür.",
     tour_s10_title: "Hata Bildir / Öneri",
     tour_s10_desc: "Bir hatayla karşılaşırsanız ya da öneri/şikayetinizi iletmek isterseniz bu kanala yazın. Herkes görebilir, böylece aynı hata tekrar tekrar bildirilmez.",
     tour_s11_title: "Haftalık To-Do'larım",
@@ -1229,6 +1251,7 @@ const I18N = {
     chat_feedback_label: "Hata Bildir / Öneri",
     chat_feedback_placeholder: "Karşılaştığınız hatayı, önerinizi veya şikayetinizi yazın...",
     nav_meetings: "Toplantı Takvimi",
+    nav_settings: "Ayarlar",
     meetings_title: "Research Group Meeting Schedule",
     meetings_subtitle: "Her Çarşamba 17:00–19:00 · 14 Ekim – 30 Aralık, Subgroup toplantılarıyla başlar.",
     meetings_zoom_btn: "Sabit Zoom Linki",
@@ -1460,7 +1483,7 @@ const I18N = {
     tour_s8_title: "Attendance",
     tour_s8_desc: "See when each team member last logged in, how many times, and who has not logged in yet.",
     tour_s9_title: "Team Chat",
-    tour_s9_desc: "\"Group Chat\" is visible to everyone; click a name in the list to message that person privately. When you get a private message, a red badge appears in the menu.",
+    tour_s9_desc: "Chat is a window at the bottom right that you can open and minimize. \"Group Chat\" is visible to everyone; pick a name in the list to message that person privately. When you get a private message, a red badge appears in the menu.",
     tour_s10_title: "Report Bug / Suggest",
     tour_s10_desc: "If you run into a bug, or want to send a suggestion or complaint, write it in this channel. Everyone can see it, so the same bug is not reported again and again.",
     tour_s11_title: "My Weekly To-Dos",
@@ -1493,6 +1516,7 @@ const I18N = {
     chat_feedback_label: "Report Bug / Suggest",
     chat_feedback_placeholder: "Describe the bug, suggestion or complaint...",
     nav_meetings: "Meeting Schedule",
+    nav_settings: "Settings",
     meetings_title: "Research Group Meeting Schedule",
     meetings_subtitle: "Every Wednesday, 17:00–19:00 · October 14 – December 30, starting with subgroup meetings.",
     meetings_zoom_btn: "Standing Zoom Link",
@@ -1627,9 +1651,9 @@ const TOUR_STEPS = [
   { tab: 'attendance', placement: 'bottom', titleKey: 'tour_s8_title', descKey: 'tour_s8_desc',
     target: () => { const el = $id('attendanceTableBody'); return el ? el.closest('.glass') : null; } },
   { tab: 'chat', placement: 'right', titleKey: 'tour_s9_title', descKey: 'tour_s9_desc',
-    target: () => { const el = $id('chatPersonList'); return el ? el.parentElement : null; } },
+    target: () => $id('chatDock') },
   { tab: 'chat', placement: 'right', titleKey: 'tour_s10_title', descKey: 'tour_s10_desc',
-    target: () => $id('chatTargetBtn-feedback') },
+    target: () => $id('chatTargetSelect') },
   { inSidebar: true, placement: 'right', titleKey: 'tour_s11_title', descKey: 'tour_s11_desc',
     target: () => { const el = $id('sidebarPersonFilter'); return el ? el.parentElement : null; } },
   { inSidebar: true, placement: 'right', titleKey: 'tour_s12_title', descKey: 'tour_s12_desc',
@@ -1659,7 +1683,7 @@ function dismissTourWelcome() {
 }
 
 function getActiveTab() {
-  const tabs = ['diagrams', 'tasks', 'people', 'dashboard', 'attendance', 'chat'];
+  const tabs = ['diagrams', 'tasks', 'people', 'dashboard', 'attendance'];
   return tabs.find(t => { const v = $id('view-' + t); return v && !v.classList.contains('hidden'); }) || 'diagrams';
 }
 
@@ -2016,16 +2040,8 @@ async function flushMeetingNotify() {
 
 async function confirmMeetingActionItem(id, personId) {
   if (!supabaseClient || !personId) return;
-  const srcItem = meetingActionItemsPending.find(i => String(i.id) === String(id));
-  const { error } = await supabaseClient.from('meeting_action_items')
-    .update({ status: 'confirmed', confirmed_person_id: personId }).eq('id', id);
-  if (error) { console.error('Aksiyon onaylanamadı:', error); return; }
-  if (srcItem) queueMeetingNotify(srcItem, personId);
-  await loadPendingMeetingActionItems();
-  await loadConfirmedMeetingActionItems();
-  renderPendingActionItemsPanel();
-  renderSidebarTodos();
-  refreshMeetingTodoViews();
+  const item = meetingActionItemsPending.find(i => String(i.id) === String(id)); if (!item) return;
+  await confirmItemsBulk([{ item, pid: personId }], false);
 }
 
 async function dismissMeetingActionItem(id) {
@@ -2046,9 +2062,10 @@ async function renderPendingActionItemsPanel() {
   if (!container || !wrap) return;
   await loadPendingMeetingActionItems();
   const items = meetingActionItemsPending;
-  if (!items.length) { wrap.classList.add('hidden'); container.innerHTML = ''; return; }
-  wrap.classList.remove('hidden');
+  const pb = document.getElementById('mtgPendingBadge'); if (pb) pb.innerText = items.length || '';
+  if (!items.length) { container.innerHTML = '<div class="text-center text-[11px] text-slate-500 py-10">Onay bekleyen madde yok.</div>'; const c0 = document.getElementById('meetingPendingCount'); if (c0) c0.innerText = ''; if (typeof renderMtg === 'function') renderMtg(); return; }
   const cnt = document.getElementById('meetingPendingCount'); if (cnt) cnt.innerText = items.length;
+  populateTargetTaskSelects();
   const peopleOpts = registeredPeople.filter(isAssignable)
     .map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
 
@@ -2110,17 +2127,12 @@ async function renderPendingActionItemsPanel() {
     if (sel && item.suggested_person_id) sel.value = item.suggested_person_id;
   });
   if (window.lucide) lucide.createIcons();
+  if (typeof renderMtg === 'function') renderMtg();
 }
 
 async function confirmPersonGroup(date, pid) {
   const items = meetingActionItemsPending.filter(i => i.week_date === date && i.suggested_person_id === pid);
-  for (const i of items) {
-    const { error } = await supabaseClient.from('meeting_action_items').update({ status: 'confirmed', confirmed_person_id: pid }).eq('id', i.id);
-    if (!error) queueMeetingNotify(i, pid);
-  }
-  flushMeetingNotify();
-  await loadPendingMeetingActionItems(); await loadConfirmedMeetingActionItems();
-  refreshMeetingTodoViews();
+  await confirmItemsBulk(items.map(item => ({ item, pid })), true);
 }
 
 // ---------------------------------------------------------------------
@@ -2179,13 +2191,7 @@ async function importDriveTodos() {
 async function confirmAllSuggestedActions() {
   const items = meetingActionItemsPending.filter(i => i.suggested_person_id);
   if (!items.length) return;
-  for (const i of items) {
-    const { error } = await supabaseClient.from('meeting_action_items').update({ status: 'confirmed', confirmed_person_id: i.suggested_person_id }).eq('id', i.id);
-    if (!error) queueMeetingNotify(i, i.suggested_person_id);
-  }
-  flushMeetingNotify();
-  await loadPendingMeetingActionItems(); await loadConfirmedMeetingActionItems();
-  refreshMeetingTodoViews();
+  await confirmItemsBulk(items.map(item => ({ item, pid: item.suggested_person_id })), true);
 }
 
 // ---------------------------------------------------------------------
@@ -2346,36 +2352,39 @@ async function renderAttendanceTable() {
 let currentChatTarget = null; // null = grup sohbeti, aksi halde { id, name, email }
 
 function populateChatPersonList() {
-  const list = document.getElementById('chatPersonList');
-  if (!list) return;
+  const sel = document.getElementById('chatTargetSelect');
+  if (!sel) return;
   const myEmail = currentUser ? (currentUser.email || '').trim().toLowerCase() : '';
-  list.innerHTML = registeredPeople
-    .filter(p => isChatable(p) && (p.email || '').trim().toLowerCase() !== myEmail)
-    .map(p => `
-      <button onclick='selectChatTarget(${JSON.stringify(p.id)})' id="chatTargetBtn-${p.id}" class="w-full text-left px-3.5 py-2.5 text-xs font-medium flex items-center space-x-2 border-b border-slate-800/40 transition truncate">
-        <i data-lucide="user" class="w-3.5 h-3.5 shrink-0"></i><span class="truncate">${p.name}</span>
-      </button>
-    `).join('');
-  lucide.createIcons();
+  sel.innerHTML = `<option value="__group">👥 ${translate('chat_group_label')}</option><option value="FEEDBACK">🐞 ${translate('chat_feedback_label')}</option>`
+    + '<optgroup label="Özel mesaj">' + registeredPeople
+      .filter(p => isChatable(p) && (p.email || '').trim().toLowerCase() !== myEmail)
+      .map(p => `<option value="${escHtml(p.id)}">${escHtml(p.name)}</option>`).join('') + '</optgroup>';
   highlightChatTargetButton();
 }
 
 function highlightChatTargetButton() {
-  const activeCls = "w-full text-left px-3.5 py-2.5 text-xs font-medium flex items-center space-x-2 border-b border-slate-800/40 transition truncate bg-indigo-600 text-white";
-  const inactiveCls = "w-full text-left px-3.5 py-2.5 text-xs font-medium flex items-center space-x-2 border-b border-slate-800/40 transition truncate text-slate-300 hover:bg-slate-800";
-  const activeFeedbackCls = "w-full text-left px-3.5 py-3 text-xs font-semibold flex items-center space-x-2 border-b border-slate-800/60 transition bg-red-600 text-white";
-  const inactiveFeedbackCls = "w-full text-left px-3.5 py-3 text-xs font-semibold flex items-center space-x-2 border-b border-slate-800/60 transition text-red-300 hover:bg-slate-800";
+  const sel = document.getElementById('chatTargetSelect');
+  if (!sel) return;
+  sel.value = currentChatTarget === 'FEEDBACK' ? 'FEEDBACK' : (currentChatTarget ? currentChatTarget.id : '__group');
+}
 
-  const groupBtn = document.getElementById('chatTargetBtn-group');
-  if (groupBtn) groupBtn.className = (currentChatTarget === null ? activeCls : inactiveCls).replace('px-3.5 py-2.5', 'px-3.5 py-3');
-
-  const feedbackBtn = document.getElementById('chatTargetBtn-feedback');
-  if (feedbackBtn) feedbackBtn.className = currentChatTarget === 'FEEDBACK' ? activeFeedbackCls : inactiveFeedbackCls;
-
-  registeredPeople.filter(isChatable).forEach(p => {
-    const btn = document.getElementById('chatTargetBtn-' + p.id);
-    if (btn) btn.className = (currentChatTarget && currentChatTarget !== 'FEEDBACK' && currentChatTarget.id === p.id) ? activeCls : inactiveCls;
-  });
+let chatDockOpen = false;
+function setChatDock(open) {
+  chatDockOpen = !!open;
+  const d = document.getElementById('chatDock'); if (!d) return;
+  d.style.height = chatDockOpen ? 'min(520px, calc(100vh - 4rem))' : '44px';
+  const ch = document.getElementById('chatDockChevron'); if (ch) { ch.setAttribute('data-lucide', chatDockOpen ? 'chevron-down' : 'chevron-up'); if (window.lucide) lucide.createIcons(); }
+  try { localStorage.setItem('demig_chat_open', chatDockOpen ? '1' : '0'); } catch (e) {}
+  if (chatDockOpen) {
+    populateChatPersonList(); loadChatMessages(); if (!tourActive) markChatAsRead();
+    const db = document.getElementById('chatDockBadge'); if (db) db.classList.add('hidden');
+  }
+}
+function toggleChatDock() { setChatDock(!chatDockOpen); }
+function initChatDock() {
+  populateChatPersonList(); loadChatMessages();
+  let open = false; try { open = localStorage.getItem('demig_chat_open') === '1'; } catch (e) {}
+  setChatDock(open);
 }
 
 function selectChatTarget(personId) {
@@ -2452,11 +2461,11 @@ async function loadChatMessages() {
 
   if (headerLabel) {
     if (currentChatTarget === 'FEEDBACK') {
-      headerLabel.innerHTML = `<i data-lucide="bug" class="w-3.5 h-3.5 text-red-400"></i><span class="text-red-300">${translate('chat_feedback_label')}</span>`;
+      headerLabel.innerHTML = `<span class="truncate">🐞 ${translate('chat_feedback_label')}</span>`;
     } else if (currentChatTarget) {
-      headerLabel.innerHTML = `<i data-lucide="user" class="w-3.5 h-3.5 text-indigo-400"></i><span>@${currentChatTarget.name}</span>`;
+      headerLabel.innerHTML = `<span class="truncate">@${escHtml(currentChatTarget.name)}</span>`;
     } else {
-      headerLabel.innerHTML = `<i data-lucide="users" class="w-3.5 h-3.5 text-indigo-400"></i><span>${translate('chat_group_label')}</span>`;
+      headerLabel.innerHTML = `<span class="truncate">${translate('chat_group_label')}</span>`;
     }
     lucide.createIcons();
   }
@@ -2534,7 +2543,7 @@ async function loadChatMessages() {
     return `
       ${dayDivider}
       <div class="flex ${isMine ? 'justify-end' : 'justify-start'}">
-        <div class="max-w-[75%]">
+        <div class="max-w-[85%]">
           <div class="${isMine ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-100'} rounded-2xl px-3.5 py-2">
             ${!isMine ? `<div class="text-[10px] font-bold text-indigo-300 mb-0.5">${escHtml(m.sender_name)}</div>` : ''}
             <div class="text-xs whitespace-pre-wrap break-words ${isMine ? 'text-white' : 'text-slate-100'}">${escHtml(m.text)}</div>
@@ -2584,8 +2593,7 @@ let chatPollInterval = null;
 function startChatPolling() {
   if (chatPollInterval) clearInterval(chatPollInterval);
   chatPollInterval = setInterval(() => {
-    const chatView = document.getElementById('view-chat');
-    if (chatView && !chatView.classList.contains('hidden')) {
+    if (chatDockOpen) {
       loadChatMessages();
       markChatAsRead();
     }
@@ -2782,6 +2790,7 @@ async function enterApp(email) {
   document.getElementById('app').classList.remove('hidden');
   startChatPolling();
   startUnreadPolling();
+  initChatDock();
   maybeShowTourWelcome();
 }
 
@@ -2959,6 +2968,7 @@ function renderAll() {
   updateMyTodoBadge();
   renderAssignedTodosPanel('assignedTodosTasksPanel');
   renderAssignedTodosPanel('assignedTodosMeetingsPanel');
+  if (typeof renderMtg === 'function') renderMtg();
   lucide.createIcons();
 }
 
@@ -2970,8 +2980,8 @@ function renderDiagrams() {
   if (progressChartObj) progressChartObj.destroy();
   progressChartObj = new Chart(ctxProg, {
     type: 'bar',
-    data: { labels: tasks.map(t => t.id), datasets: [{ label: 'İlerleme (%)', data: tasks.map(t => t.progress), backgroundColor: tasks.map(t => t.status === 'Tamamlandı' ? '#10b981' : '#1E3A66'), borderRadius: 6 }] },
-    options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100, ticks: { color: '#64748b' }, grid: { color: '#e2e8f0' } }, x: { ticks: { color: '#64748b' }, grid: { display: false } } }, plugins: { legend: { display: false } } }
+    data: { labels: tasks.map(t => t.id), datasets: [{ label: 'İlerleme (%)', data: tasks.map(t => t.progress), backgroundColor: tasks.map(t => t.status === 'Tamamlandı' ? '#10b981' : (isDarkTheme() ? '#5B7FC0' : '#1E3A66')), borderRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100, ticks: { color: chartTick() }, grid: { color: chartGrid() } }, x: { ticks: { color: chartTick() }, grid: { display: false } } }, plugins: { legend: { display: false } } }
   });
 }
 
@@ -3135,8 +3145,13 @@ async function updateWeeklyTodoStatus(taskIdx, todoId, status) {
 }
 
 async function deleteWeeklyTodo(taskIdx, todoId) {
+  const gone = tasks[taskIdx].weeklyTodos.find(w => w.id === todoId);
   tasks[taskIdx].weeklyTodos = tasks[taskIdx].weeklyTodos.filter(w => w.id !== todoId);
   await persistTask(tasks[taskIdx]);
+  if (gone && gone.meetingItemId && supabaseClient) {
+    await supabaseClient.from('meeting_action_items').update({ status: 'dismissed', confirmed_person_id: null }).eq('id', gone.meetingItemId);
+    await loadConfirmedMeetingActionItems();
+  }
   renderAll();
 }
 
@@ -3196,6 +3211,7 @@ function openWeeklyTodoModal(taskIdx, todoId) {
 
 function closeWeeklyTodoModal() {
   document.getElementById('weeklyTodoModal').classList.add('hidden');
+  window.__newTodoMeetingDate = undefined;
 }
 
 async function saveWeeklyTodo(e) {
@@ -3218,7 +3234,9 @@ async function saveWeeklyTodo(e) {
     status: document.getElementById('weeklyTodoStatus').value,
     link: document.getElementById('weeklyTodoLink').value,
     text: document.getElementById('weeklyTodoText').value,
-    comments: isNew ? [] : ((tasks[taskIdx].weeklyTodos.find(w => w.id === id) || {}).comments || [])
+    comments: isNew ? [] : ((tasks[taskIdx].weeklyTodos.find(w => w.id === id) || {}).comments || []),
+    meetingItemId: isNew ? undefined : (tasks[taskIdx].weeklyTodos.find(w => w.id === id) || {}).meetingItemId,
+    meetingDate: isNew ? (window.__newTodoMeetingDate || undefined) : (tasks[taskIdx].weeklyTodos.find(w => w.id === id) || {}).meetingDate
   };
   if (id) {
     const idx = tasks[taskIdx].weeklyTodos.findIndex(w => w.id === id);
@@ -3260,7 +3278,7 @@ function renderWeeklyOverviewTable() {
     ensureWeeklyTodos(t);
     t.weeklyTodos.forEach(w => rows.push({ kind: 'w', ti, w, t }));
   });
-  (meetingActionItemsConfirmed || []).forEach(m => rows.push({
+  legacyConfirmed().forEach(m => rows.push({
     kind: 'm', m, ti: '__m',
     t: { name: 'Toplantı · ' + formatMeetingDate(m.week_date) },
     w: { id: m.id, assigneeIds: m.confirmed_person_id ? [m.confirmed_person_id] : [], status: m.todo_status || 'Başlamadı', priority: 'Orta', text: m.raw_text, startDate: m.week_date, endDate: '' }
@@ -3346,7 +3364,7 @@ function updateMyTodoBadge() {
       if ((w.assigneeIds || []).includes(myId) && w.status !== 'Tamamlandı') count++;
     });
   });
-  (meetingActionItemsConfirmed || []).forEach(m => { if (m.confirmed_person_id === myId && (m.todo_status || 'Başlamadı') !== 'Tamamlandı') count++; });
+  legacyConfirmed().forEach(m => { if (m.confirmed_person_id === myId && (m.todo_status || 'Başlamadı') !== 'Tamamlandı') count++; });
   if (count > 0) {
     badge.innerText = '+' + count;
     badge.classList.remove('hidden');
@@ -3369,6 +3387,8 @@ async function checkUnreadMessages() {
     if (error) { console.error('Okunmamış mesaj kontrolü başarısız:', error); return; }
 
     const count = (msgRows || []).length;
+    const db = document.getElementById('chatDockBadge');
+    if (db) { if (count > 0 && !chatDockOpen) { db.innerText = count > 9 ? '9+' : String(count); db.classList.remove('hidden'); } else db.classList.add('hidden'); }
     if (count > 0) {
       badge.innerText = count > 9 ? '9+' : String(count);
       badge.classList.remove('hidden');
@@ -3388,6 +3408,7 @@ async function markChatAsRead() {
     await supabaseClient.from('chat_reads').upsert({ person_email: myEmail, last_read_at: new Date().toISOString() });
     const badge = document.getElementById('chatUnreadBadge');
     if (badge) badge.classList.add('hidden');
+    const db2 = document.getElementById('chatDockBadge'); if (db2) db2.classList.add('hidden');
   } catch (e) {
     console.error('Okundu işareti kaydedilemedi:', e);
   }
@@ -3478,6 +3499,7 @@ function renderTodoDetail() {
       <select id="todoDetailStatus" ${canEdit ? '' : 'disabled'} class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-100">${statusOpts}</select>
       ${canEdit ? '<button onclick="saveTodoDetail()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">Kaydet</button>' : '<span class="text-[10px] text-slate-500">Yalnızca atanan kişi düzenleyebilir; yorum yazabilirsiniz.</span>'}
       ${d.kind === 'w' && canEdit ? `<button onclick="closeTodoDetail();openWeeklyTodoModal(${todoDetailCtx.ti}, '${todoDetailCtx.wid}')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">Tam düzenle</button>` : ''}
+      ${d.kind === 'w' && d.w.meetingItemId && canEdit ? `<button onclick="unconfirmMeetingTodo('${d.w.meetingItemId}', true)" class="px-3 py-1.5 bg-amber-600/80 hover:bg-amber-500 text-white text-[11px] font-semibold rounded-lg">Onaydan geri al</button><button onclick="deleteMeetingTodo('${d.w.meetingItemId}', true)" class="px-3 py-1.5 bg-rose-600/80 hover:bg-rose-500 text-white text-[11px] font-semibold rounded-lg">Sil</button>` : ''}
       ${d.kind === 'm' && canEdit ? `<button onclick="unconfirmMeetingTodo('${d.m.id}', true)" class="px-3 py-1.5 bg-amber-600/80 hover:bg-amber-500 text-white text-[11px] font-semibold rounded-lg">Onaydan geri al</button><button onclick="deleteMeetingTodo('${d.m.id}', true)" class="px-3 py-1.5 bg-rose-600/80 hover:bg-rose-500 text-white text-[11px] font-semibold rounded-lg">Sil</button>` : ''}
       <button onclick="goToTodoSource()" class="ml-auto px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">Kaynağa git</button>
     </div>
@@ -3553,20 +3575,96 @@ function goToTodoSource() {
 }
 
 // =====================================================================
-// ATANMIŞ (ONAYLANMIŞ) TOPLANTI GÖREVLERİ: görev takibi + toplantı sayfası paneli
+// ATANMIŞ (ONAYLANMIŞ) TOPLANTI GÖREVLERİ
+// Onaylanan madde, seçilen "Görev / Adım" altında GERÇEK bir haftalık to-do olarak açılır
+// (Haftalık Görev formundaki tüm alanlar: sorumlu, tarih, öncelik, durum, link, açıklama).
 // =====================================================================
 const assignedTodoFilter = {};
 const assignedOuterDefault = { assignedTodosTasksPanel: true, assignedTodosMeetingsPanel: false };
+let pendingTargetTaskIdx = null;
+
+function addDaysIso(iso, n) { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+function findTwin(mid) {
+  for (let ti = 0; ti < tasks.length; ti++) {
+    const w = (tasks[ti].weeklyTodos || []).find(x => x.meetingItemId && String(x.meetingItemId) === String(mid));
+    if (w) return { ti, w };
+  }
+  return null;
+}
+function legacyConfirmed() { return (meetingActionItemsConfirmed || []).filter(m => !findTwin(m.id)); }
+function assignedList() {
+  return (meetingActionItemsConfirmed || []).map(m => {
+    const tw = findTwin(m.id);
+    return tw
+      ? { m, tw, id: m.id, pid: (tw.w.assigneeIds && tw.w.assigneeIds[0]) || m.confirmed_person_id, date: m.week_date, text: tw.w.text, status: tw.w.status || 'Başlamadı', comments: tw.w.comments || [], taskName: tasks[tw.ti].name }
+      : { m, tw: null, id: m.id, pid: m.confirmed_person_id, date: m.week_date, text: m.raw_text, status: m.todo_status || 'Başlamadı', comments: m.comments || [], taskName: '' };
+  });
+}
+function currentTargetTaskIdx() {
+  if (!tasks.length) return null;
+  if (pendingTargetTaskIdx !== null && tasks[pendingTargetTaskIdx]) return pendingTargetTaskIdx;
+  const i = tasks.findIndex(t => /toplant/i.test(t.name));
+  return i >= 0 ? i : 0;
+}
+function setPendingTargetTask(v) { pendingTargetTaskIdx = parseInt(v, 10); populateTargetTaskSelects(); }
+function targetTaskOptionsHTML() {
+  const cur = currentTargetTaskIdx();
+  return tasks.map((t, i) => `<option value="${i}" ${i === cur ? 'selected' : ''}>${escapeHtml(t.name)}</option>`).join('');
+}
+function populateTargetTaskSelects() {
+  document.querySelectorAll('select.target-task-select').forEach(sel => { sel.innerHTML = targetTaskOptionsHTML(); });
+}
+
+async function createWeeklyFromMeeting(item, personId, ti) {
+  const t = tasks[ti]; if (!t) return false;
+  ensureWeeklyTodos(t);
+  t.weeklyTodos.push({
+    id: 'w' + Date.now() + Math.floor(Math.random() * 100000),
+    assigneeIds: [personId],
+    startDate: item.week_date,
+    endDate: addDaysIso(item.week_date, 7),
+    priority: 'Orta', status: 'Başlamadı', link: '',
+    text: item.raw_text, comments: [],
+    meetingItemId: item.id, meetingDate: item.week_date
+  });
+  sortWeeklyTodos(t);
+  return true;
+}
+
+async function confirmItemsBulk(pairs, flush) {
+  if (!supabaseClient || !pairs.length) return;
+  const ti = currentTargetTaskIdx(); const touched = new Set();
+  for (const { item, pid } of pairs) {
+    const { error } = await supabaseClient.from('meeting_action_items').update({ status: 'confirmed', confirmed_person_id: pid }).eq('id', item.id);
+    if (error) { console.error('Aksiyon onaylanamadı:', error); continue; }
+    if (ti !== null && await createWeeklyFromMeeting(item, pid, ti)) touched.add(ti);
+    queueMeetingNotify(item, pid);
+  }
+  for (const i of touched) await persistTask(tasks[i]);
+  if (flush) flushMeetingNotify();
+  await refreshMeetingTodoViews();
+}
+
+async function convertLegacyTodos() {
+  const list = legacyConfirmed(); const ti = currentTargetTaskIdx();
+  if (!list.length || ti === null) return;
+  if (!confirm(`${list.length} eski atama "${tasks[ti].name}" altında haftalık görev formuna dönüştürülsün mü?`)) return;
+  for (const m of list) {
+    await createWeeklyFromMeeting(m, m.confirmed_person_id, ti);
+    const tw = findTwin(m.id);
+    if (tw && m.todo_status) tw.w.status = m.todo_status;
+    if (tw && m.comments && m.comments.length) tw.w.comments = m.comments;
+  }
+  await persistTask(tasks[ti]);
+  await refreshMeetingTodoViews();
+  showMiniToast('Eski atamalar haftalık göreve dönüştürüldü.');
+}
 
 async function refreshMeetingTodoViews() {
   await loadPendingMeetingActionItems();
   await loadConfirmedMeetingActionItems();
   renderPendingActionItemsPanel();
-  renderAssignedTodosPanel('assignedTodosTasksPanel');
-  renderAssignedTodosPanel('assignedTodosMeetingsPanel');
-  renderSidebarTodos();
-  renderWeeklyOverviewTable();
-  updateMyTodoBadge();
+  renderAll();
   if (typeof renderMeetingsSection === 'function') renderMeetingsSection();
   if (todoDetailCtx && !todoDetailGet()) closeTodoDetail();
   else if (todoDetailCtx) renderTodoDetail();
@@ -3579,12 +3677,18 @@ async function quickToggleMeetingTodo(id) {
   if (await persistMeetingItemFields(m, { todo_status: next })) await refreshMeetingTodoViews();
 }
 async function setMeetingTodoStatus(id, val) {
-  const m = (meetingActionItemsConfirmed || []).find(x => String(x.id) === String(id)); if (!m) return;
-  if (await persistMeetingItemFields(m, { todo_status: val })) await refreshMeetingTodoViews();
+  const it = assignedList().find(x => String(x.id) === String(id)); if (!it) return;
+  if (it.tw) { it.tw.w.status = val; await persistTask(tasks[it.tw.ti]); await refreshMeetingTodoViews(); return; }
+  if (await persistMeetingItemFields(it.m, { todo_status: val })) await refreshMeetingTodoViews();
+}
+async function removeTwinOf(mid) {
+  const tw = findTwin(mid);
+  if (tw) { tasks[tw.ti].weeklyTodos = tasks[tw.ti].weeklyTodos.filter(x => x !== tw.w); await persistTask(tasks[tw.ti]); }
 }
 async function unconfirmMeetingTodo(id, fromDetail) {
   const m = (meetingActionItemsConfirmed || []).find(x => String(x.id) === String(id)); if (!m) return;
   if (!confirm('Bu görev atamadan çıkarılıp "Onay Bekliyor" listesine geri alınsın mı?')) return;
+  await removeTwinOf(id);
   if (await persistMeetingItemFields(m, { status: 'pending', confirmed_person_id: null })) {
     if (fromDetail) closeTodoDetail();
     await refreshMeetingTodoViews();
@@ -3594,6 +3698,7 @@ async function unconfirmMeetingTodo(id, fromDetail) {
 async function deleteMeetingTodo(id, fromDetail) {
   const m = (meetingActionItemsConfirmed || []).find(x => String(x.id) === String(id)); if (!m) return;
   if (!confirm('Bu görev silinsin mi? (Kişinin listesinden ve toplantı kartından kalkar.)')) return;
+  await removeTwinOf(id);
   if (await persistMeetingItemFields(m, { status: 'dismissed', confirmed_person_id: null })) {
     if (fromDetail) closeTodoDetail();
     await refreshMeetingTodoViews();
@@ -3601,28 +3706,38 @@ async function deleteMeetingTodo(id, fromDetail) {
   }
 }
 async function bulkMeetingTodos(pid, mode) {
-  const list = (meetingActionItemsConfirmed || []).filter(m => m.confirmed_person_id === pid);
+  const list = assignedList().filter(x => x.pid === pid);
   if (!list.length) return;
   const person = (registeredPeople.find(p => p.id === pid) || {}).name || pid;
   const msg = mode === 'delete' ? `${person} kişisinin ${list.length} görevi silinsin mi?` : `${person} kişisinin ${list.length} görevi atamadan çıkarılıp "Onay Bekliyor" listesine alınsın mı?`;
   if (!confirm(msg)) return;
   const fields = mode === 'delete' ? { status: 'dismissed', confirmed_person_id: null } : { status: 'pending', confirmed_person_id: null };
-  for (const m of list.slice()) await persistMeetingItemFields(m, fields);
+  for (const it of list.slice()) { await removeTwinOf(it.id); await persistMeetingItemFields(it.m, fields); }
   await refreshMeetingTodoViews();
   showMiniToast(mode === 'delete' ? 'Görevler silindi.' : 'Görevler onay listesine geri alındı.');
 }
 
+function openAssignedTodo(id) {
+  const it = assignedList().find(x => String(x.id) === String(id)); if (!it) return;
+  if (it.tw) openTodoDetail('w', it.tw.ti, it.tw.w.id); else openTodoDetail('m', it.m.id);
+}
+function editAssignedTodo(id) {
+  const it = assignedList().find(x => String(x.id) === String(id)); if (!it) return;
+  if (it.tw) openWeeklyTodoModal(it.tw.ti, it.tw.w.id); else openTodoDetail('m', it.m.id);
+}
+
 function renderAssignedTodosPanel(cid) {
   const box = document.getElementById(cid); if (!box) return;
-  const items = (meetingActionItemsConfirmed || []).slice().sort((a, b) => String(b.week_date).localeCompare(String(a.week_date)));
+  const items = assignedList().sort((a, b) => String(b.date).localeCompare(String(a.date)));
   if (!items.length) { box.innerHTML = ''; return; }
   const initKey = 'init:' + cid;
   if (!pendingOpenKeys.has(initKey)) { pendingOpenKeys.add(initKey); if (assignedOuterDefault[cid]) pendingOpenKeys.add('A:' + cid); }
   const nameOf = id => (registeredPeople.find(p => p.id === id) || {}).name || id || '—';
-  const pids = [...new Set(items.map(i => i.confirmed_person_id))].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'tr'));
+  const pids = [...new Set(items.map(i => i.pid))].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'tr'));
   const flt = assignedTodoFilter[cid] || '';
   const shown = flt ? pids.filter(x => x === flt) : pids;
-  const done = items.filter(i => (i.todo_status || 'Başlamadı') === 'Tamamlandı').length;
+  const done = items.filter(i => i.status === 'Tamamlandı').length;
+  const legacy = legacyConfirmed().length;
   const outerKey = 'A:' + cid;
   box.innerHTML = `<details ${pendingOpenKeys.has(outerKey) ? 'open' : ''} ontoggle="togglePendingGroup('${outerKey}', this.open)" class="glass rounded-2xl shadow-xl border border-slate-800 group">
     <summary class="cursor-pointer list-none flex items-center justify-between gap-2 px-5 py-3.5">
@@ -3632,14 +3747,19 @@ function renderAssignedTodosPanel(cid) {
       <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180"></i>
     </summary>
     <div class="px-5 pb-5 space-y-2">
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
         <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kişi</label>
         <select onchange="assignedTodoFilter['${cid}']=this.value;renderAssignedTodosPanel('${cid}')" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-100">
           <option value="">Tüm Kişiler (grup)</option>${pids.map(x => `<option value="${x}" ${x === flt ? 'selected' : ''}>${escapeHtml(nameOf(x))}</option>`).join('')}
         </select>
       </div>
+      ${legacy ? `<div class="flex items-center gap-2 flex-wrap text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+        <span>${legacy} eski atama henüz haftalık görev formuna çevrilmedi.</span>
+        <select class="target-task-select bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-100 max-w-[220px]" onchange="setPendingTargetTask(this.value)">${targetTaskOptionsHTML()}</select>
+        <button onclick="convertLegacyTodos()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-semibold rounded-md">Haftalık göreve çevir</button>
+      </div>` : ''}
       ${shown.map(pid => {
-        const mine = items.filter(i => i.confirmed_person_id === pid);
+        const mine = items.filter(i => i.pid === pid);
         const canAct = todoCanEdit([pid]);
         const pKey = 'ap:' + cid + ':' + pid;
         return `<details ${pendingOpenKeys.has(pKey) ? 'open' : ''} ontoggle="togglePendingGroup('${pKey}', this.open)" class="bg-slate-800/50 border border-slate-700/70 rounded-lg group/p">
@@ -3653,17 +3773,18 @@ function renderAssignedTodosPanel(cid) {
             </span>
           </summary>
           <div class="px-3 pb-2.5 space-y-1.5">
-            ${mine.map(m => { const st = m.todo_status || 'Başlamadı'; return `
-            <div class="flex flex-col md:flex-row md:items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-md p-2 ${st === 'Tamamlandı' ? 'opacity-60' : ''}">
-              <span class="text-[10px] text-slate-400 whitespace-nowrap">${formatMeetingDate(m.week_date)}</span>
-              <div class="flex-1 min-w-0 text-[11px] text-slate-100 ${st === 'Tamamlandı' ? 'line-through' : ''}">${escapeHtml(m.raw_text)}${(m.comments || []).length ? ` <span class="text-[10px] text-slate-400">💬${m.comments.length}</span>` : ''}</div>
+            ${mine.map(it => `
+            <div class="flex flex-col md:flex-row md:items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-md p-2 ${it.status === 'Tamamlandı' ? 'opacity-60' : ''}">
+              <div class="flex flex-col whitespace-nowrap"><span class="text-[10px] text-slate-400">${formatMeetingDate(it.date)}</span>${it.taskName ? `<span class="text-[9px] text-indigo-300 max-w-[140px] truncate" title="${escapeHtml(it.taskName)}">${escapeHtml(it.taskName)}</span>` : ''}</div>
+              <div class="flex-1 min-w-0 text-[11px] text-slate-100 ${it.status === 'Tamamlandı' ? 'line-through' : ''}">${escapeHtml(it.text)}${it.comments.length ? ` <span class="text-[10px] text-slate-400">💬${it.comments.length}</span>` : ''}</div>
               <div class="flex items-center gap-1.5 shrink-0">
-                <select ${canAct ? '' : 'disabled'} onchange="setMeetingTodoStatus('${m.id}', this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-1 text-[10px] text-slate-100">${TODO_STATUSES.map(x => `<option ${x === st ? 'selected' : ''}>${x}</option>`).join('')}</select>
-                <button onclick="openTodoDetail('m', '${m.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold rounded-md">Aç / Düzenle</button>
-                ${canAct ? `<button onclick="unconfirmMeetingTodo('${m.id}')" title="Onay listesine geri al" class="px-2 py-1 bg-amber-600/80 hover:bg-amber-500 text-white text-[10px] font-semibold rounded-md">Geri al</button>
-                <button onclick="deleteMeetingTodo('${m.id}')" class="px-2 py-1 bg-rose-600/80 hover:bg-rose-500 text-white text-[10px] font-semibold rounded-md">Sil</button>` : ''}
+                <select ${canAct ? '' : 'disabled'} onchange="setMeetingTodoStatus('${it.id}', this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-1 text-[10px] text-slate-100">${TODO_STATUSES.map(x => `<option ${x === it.status ? 'selected' : ''}>${x}</option>`).join('')}</select>
+                <button onclick="openAssignedTodo('${it.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold rounded-md">Aç</button>
+                ${canAct ? `<button onclick="editAssignedTodo('${it.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold rounded-md">Düzenle</button>
+                <button onclick="unconfirmMeetingTodo('${it.id}')" title="Onay listesine geri al" class="px-2 py-1 bg-amber-600/80 hover:bg-amber-500 text-white text-[10px] font-semibold rounded-md">Geri al</button>
+                <button onclick="deleteMeetingTodo('${it.id}')" class="px-2 py-1 bg-rose-600/80 hover:bg-rose-500 text-white text-[10px] font-semibold rounded-md">Sil</button>` : ''}
               </div>
-            </div>`; }).join('')}
+            </div>`).join('')}
           </div>
         </details>`;
       }).join('')}
@@ -3699,7 +3820,7 @@ function renderSidebarTodos() {
       }
     });
   });
-  (meetingActionItemsConfirmed || []).forEach(m => {
+  legacyConfirmed().forEach(m => {
     if (filterVal === 'all' || m.confirmed_person_id === targetId) {
       items.push({
         task: 'Toplantı · ' + (typeof formatMeetingDate === 'function' ? formatMeetingDate(m.week_date) : m.week_date),
@@ -4294,8 +4415,63 @@ function closeSidebar() {
   document.getElementById('sidebarBackdrop').classList.add('hidden');
 }
 
+// ---- TEMA
+function getThemePref() { try { return localStorage.getItem('demig_theme') || 'light'; } catch (e) { return 'light'; } }
+function isDarkTheme() { return document.documentElement.classList.contains('dark'); }
+function chartTick() { return isDarkTheme() ? '#A9B3C4' : chartTick(); }
+function chartGrid() { return isDarkTheme() ? '#2B3548' : chartGrid(); }
+function applyTheme() {
+  const pref = getThemePref();
+  const dark = pref === 'dark' || (pref === 'system' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', dark);
+  updateThemeButtons();
+}
+function updateThemeButtons() {
+  const pref = getThemePref();
+  ['light', 'dark', 'system'].forEach(t => {
+    const b = document.getElementById('themeBtn-' + t); if (!b) return;
+    b.className = 'inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold border transition ' + (pref === t ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800');
+  });
+}
+function setTheme(p) {
+  try { localStorage.setItem('demig_theme', p); } catch (e) {}
+  applyTheme();
+  if (typeof renderAll === 'function' && currentUser) renderAll();
+}
+if (window.matchMedia) { try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (getThemePref() === 'system') { applyTheme(); if (currentUser) renderAll(); } }); } catch (e) {} }
+
+// ---- AYARLAR / PROFİL
+function renderSettings() {
+  const me = currentUser ? registeredPeople.find(p => (p.email || '').trim().toLowerCase() === (currentUser.email || '').trim().toLowerCase()) : null;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  set('setName', me ? me.name : ''); set('setRole', me ? me.role : ''); set('setEmail', currentUser ? currentUser.email : '');
+  const m = document.getElementById('setProfileMsg'); if (m) m.innerText = '';
+  updateThemeButtons();
+  if (window.lucide) lucide.createIcons();
+}
+async function saveProfile() {
+  const msg = document.getElementById('setProfileMsg');
+  const say = (t, ok) => { msg.innerText = t; msg.className = 'text-xs ' + (ok ? 'text-emerald-500' : 'text-red-400'); };
+  const me = registeredPeople.find(p => (p.email || '').trim().toLowerCase() === (currentUser.email || '').trim().toLowerCase());
+  if (!me) return say('Profil kaydı bulunamadı.');
+  const name = document.getElementById('setName').value.trim(), role = document.getElementById('setRole').value.trim();
+  if (!name) return say('Ad soyad boş olamaz.');
+  if (supabaseClient) {
+    const { data, error } = await supabaseClient.from('people').update({ name, role }).eq('id', me.id).select();
+    if (error) return say('Kaydedilemedi: ' + error.message);
+    if (!data || !data.length) return say('Kaydedilemedi: profil düzenleme yetkiniz yok (yönetici ile görüşün).');
+  }
+  me.name = name; me.role = role;
+  if (!supabaseClient) savePeople();
+  currentUser.name = name; currentUser.dept = role;
+  updateUserBadge();
+  say('Profil güncellendi.', true);
+  renderAll();
+}
+
 function switchTab(tab) {
-  ['diagrams', 'tasks', 'people', 'dashboard', 'attendance', 'chat', 'meetings'].forEach(t => {
+  if (tab === 'chat') { closeSidebar(); setChatDock(true); return; }
+  ['diagrams', 'tasks', 'people', 'dashboard', 'attendance', 'meetings', 'settings'].forEach(t => {
     document.getElementById('view-' + t).classList.add('hidden');
     document.getElementById('tab-' + t).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition";
   });
@@ -4303,8 +4479,8 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).className = "w-full tab-btn px-3.5 py-2.5 rounded-xl text-xs font-medium flex items-center space-x-3 bg-indigo-600 text-white transition";
   closeSidebar();
   if (tab === 'attendance') renderAttendanceTable();
-  if (tab === 'chat') { populateChatPersonList(); loadChatMessages(); if (!tourActive) markChatAsRead(); }
   if (tab === 'meetings') renderMeetingsSection();
+  if (tab === 'settings') renderSettings();
 }
 
 // =====================================================================
@@ -4397,217 +4573,287 @@ function formatMeetingDate(iso) {
   return d.toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
-let meetingFilter = 'all'; // 'upcoming' | 'past' | 'all'
-let expandedMeetingWeeks = null; // Set of week dates that are open; null = not initialized yet
-
 function todayIso() {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
+let expandedMeetingWeeks = null; // eski API uyumluluğu
 
-function filteredMeetingWeeks() {
-  const t = todayIso();
-  if (meetingFilter === 'upcoming') return MEETING_WEEKS.filter(w => w.date >= t);
-  if (meetingFilter === 'past') return MEETING_WEEKS.filter(w => w.date < t).slice().reverse(); // en yeni üstte
-  return MEETING_WEEKS;
-}
+// =====================================================================
+// TOPLANTILAR: sol liste + sağ detay (notlar / görevler), görev listesi, onay bekleyen
+// =====================================================================
+const mtgState = { sel: null, sub: 'notes', track: null, tab: 'meetings', filter: 'all', q: '', page: 0, tf: { person: '', status: '__open', q: '' } };
+const MTG_PAGE_SIZE = 12;
+const TAB_ON = 'bg-indigo-600 text-white', TAB_OFF = 'text-slate-300 hover:bg-slate-800';
 
-function setMeetingFilter(f) {
-  meetingFilter = f;
-  renderMeetingsSection();
-}
+function openMeetingModal(id) { document.getElementById(id).classList.remove('hidden'); if (id === 'mtgImportModal') populateMeetingUploadWeekSelect(); if (window.lucide) lucide.createIcons(); }
+function closeMeetingModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-function toggleMeetingWeek(date) {
-  if (expandedMeetingWeeks.has(date)) expandedMeetingWeeks.delete(date);
-  else expandedMeetingWeeks.add(date);
-  renderMeetingsSection();
-}
+function mtgWeekday(iso, long) { return new Date(iso + 'T12:00:00').toLocaleDateString('tr-TR', { weekday: long ? 'long' : 'short' }); }
+function mtgTrackHasNotes(date, w) { return (MEETING_TRACKS[w.type] || []).some(t => { const r = meetingRecords[meetingRecordKey(date, t.id)]; return r && (r.action_text || r.notes_link || r.recording_link); }); }
+function mtgTrackLabel(t) { return translate(t.labelKey); }
+function mtgNameOf(id) { return (registeredPeople.find(p => p.id === id) || {}).name || (id ? id : 'Atanmamış'); }
 
-function jumpToMeetingWeek(date) {
-  if (!date) return;
-  if (!MEETING_WEEKS.some(w => w.date === date)) return;
-  meetingFilter = 'all';
-  expandedMeetingWeeks.add(date);
-  const d = new Date(date + 'T00:00:00');
-  meetingCalendarCursor = { year: d.getFullYear(), month: d.getMonth() };
-  renderMeetingsSection();
-  setTimeout(() => {
-    const el = document.getElementById('meetingWeek-' + date);
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 50);
-}
-
-// -------- Küçük Toplantı Takvimi (ay görünümü, Subgroup/Full Group işaretli) --------
-let meetingCalendarCursor = null; // { year, month(0-indexed) }
-
-function initMeetingCalendarCursor() {
-  if (meetingCalendarCursor) return;
-  const t = todayIso();
-  const upcoming = MEETING_WEEKS.find(w => w.date >= t) || MEETING_WEEKS[0];
-  const d = new Date(upcoming.date + 'T00:00:00');
-  meetingCalendarCursor = { year: d.getFullYear(), month: d.getMonth() };
-}
-
-function shiftMeetingCalendarMonth(delta) {
-  initMeetingCalendarCursor();
-  let m = meetingCalendarCursor.month + delta;
-  let y = meetingCalendarCursor.year;
-  if (m < 0) { m = 11; y -= 1; }
-  if (m > 11) { m = 0; y += 1; }
-  meetingCalendarCursor = { year: y, month: m };
-  renderMeetingCalendar();
-}
-
-function meetingWeekForDate(iso) {
-  return MEETING_WEEKS.find(w => w.date === iso);
-}
-
-function renderMeetingCalendar() {
-  initMeetingCalendarCursor();
-  const grid = document.getElementById('meetingCalendarGrid');
-  const label = document.getElementById('meetingCalendarMonthLabel');
-  if (!grid || !label) return;
-  const { year, month } = meetingCalendarCursor;
-  const monthDate = new Date(year, month, 1);
-  label.textContent = monthDate.toLocaleDateString(currentLang === 'tr' ? 'tr-TR' : 'en-US', { month: 'long', year: 'numeric' });
-
-  const dayNames = currentLang === 'tr' ? ['Pt','Sa','Ça','Pe','Cu','Ct','Pz'] : ['Mo','Tu','We','Th','Fr','Sa','Su'];
-  const firstDay = new Date(year, month, 1);
-  const startOffset = (firstDay.getDay() + 6) % 7; // Pazartesi başlangıçlı
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const t = todayIso();
-
-  let cells = '';
-  for (let i = 0; i < startOffset; i++) cells += `<div></div>`;
-  for (let day = 1; day <= daysInMonth; day++) {
-    const iso = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-    const week = meetingWeekForDate(iso);
-    const isToday = iso === t;
-    let dot = '';
-    let attrs = '';
-    if (week) {
-      const dotColor = week.type === 'sub' ? 'bg-indigo-400' : 'bg-amber-400';
-      dot = `<span class="w-1.5 h-1.5 rounded-full ${dotColor} absolute bottom-1 left-1/2 -translate-x-1/2"></span>`;
-      attrs = `onclick="jumpToMeetingWeek('${iso}')" title="${formatMeetingDate(iso)}"`;
-    }
-    cells += `
-      <div ${attrs} class="relative h-8 flex items-center justify-center text-[11px] rounded-lg ${week ? 'cursor-pointer font-semibold text-slate-100 hover:bg-slate-800' : 'text-slate-600'} ${isToday ? 'ring-1 ring-indigo-400' : ''}">
-        ${day}${dot}
-      </div>`;
-  }
-
-  grid.innerHTML = `
-    <div class="grid grid-cols-7 gap-0.5 mb-1 text-[10px] text-slate-500 font-bold uppercase text-center">
-      ${dayNames.map(d => `<div>${d}</div>`).join('')}
-    </div>
-    <div class="grid grid-cols-7 gap-0.5">${cells}</div>
-  `;
-}
-
-function updateMeetingFilterButtons() {
-  const variants = { upcoming: 'meetingFilterBtn-upcoming', past: 'meetingFilterBtn-past', all: 'meetingFilterBtn-all' };
-  Object.keys(variants).forEach(key => {
-    const btn = document.getElementById(variants[key]);
-    if (!btn) return;
-    btn.className = key === meetingFilter
-      ? "px-3 py-1.5 transition bg-indigo-600 text-white"
-      : "px-3 py-1.5 transition text-slate-400 hover:text-slate-100";
+// ---- görev satırları (haftalık to-do + eski atamalar)
+function meetingRows() {
+  const rows = [];
+  tasks.forEach((t, ti) => {
+    ensureWeeklyTodos(t);
+    t.weeklyTodos.forEach(w => { if (w.meetingDate) rows.push({ key: 'w:' + w.id, kind: 'w', ti, w, pid: (w.assigneeIds || [])[0] || null, date: w.meetingDate, text: w.text || '', status: w.status || 'Başlamadı', priority: w.priority || 'Orta', due: w.endDate || '', taskName: t.name, comments: w.comments || [] }); });
   });
+  legacyConfirmed().forEach(m => rows.push({ key: 'm:' + m.id, kind: 'm', m, pid: m.confirmed_person_id, date: m.week_date, text: m.raw_text, status: m.todo_status || 'Başlamadı', priority: 'Orta', due: '', taskName: '—', comments: m.comments || [] }));
+  return rows;
 }
+function mtgFindRow(key) { return meetingRows().find(r => r.key === key); }
+function mtgAfterChange() { renderAll(); renderMtg(); }
+async function mtgRowStatus(key, val) {
+  const r = mtgFindRow(key); if (!r) return;
+  if (r.kind === 'w') { r.w.status = val; await persistTask(tasks[r.ti]); mtgAfterChange(); }
+  else if (await persistMeetingItemFields(r.m, { todo_status: val })) mtgAfterChange();
+}
+function mtgRowToggle(key) { const r = mtgFindRow(key); if (r) mtgRowStatus(key, r.status === 'Tamamlandı' ? 'Devam Ediyor' : 'Tamamlandı'); }
+function mtgRowOpen(key) { const r = mtgFindRow(key); if (!r) return; if (r.kind === 'w') openTodoDetail('w', r.ti, r.w.id); else openTodoDetail('m', r.m.id); }
+function mtgRowEdit(key) { const r = mtgFindRow(key); if (!r) return; if (r.kind === 'w') openWeeklyTodoModal(r.ti, r.w.id); else openTodoDetail('m', r.m.id); }
+async function mtgRowDelete(key) {
+  const r = mtgFindRow(key); if (!r) return;
+  if (r.kind === 'm') return deleteMeetingTodo(r.m.id);
+  if (r.w.meetingItemId) return deleteMeetingTodo(r.w.meetingItemId);
+  if (!confirm('Bu görev silinsin mi?')) return;
+  await deleteWeeklyTodo(r.ti, r.w.id); mtgAfterChange();
+}
+function mtgAddTodo(date) {
+  window.__newTodoMeetingDate = date;
+  openWeeklyTodoModal(null);
+  document.getElementById('weeklyTodoStart').value = date;
+  document.getElementById('weeklyTodoEnd').value = addDaysIso(date, 7);
+}
+
+// ---- sekmeler / filtre
+function mtgSetTab(t) { mtgState.tab = t; renderMtg(); }
+function mtgSetFilter(f) { mtgState.filter = f; renderMtg(); }
+function mtgSelect(date, sub) { mtgState.sel = date; if (sub) mtgState.sub = sub; mtgState.tab = 'meetings'; renderMtg(); }
+function mtgSetSub(sub) { mtgState.sub = sub; renderMtgDetail(); }
+function mtgSetTrack(id) { mtgState.track = id; renderMtgDetail(); }
+function jumpToMeetingWeek(date) { if (!date) return; mtgState.q = ''; mtgSelect(date, 'tasks'); setTimeout(() => { const el = document.getElementById('mtgRow-' + date); if (el) el.scrollIntoView({ block: 'center' }); }, 60); }
 
 async function renderMeetingsSection() {
   await loadMeetingRecords();
-  renderPendingActionItemsPanel();
-  renderAssignedTodosPanel('assignedTodosMeetingsPanel');
-  const container = document.getElementById('meetingWeeksContainer');
-  if (!container) return;
-
-  const weeks = filteredMeetingWeeks();
-
-  if (expandedMeetingWeeks === null) {
-    expandedMeetingWeeks = new Set();
-    const t = todayIso();
-    const nextWeek = MEETING_WEEKS.find(w => w.date >= t) || MEETING_WEEKS[0];
-    if (nextWeek) expandedMeetingWeeks.add(nextWeek.date);
-  }
-
-  updateMeetingFilterButtons();
-  renderMeetingCalendar();
+  await renderPendingActionItemsPanel(); // sonunda renderMtg() çağrılır
   populateMeetingUploadWeekSelect();
+}
 
-  if (!weeks.length) {
-    container.innerHTML = `<div class="glass rounded-2xl p-6 text-center text-xs text-slate-400">—</div>`;
-    return;
+function renderMtg() {
+  if (!document.getElementById('mtgDetail')) return;
+  if (!mtgState.sel) {
+    const t = todayIso();
+    const past = MEETING_WEEKS.filter(w => w.date <= t).map(w => w.date);
+    mtgState.sel = past.length ? past[past.length - 1] : (MEETING_WEEKS[0] || {}).date;
   }
+  const rows = meetingRows();
+  const open = rows.filter(r => r.status !== 'Tamamlandı').length;
+  const tc = document.getElementById('mtgTasksCount'); if (tc) tc.innerText = open || '';
+  const pb = document.getElementById('mtgPendingBadge'); if (pb) pb.innerText = meetingActionItemsPending.length || '';
+  ['meetings', 'tasks', 'pending'].forEach(t => {
+    const b = document.getElementById('mtgTabBtn-' + t); if (b) b.className = 'px-3.5 py-1.5 rounded-lg transition ' + (mtgState.tab === t ? TAB_ON : TAB_OFF);
+    const v = document.getElementById('mtgView-' + t); if (v) v.classList.toggle('hidden', mtgState.tab !== t);
+  });
+  ['upcoming', 'past', 'all'].forEach(f => { const b = document.getElementById('mtgFilterBtn-' + f); if (b) b.className = 'flex-1 px-2 py-1.5 transition ' + (mtgState.filter === f ? TAB_ON : 'text-slate-300 hover:bg-slate-700'); });
+  if (mtgState.tab === 'meetings') {
+    renderMtgList();
+    const ae = document.activeElement;
+    if (!(ae && ae.closest && ae.closest('#mtgDetail') && (ae.tagName === 'TEXTAREA' || ae.tagName === 'INPUT'))) renderMtgDetail();
+  }
+  if (mtgState.tab === 'tasks') renderMtgTasks();
+  if (window.lucide) lucide.createIcons();
+}
 
-  container.innerHTML = weeks.map(w => {
-    const tracks = MEETING_TRACKS[w.type] || [];
-    const isOpen = expandedMeetingWeeks.has(w.date);
-    const badge = w.type === 'sub'
-      ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">${translate('meetings_week_subgroup_badge')}</span>`
-      : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">${translate('meetings_week_fullgroup_badge')}</span>`;
-    const hasContent = tracks.some(t => {
-      const rec = meetingRecords[meetingRecordKey(w.date, t.id)] || {};
-      return rec.recording_link || rec.notes_link || rec.action_text;
-    });
-    return `
-      <div id="meetingWeek-${w.date}" class="glass rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
-        <button onclick="toggleMeetingWeek('${w.date}')" class="w-full flex items-center justify-between flex-wrap gap-2 p-5 text-left transition hover:bg-slate-900/40">
-          <div class="flex items-center space-x-2.5">
-            <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}"></i>
-            <h3 class="text-sm font-bold text-slate-100">${formatMeetingDate(w.date)}</h3>
-            ${hasContent ? `<i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400" title="${translate('meetings_saved')}"></i>` : ''}
-          </div>
-          ${badge}
-        </button>
-        <div class="${isOpen ? '' : 'hidden'} px-5 pb-5 space-y-2.5">
-          ${tracks.map(t => {
-            const rec = meetingRecords[meetingRecordKey(w.date, t.id)] || {};
-            const trackSaved = rec.recording_link || rec.notes_link || rec.action_text;
-            return `
-            <div class="rounded-xl border border-slate-800 bg-slate-900/40 p-3.5">
-              <div class="flex items-center justify-between mb-2.5 flex-wrap gap-1.5">
-                <div class="flex items-center space-x-2">
-                  <span class="font-mono text-[10px] text-slate-500">${t.time}</span>
-                  <span class="text-xs font-semibold text-slate-200">${translate(t.labelKey)}</span>
-                </div>
-                ${trackSaved ? `<i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-400" title="${translate('meetings_saved')}"></i>` : ''}
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_recording_label')}</label>
-                  <input type="url" value="${escHtml(rec.recording_link || '')}" placeholder="${translate('meetings_link_placeholder')}"
-                    onchange="updateMeetingField('${w.date}', '${t.id}', 'recording_link', this.value)"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500">
-                </div>
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_notes_label')}</label>
-                  <input type="url" value="${escHtml(rec.notes_link || '')}" placeholder="${translate('meetings_link_placeholder')}"
-                    onchange="updateMeetingField('${w.date}', '${t.id}', 'notes_link', this.value)"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500">
-                </div>
-                <div>
-                  <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${translate('meetings_action_label')}</label>
-                  <textarea rows="1" placeholder="${translate('meetings_action_placeholder')}"
-                    onchange="updateMeetingField('${w.date}', '${t.id}', 'action_text', this.value)"
-                    class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100 editable-input focus:outline-none focus:border-indigo-500">${escHtml(rec.action_text || '')}</textarea>
-                </div>
-              </div>
-            </div>`;
-          }).join('')}
-          ${(() => {
-            const done = (meetingActionItemsConfirmed || []).filter(a => a.week_date === w.date);
-            if (!done.length) return '';
-            return `<div class="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3.5">
-              <div class="text-[10px] font-bold text-emerald-300 uppercase tracking-wider mb-1.5">Bu toplantıdan atanan görevler (${done.length})</div>
-              ${done.map(a => { const pp = registeredPeople.find(x => x.id === a.confirmed_person_id); return `<div class="text-[11px] text-slate-200 py-0.5"><span class="font-semibold text-emerald-300">${escHtml(pp ? pp.name : '-')}:</span> ${escHtml(a.raw_text)}</div>`; }).join('')}
-            </div>`;
-          })()}
+function renderMtgList() {
+  const box = document.getElementById('mtgList'); if (!box) return;
+  const t = todayIso(), q = (mtgState.q || '').trim().toLocaleLowerCase('tr-TR');
+  const rows = meetingRows();
+  const upcoming = MEETING_WEEKS.filter(w => w.date >= t);
+  const past = MEETING_WEEKS.filter(w => w.date < t).slice().reverse();
+  let list;
+  if (mtgState.filter === 'upcoming') list = upcoming;
+  else if (mtgState.filter === 'past') list = past;
+  else list = upcoming.slice(0, 6).reverse().concat(past); // en yeni üstte; 6 yaklaşan hafta
+  if (q) list = list.filter(w => {
+    const hay = [formatMeetingDate(w.date), mtgWeekday(w.date, true), ...(MEETING_TRACKS[w.type] || []).map(tr => (meetingRecords[meetingRecordKey(w.date, tr.id)] || {}).action_text || ''), ...rows.filter(r => r.date === w.date).map(r => r.text + ' ' + mtgNameOf(r.pid))].join(' ').toLocaleLowerCase('tr-TR');
+    return hay.includes(q);
+  });
+  if (!list.length) { box.innerHTML = '<div class="p-6 text-center text-[11px] text-slate-500">Toplantı bulunamadı.</div>'; return; }
+  let html = '', lastMonth = '';
+  list.forEach(w => {
+    const mk = w.date.slice(0, 7);
+    if (mk !== lastMonth) {
+      lastMonth = mk;
+      html += `<div class="sticky top-0 z-10 bg-slate-900/95 backdrop-blur px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800">${new Date(w.date + 'T12:00:00').toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })}</div>`;
+    }
+    const mine = rows.filter(r => r.date === w.date);
+    const openN = mine.filter(r => r.status !== 'Tamamlandı').length;
+    const pendN = meetingActionItemsPending.filter(i => i.week_date === w.date).length;
+    const hasNotes = mtgTrackHasNotes(w.date, w);
+    const sel = mtgState.sel === w.date;
+    const isToday = w.date === t;
+    html += `<button id="mtgRow-${w.date}" onclick="mtgSelect('${w.date}')" class="w-full text-left flex items-center gap-3 px-3 py-2.5 border-b border-slate-800/60 transition ${sel ? 'bg-indigo-600/15 border-l-2 border-l-indigo-500' : 'hover:bg-slate-800/50'}">
+      <div class="w-9 text-center shrink-0"><div class="text-base font-bold leading-none ${sel ? 'text-indigo-300' : 'text-slate-100'}">${w.date.slice(8)}</div><div class="text-[9px] uppercase text-slate-500 mt-0.5">${mtgWeekday(w.date)}</div></div>
+      <div class="flex-1 min-w-0">
+        <div class="text-[11px] font-semibold text-slate-100 flex items-center gap-1.5"><span class="inline-block w-1.5 h-1.5 rounded-full ${w.type === 'sub' ? 'bg-indigo-400' : 'bg-amber-400'}"></span>${w.type === 'sub' ? 'Subgroup' : 'Full Group'}${isToday ? ' <span class="text-[9px] text-emerald-300">· bugün</span>' : ''}</div>
+        <div class="flex items-center gap-1 mt-1 flex-wrap">
+          ${hasNotes ? '<span class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[9px] font-semibold">Not</span>' : ''}
+          ${mine.length ? `<span class="px-1.5 py-0.5 rounded bg-slate-700 text-slate-200 text-[9px] font-semibold">${openN}/${mine.length} görev</span>` : ''}
+          ${pendN ? `<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-semibold">${pendN} bekliyor</span>` : ''}
         </div>
       </div>
-    `;
-  }).join('');
-  lucide.createIcons();
+    </button>`;
+  });
+  box.innerHTML = html;
+}
+
+function mtgSaveNote(date, trackId, el) {
+  updateMeetingField(date, trackId, 'action_text', el.value);
+  const ind = document.getElementById('mtgSaved'); if (ind) { ind.textContent = 'Kaydedildi ✓'; setTimeout(() => { if (ind) ind.textContent = ''; }, 2000); }
+}
+let mtgNoteTimer = null;
+function mtgNoteInput(date, trackId, el) {
+  const ind = document.getElementById('mtgSaved'); if (ind) ind.textContent = 'Yazılıyor…';
+  clearTimeout(mtgNoteTimer); mtgNoteTimer = setTimeout(() => mtgSaveNote(date, trackId, el), 1200);
+}
+
+function mtgTaskRowHTML(r, canAct) {
+  const done = r.status === 'Tamamlandı';
+  return `<div class="flex flex-col sm:flex-row sm:items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-lg px-2.5 py-2 ${done ? 'opacity-60' : ''}">
+    <button onclick="mtgRowToggle('${r.key}')" title="${done ? 'Geri al' : 'Tamamlandı işaretle'}" class="w-5 h-5 shrink-0 rounded border ${done ? 'bg-emerald-500 border-emerald-500 text-slate-950' : 'border-slate-600 hover:border-emerald-400'} flex items-center justify-center text-[11px] font-bold">${done ? '✓' : ''}</button>
+    <div class="flex-1 min-w-0">
+      <div class="text-[11px] text-slate-100 ${done ? 'line-through' : ''}">${escHtml(r.text)}</div>
+      <div class="text-[9px] text-slate-500 mt-0.5">${escHtml(r.taskName)}${r.due ? ' · bitiş ' + escHtml(r.due) : ''}${r.comments.length ? ' · 💬' + r.comments.length : ''}</div>
+    </div>
+    <div class="flex items-center gap-1 shrink-0">
+      <select ${canAct ? '' : 'disabled'} onchange="mtgRowStatus('${r.key}', this.value)" class="bg-slate-800 border border-slate-700 rounded-md px-1.5 py-1 text-[10px] text-slate-100">${TODO_STATUSES.map(x => `<option ${x === r.status ? 'selected' : ''}>${x}</option>`).join('')}</select>
+      <button onclick="mtgRowOpen('${r.key}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold rounded-md">Aç</button>
+      ${canAct ? `<button onclick="mtgRowEdit('${r.key}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold rounded-md">Düzenle</button>
+      <button onclick="mtgRowDelete('${r.key}')" title="Atamadan sil" class="px-1.5 py-1 border border-rose-500/40 text-rose-300 hover:bg-rose-500/20 text-[11px] font-bold leading-none rounded-md">✕</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderMtgDetail() {
+  const box = document.getElementById('mtgDetail'); if (!box) return;
+  const w = MEETING_WEEKS.find(x => x.date === mtgState.sel);
+  if (!w) { box.innerHTML = '<div class="p-10 text-center text-xs text-slate-500">Soldan bir toplantı seçin.</div>'; return; }
+  const tracks = MEETING_TRACKS[w.type] || [];
+  if (!tracks.some(t => t.id === mtgState.track)) {
+    const withNotes = tracks.find(t => (meetingRecords[meetingRecordKey(w.date, t.id)] || {}).action_text);
+    mtgState.track = (withNotes || tracks[0]).id;
+  }
+  const rows = meetingRows().filter(r => r.date === w.date);
+  const pend = meetingActionItemsPending.filter(i => i.week_date === w.date);
+  const tabBtn = (id, label, n) => `<button onclick="mtgSetSub('${id}')" class="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition ${mtgState.sub === id ? TAB_ON : TAB_OFF}">${label}${n ? ` <span class="ml-1 px-1.5 py-0.5 rounded-full bg-black/20 text-[9px]">${n}</span>` : ''}</button>`;
+  let body = '';
+  if (mtgState.sub === 'notes') {
+    const tr = tracks.find(t => t.id === mtgState.track);
+    const rec = meetingRecords[meetingRecordKey(w.date, tr.id)] || {};
+    body = `
+      <div class="flex flex-wrap gap-1.5 mb-3">
+        ${tracks.map(t => { const r = meetingRecords[meetingRecordKey(w.date, t.id)] || {}; const has = r.action_text || r.notes_link || r.recording_link; return `<button onclick="mtgSetTrack('${t.id}')" class="px-2.5 py-1.5 rounded-lg border text-[10px] font-semibold transition ${t.id === tr.id ? 'border-indigo-500 bg-indigo-600/20 text-indigo-200' : 'border-slate-700 text-slate-300 hover:bg-slate-800'}"><span class="font-mono text-slate-500 mr-1">${t.time}</span>${escHtml(mtgTrackLabel(t))}${has ? ' <span class="text-emerald-400">●</span>' : ''}</button>`; }).join('')}
+      </div>
+      <div class="flex items-center justify-between mb-1.5"><label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Notlar ve kararlar</label><span id="mtgSaved" class="text-[10px] text-emerald-400"></span></div>
+      <textarea rows="12" placeholder="Toplantıda konuşulanlar, alınan kararlar, açık sorular… (yazdıkça otomatik kaydedilir)"
+        oninput="mtgNoteInput('${w.date}','${tr.id}',this)" onchange="mtgSaveNote('${w.date}','${tr.id}',this)"
+        class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs leading-relaxed text-slate-100 focus:outline-none focus:border-indigo-500">${escHtml(rec.action_text || '')}</textarea>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3">
+        <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Zoom kaydı linki</label>
+          <input type="url" value="${escHtml(rec.recording_link || '')}" placeholder="https://…" onchange="updateMeetingField('${w.date}','${tr.id}','recording_link',this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100"></div>
+        <div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Not dokümanı linki</label>
+          <input type="url" value="${escHtml(rec.notes_link || '')}" placeholder="https://…" onchange="updateMeetingField('${w.date}','${tr.id}','notes_link',this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100"></div>
+      </div>
+      ${(rec.recording_link || rec.notes_link) ? `<div class="flex gap-2 mt-2 text-[11px]">${rec.recording_link ? `<a href="${escHtml(rec.recording_link)}" target="_blank" rel="noopener" class="text-indigo-400 underline">Kaydı aç</a>` : ''}${rec.notes_link ? `<a href="${escHtml(rec.notes_link)}" target="_blank" rel="noopener" class="text-indigo-400 underline">Notu aç</a>` : ''}</div>` : ''}`;
+  } else {
+    const peopleOpts = registeredPeople.filter(isAssignable).map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
+    const pendHTML = pend.length ? `<div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 mb-3">
+      <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
+        <div class="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Onay bekleyen (${pend.length})</div>
+        <div class="flex items-center gap-1.5 text-[10px] text-slate-300">Görev / Adım:
+          <select class="target-task-select bg-slate-900 border border-slate-700 rounded-md px-1.5 py-1 text-[10px] text-slate-100 max-w-[170px]" onchange="setPendingTargetTask(this.value)">${targetTaskOptionsHTML()}</select>
+          <button onclick="mtgConfirmDate('${w.date}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-semibold rounded-md">Önerilenleri onayla</button>
+        </div></div>
+      <div class="space-y-1.5">${pend.map(i => `<div class="flex flex-col sm:flex-row sm:items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-lg px-2.5 py-2">
+        <div class="flex-1 min-w-0 text-[11px] text-slate-100">${escHtml(i.raw_text)}</div>
+        <div class="flex items-center gap-1 shrink-0">
+          <select id="mtgAssignee-${i.id}" class="bg-slate-800 border border-slate-700 rounded-md px-1.5 py-1 text-[10px] text-slate-100"><option value="">—</option>${peopleOpts.replace(`value="${i.suggested_person_id}"`, `value="${i.suggested_person_id}" selected`)}</select>
+          <button onclick="confirmMeetingActionItem('${i.id}', document.getElementById('mtgAssignee-${i.id}').value)" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-semibold rounded-md">Onayla</button>
+          <button onclick="dismissMeetingActionItem('${i.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold rounded-md">Yoksay</button>
+        </div></div>`).join('')}</div></div>` : '';
+    const byP = {}; rows.forEach(r => { (byP[r.pid || '__none'] = byP[r.pid || '__none'] || []).push(r); });
+    const pids = Object.keys(byP).sort((a, b) => mtgNameOf(a === '__none' ? null : a).localeCompare(mtgNameOf(b === '__none' ? null : b), 'tr'));
+    body = pendHTML + (pids.length ? pids.map(pid => {
+      const list = byP[pid]; const canAct = pid !== '__none' ? todoCanEdit([pid]) : todoCanEdit([]);
+      return `<div class="mb-3"><div class="flex items-center gap-1.5 mb-1.5 text-[11px] font-semibold text-slate-200"><i data-lucide="user" class="w-3 h-3 text-indigo-300"></i>${escHtml(pid === '__none' ? 'Atanmamış' : mtgNameOf(pid))}<span class="px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300 text-[9px]">${list.length}</span></div><div class="space-y-1.5">${list.map(r => mtgTaskRowHTML(r, canAct)).join('')}</div></div>`;
+    }).join('') : (pend.length ? '' : '<div class="text-center text-[11px] text-slate-500 py-8">Bu toplantı için henüz görev yok.</div>'))
+      + `<button onclick="mtgAddTodo('${w.date}')" class="mt-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">+ Görev ekle</button>`;
+  }
+  box.innerHTML = `
+    <div class="sticky top-0 z-10 bg-slate-900/95 backdrop-blur px-5 pt-4 pb-3 border-b border-slate-800">
+      <div class="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h3 class="text-base font-bold text-slate-100">${new Date(w.date + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' })}</h3>
+          <div class="mt-1 flex items-center gap-2"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${w.type === 'sub' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'}">${w.type === 'sub' ? 'Subgroup haftası' : 'Full Group haftası'}</span><span class="text-[10px] text-slate-500">17:00–19:00</span></div>
+        </div>
+        <div class="flex items-center gap-1 bg-slate-950/60 border border-slate-800 rounded-xl p-1">${tabBtn('notes', 'Notlar')}${tabBtn('tasks', 'Görevler', rows.length + pend.length)}</div>
+      </div>
+    </div>
+    <div class="p-5">${body}</div>`;
+  if (window.lucide) lucide.createIcons();
+}
+
+async function mtgConfirmDate(date) {
+  const items = meetingActionItemsPending.filter(i => i.week_date === date && (i.suggested_person_id || (document.getElementById('mtgAssignee-' + i.id) || {}).value));
+  const pairs = items.map(item => ({ item, pid: (document.getElementById('mtgAssignee-' + item.id) || {}).value || item.suggested_person_id })).filter(x => x.pid);
+  if (!pairs.length) return;
+  await confirmItemsBulk(pairs, true);
+}
+
+function renderMtgTasks() {
+  const box = document.getElementById('mtgTasksBox'); if (!box) return;
+  const all = meetingRows();
+  const fp = document.getElementById('mtgTfPerson');
+  if (fp) {
+    const prev = mtgState.tf.person;
+    const pids = [...new Set(all.map(r => r.pid || '__none'))].sort((a, b) => mtgNameOf(a === '__none' ? null : a).localeCompare(mtgNameOf(b === '__none' ? null : b), 'tr'));
+    fp.innerHTML = '<option value="">Tüm Kişiler (grup)</option>' + pids.map(x => `<option value="${x}" ${x === prev ? 'selected' : ''}>${escHtml(x === '__none' ? 'Atanmamış' : mtgNameOf(x))}</option>`).join('');
+    const fs = document.getElementById('mtgTfStatus'); if (fs) fs.value = mtgState.tf.status;
+  }
+  const q = (mtgState.tf.q || '').toLocaleLowerCase('tr-TR');
+  let rows = all.filter(r => {
+    if (mtgState.tf.person && (r.pid || '__none') !== mtgState.tf.person) return false;
+    if (mtgState.tf.status === '__open') { if (r.status === 'Tamamlandı') return false; } else if (mtgState.tf.status && r.status !== mtgState.tf.status) return false;
+    if (q && !(r.text + ' ' + r.taskName + ' ' + mtgNameOf(r.pid)).toLocaleLowerCase('tr-TR').includes(q)) return false;
+    return true;
+  }).sort((a, b) => (a.status === 'Tamamlandı') - (b.status === 'Tamamlandı') || String(b.date).localeCompare(String(a.date)) || priorityWeight(b.priority) - priorityWeight(a.priority));
+  const total = rows.length, pages = Math.max(1, Math.ceil(total / MTG_PAGE_SIZE));
+  if (mtgState.page >= pages) mtgState.page = pages - 1;
+  const slice = rows.slice(mtgState.page * MTG_PAGE_SIZE, (mtgState.page + 1) * MTG_PAGE_SIZE);
+  const sum = document.getElementById('mtgTasksSummary'); if (sum) sum.innerText = `${total} görev · ${all.filter(r => r.status === 'Tamamlandı').length}/${all.length} tamamlandı`;
+  if (!slice.length) { box.innerHTML = '<div class="text-center text-[11px] text-slate-500 py-12">Gösterilecek görev yok.</div>'; return; }
+  box.innerHTML = `<div class="overflow-x-auto border border-slate-800 rounded-xl"><table class="w-full text-left text-[11px] text-slate-300">
+    <thead class="bg-slate-900 text-slate-400 uppercase text-[10px]"><tr><th class="p-2">Toplantı</th><th class="p-2">Kişi</th><th class="p-2">Görev</th><th class="p-2">Görev / Adım</th><th class="p-2">Durum</th><th class="p-2 text-right"></th></tr></thead>
+    <tbody>${slice.map(r => { const done = r.status === 'Tamamlandı'; const canAct = todoCanEdit(r.pid ? [r.pid] : []); return `<tr class="border-t border-slate-800/60 ${done ? 'opacity-60' : ''}">
+      <td class="p-2 whitespace-nowrap text-slate-400">${formatMeetingDate(r.date)}</td>
+      <td class="p-2 whitespace-nowrap font-semibold text-indigo-300">${escHtml(mtgNameOf(r.pid))}</td>
+      <td class="p-2 max-w-[360px]"><div class="line-clamp-2 ${done ? 'line-through' : ''}" title="${escHtml(r.text)}">${escHtml(r.text)}</div></td>
+      <td class="p-2 max-w-[160px] truncate text-slate-400" title="${escHtml(r.taskName)}">${escHtml(r.taskName)}</td>
+      <td class="p-2"><span class="px-1.5 py-0.5 rounded text-[9px] font-bold border whitespace-nowrap ${statusBadgeClass(r.status)}">${r.status}</span></td>
+      <td class="p-2 text-right whitespace-nowrap">
+        <button onclick="mtgRowToggle('${r.key}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">${done ? '↩ Geri al' : '✓ Bitti'}</button>
+        <button onclick="mtgRowOpen('${r.key}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">Aç</button>
+        ${canAct ? `<button onclick="mtgRowEdit('${r.key}')" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 hover:bg-slate-800 text-slate-300">Düzenle</button>
+        <button onclick="mtgRowDelete('${r.key}')" title="Atamadan sil" class="text-[11px] px-1.5 py-0.5 rounded border border-rose-500/40 text-rose-300 hover:bg-rose-500/20 font-bold leading-none">✕</button>` : ''}
+      </td></tr>`; }).join('')}</tbody></table></div>
+    <div class="flex items-center justify-between mt-3 text-[11px] text-slate-400">
+      <span>Sayfa ${mtgState.page + 1} / ${pages}</span>
+      <div class="flex gap-1.5"><button ${mtgState.page === 0 ? 'disabled style="opacity:.4"' : ''} onclick="mtgState.page--;renderMtgTasks()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200">‹ Önceki</button>
+      <button ${mtgState.page >= pages - 1 ? 'disabled style="opacity:.4"' : ''} onclick="mtgState.page++;renderMtgTasks()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200">Sonraki ›</button></div>
+    </div>`;
 }
 
 function populateModalAssignees() {
