@@ -2205,12 +2205,15 @@ async function handleDocxImport(f) {
     const buf = await f.arrayBuffer();
     const res = await mammoth.convertToHtml({ arrayBuffer: buf });
     const fb = document.getElementById('driveImportWeekSelect').value;
-    const items = parseDocxTodoHtml(res.value, fb);
+    const parsed = parseDocxTodoHtml(res.value, fb);
+    const valid = new Set(MEETING_WEEKS.map(w => w.date));   // yalnızca listedeki toplantı tarihleri
+    const items = parsed.filter(i => valid.has(i.date));
+    const skippedN = parsed.length - items.length;
     docxImportItems = items;
     const days = new Set(items.map(i => i.date)).size;
     const matched = items.filter(i => driveFindPerson(i.person)).length;
     document.getElementById('driveImportText').value = items.map(i => `[${i.date}] ${i.person}: ${i.text}`).join('\n');
-    st.textContent = items.length ? `${items.length} madde, ${days} gün bulundu (${matched} tanesi kişiyle eşleşti). "Maddeleri İçe Aktar"a basın.` : 'Dosyada to-do tablosu bulunamadı.';
+    st.textContent = items.length ? `${items.length} madde, ${days} gün bulundu (${matched} tanesi kişiyle eşleşti)` + (skippedN ? `; listede olmayan tarihlerdeki ${skippedN} madde atlandı` : '') + '. "Maddeleri İçe Aktar"a basın.' : (parsed.length ? `Dosyadaki ${parsed.length} madde toplantı listesindeki tarihlerle eşleşmedi.` : 'Dosyada to-do tablosu bulunamadı.');
   } catch (e) { console.error(e); st.textContent = 'Word dosyası okunamadı: ' + e.message; }
 }
 function handleDriveImportFile(ev) {
