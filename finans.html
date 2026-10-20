@@ -269,6 +269,7 @@
         <p class="text-[11px] text-slate-400" data-i18n="sp_desc">Ekip üyelerinin aylık ödeme planı ve kaynağı. Bu bölüm sadece yöneticilere görünür.</p>
         <div class="flex gap-2">
           <button data-act="exportStaffPlan" class="btn btn-ghost">Excel'e Aktar</button>
+          <button data-act="bulkStaff" class="btn btn-ghost">⚡ Toplu Giriş</button>
           <button data-act="newStaffPlan" class="btn btn-primary" data-i18n="btn_new_person">+ Personel Ekle</button>
         </div>
       </div>
@@ -436,6 +437,36 @@
 </div>
 
 <!-- ========== MODAL: ŞİFRE DEĞİŞTİR ========== -->
+<!-- ========== MODAL: TOPLU PERSONEL ÖDEMESİ ========== -->
+<div id="staffBulkModal" class="hidden fixed inset-0 z-50 flex items-start justify-center bg-black/80 p-4 overflow-y-auto">
+  <div class="glass rounded-2xl w-full max-w-2xl p-6 my-6 shadow-2xl">
+    <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+      <h3 class="text-base font-bold">Toplu Personel Ödemesi</h3>
+      <button data-act="closeModal" data-modal="staffBulkModal" class="text-slate-400 hover:text-slate-100 text-lg leading-none" aria-label="close">✕</button>
+    </div>
+    <p class="text-[11px] text-slate-400 mb-3">Dönemi seçin, her personel için aylık tutarı yazın. Tutar, dönemdeki her aya yazılır.</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+      <div><label class="lbl">Başlangıç (ay / yıl)</label><div id="sbFrom" class="flex gap-2"></div></div>
+      <div><label class="lbl">Bitiş (ay / yıl)</label><div id="sbTo" class="flex gap-2"></div></div>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <label class="lbl mb-0">Personel ve aylık tutar (₺)</label>
+      <div class="flex gap-2">
+        <button type="button" data-act="sbAddAll" class="btn btn-ghost !text-[11px] !py-1">Tüm aktif personeli ekle</button>
+        <button type="button" data-act="sbAddRow" class="btn btn-ghost !text-[11px] !py-1">+ Satır</button>
+      </div>
+    </div>
+    <div id="sbRows" class="space-y-2 max-h-[40vh] overflow-y-auto pr-1"></div>
+    <label class="flex items-center gap-2 text-[11px] text-slate-300 mt-3"><input type="checkbox" id="sbOverwrite" checked> Dönemde zaten tutar olan ayların üzerine yaz</label>
+    <div id="sbPreview" class="text-[11px] text-slate-400 mt-2"></div>
+    <div id="staffBulkMsg" class="hidden text-[11px] rounded-lg px-3 py-2 mt-2"></div>
+    <div class="flex justify-end gap-2 pt-3 mt-3 border-t border-slate-800">
+      <button type="button" data-act="closeModal" data-modal="staffBulkModal" class="btn btn-ghost">İptal</button>
+      <button type="button" data-act="sbSave" class="btn btn-primary">Kaydet</button>
+    </div>
+  </div>
+</div>
+
 <!-- ========== MODAL: PERSONEL ÖDEME PLANI ========== -->
 <div id="staffPlanModal" class="hidden fixed inset-0 z-50 flex items-start justify-center bg-black/80 p-4 overflow-y-auto">
   <div class="glass rounded-2xl w-full max-w-xl p-6 my-6 shadow-2xl">
@@ -1077,6 +1108,11 @@ function bindStaticEvents() {
     else if (act === 'toggleStaffActive') toggleStaffActive(btn.getAttribute('data-id'));
     else if (act === 'exportStaffPlan') exportStaffPlanExcel();
     else if (act === 'addStaffMonth') addStaffMonthRow('', '');
+    else if (act === 'bulkStaff') openStaffBulk();
+    else if (act === 'sbAddRow') sbAddRow('', '');
+    else if (act === 'sbAddAll') sbAddAll();
+    else if (act === 'sbRemove') { btn.closest('.sb-row').remove(); sbPreview(); }
+    else if (act === 'sbSave') saveStaffBulk();
     else if (act === 'removeStaffMonth') btn.closest('.sp-month-row').remove();
     else if (act === 'newPartEntry') openPartModal(null);
     else if (act === 'editPartEntry') openPartModal(btn.getAttribute('data-id'));
@@ -1837,12 +1873,34 @@ function exportStaffPlanExcel() {
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })); a.download = name + '.csv'; a.click();
   }
 }
+const YM_MONTHS = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+function ymPickerHTML(key) {
+  const now = new Date();
+  const [y0, m0] = (key || '').match(/^\d{4}-\d{2}$/) ? key.split('-').map((x) => parseInt(x, 10)) : [now.getFullYear(), now.getMonth() + 1];
+  const years = []; for (let y = 2024; y <= 2032; y++) years.push(y);
+  if (!years.includes(y0)) years.push(y0);
+  years.sort();
+  return `<select class="fld ym-m">${YM_MONTHS.map((n, i) => `<option value="${i + 1}" ${i + 1 === m0 ? 'selected' : ''}>${n}</option>`).join('')}</select>`
+    + `<select class="fld ym-y">${years.map((y) => `<option value="${y}" ${y === y0 ? 'selected' : ''}>${y}</option>`).join('')}</select>`;
+}
+function ymValue(box) {
+  const m = box.querySelector('.ym-m').value, y = box.querySelector('.ym-y').value;
+  return y + '-' + String(m).padStart(2, '0');
+}
+function nextMonthAfterLastRow() {
+  const rows = document.querySelectorAll('#spMonthRows .sp-month-row .sp-month-key');
+  if (rows.length) {
+    const [y, m] = ymValue(rows[rows.length - 1]).split('-').map((x) => parseInt(x, 10));
+    const d = new Date(y, m, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+  const n = new Date(); return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0');
+}
 function addStaffMonthRow(key, value) {
   const box = $('spMonthRows');
   const row = document.createElement('div');
   row.className = 'sp-month-row flex items-center gap-2';
   row.innerHTML = `
-    <input type="month" class="fld sp-month-key" value="${esc(key || '')}">
+    <div class="sp-month-key flex gap-2 flex-1">${ymPickerHTML(key || nextMonthAfterLastRow())}</div>
     <input type="number" step="0.01" class="fld sp-month-val" placeholder="0.00" value="${value !== undefined && value !== '' ? esc(value) : ''}">
     <button type="button" data-act="removeStaffMonth" class="text-red-400 hover:text-red-300 px-1 shrink-0">✕</button>
   `;
@@ -1876,7 +1934,7 @@ async function onStaffPlanSubmit(e) {
 
   const monthly = {};
   document.querySelectorAll('#spMonthRows .sp-month-row').forEach((row) => {
-    const k = row.querySelector('.sp-month-key').value;
+    const k = ymValue(row.querySelector('.sp-month-key'));
     const v = row.querySelector('.sp-month-val').value;
     if (k && v !== '') monthly[k] = num(v);
   });
@@ -1904,6 +1962,91 @@ async function onStaffPlanSubmit(e) {
     closeModal('staffPlanModal');
     await loadAdminData();
   } catch (err) { showMsg('staffPlanMsg', friendlyError(err), 'error'); }
+  finally { btn.disabled = false; }
+}
+// ---- TOPLU GİRİŞ
+function sbMonths() {
+  const a = ymValue($('sbFrom')), b = ymValue($('sbTo'));
+  if (a > b) return [];
+  const out = []; let [y, m] = a.split('-').map((x) => parseInt(x, 10));
+  const [ey, em] = b.split('-').map((x) => parseInt(x, 10));
+  while (y < ey || (y === ey && m <= em)) { out.push(y + '-' + String(m).padStart(2, '0')); m++; if (m > 12) { m = 1; y++; } }
+  return out;
+}
+function sbPreview() {
+  const months = sbMonths();
+  const rows = Array.from(document.querySelectorAll('#sbRows .sb-row')).filter((r) => r.querySelector('.sb-amt').value !== '');
+  $('sbPreview').textContent = months.length
+    ? `${months.length} ay (${monthKeyLabel(months[0])} – ${monthKeyLabel(months[months.length - 1])}) × ${rows.length} kişi`
+    : 'Bitiş ayı başlangıçtan önce olamaz.';
+}
+function sbAddRow(planId, amount) {
+  const opts = allStaffPlan.filter(staffIsActive).map((p) => `<option value="${esc(p.id)}" ${p.id === planId ? 'selected' : ''}>${esc(p.person_name)}</option>`).join('');
+  const row = document.createElement('div');
+  row.className = 'sb-row flex flex-wrap items-center gap-2';
+  row.innerHTML = `
+    <select class="fld sb-person flex-1 min-w-[160px]"><option value="">— Personel seç —</option>${opts}<option value="__new">+ Yeni kişi…</option></select>
+    <input type="text" class="fld sb-newname hidden flex-1 min-w-[140px]" placeholder="Ad Soyad">
+    <input type="number" step="0.01" class="fld sb-amt w-36" placeholder="Aylık tutar" value="${amount !== '' && amount !== undefined ? esc(amount) : ''}">
+    <button type="button" data-act="sbRemove" class="text-red-400 hover:text-red-300 px-1 shrink-0">✕</button>`;
+  row.querySelector('.sb-person').addEventListener('change', (e) => row.querySelector('.sb-newname').classList.toggle('hidden', e.target.value !== '__new'));
+  row.querySelector('.sb-amt').addEventListener('input', sbPreview);
+  $('sbRows').appendChild(row);
+}
+function sbAddAll() {
+  const used = new Set(Array.from(document.querySelectorAll('#sbRows .sb-person')).map((x) => x.value));
+  // boş satırları temizle
+  document.querySelectorAll('#sbRows .sb-row').forEach((r) => { if (!r.querySelector('.sb-person').value && r.querySelector('.sb-amt').value === '') r.remove(); });
+  allStaffPlan.filter(staffIsActive).forEach((p) => {
+    if (used.has(p.id)) return;
+    const am = p.monthly_amounts || {}; const ks = Object.keys(am).sort();
+    sbAddRow(p.id, ks.length ? am[ks[ks.length - 1]] : '');   // son aydaki tutar öneri olarak gelir
+  });
+  sbPreview();
+}
+function openStaffBulk() {
+  showMsg('staffBulkMsg', '');
+  const n = new Date(); const cur = n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0');
+  $('sbFrom').innerHTML = ymPickerHTML(cur); $('sbTo').innerHTML = ymPickerHTML(cur);
+  ['sbFrom', 'sbTo'].forEach((id) => $(id).addEventListener('change', sbPreview));
+  $('sbRows').innerHTML = '';
+  sbAddRow('', '');
+  sbPreview();
+  openModal('staffBulkModal');
+}
+async function saveStaffBulk() {
+  showMsg('staffBulkMsg', '');
+  const months = sbMonths();
+  if (!months.length) return showMsg('staffBulkMsg', 'Dönemi kontrol edin (bitiş, başlangıçtan önce olamaz).', 'error');
+  const overwrite = $('sbOverwrite').checked;
+  const byId = {}, newOnes = [];
+  for (const row of document.querySelectorAll('#sbRows .sb-row')) {
+    const pid = row.querySelector('.sb-person').value, amt = row.querySelector('.sb-amt').value;
+    if (!pid && amt === '') continue;
+    if (!pid) return showMsg('staffBulkMsg', 'Tutarı olan her satırda personel seçin.', 'error');
+    if (amt === '' || isNaN(num(amt))) return showMsg('staffBulkMsg', 'Seçili her personel için tutar yazın.', 'error');
+    if (pid === '__new') {
+      const nm = row.querySelector('.sb-newname').value.trim();
+      if (!nm) return showMsg('staffBulkMsg', 'Yeni kişi için ad soyad yazın.', 'error');
+      newOnes.push({ name: nm, amt: num(amt) });
+    } else byId[pid] = num(amt);
+  }
+  if (!Object.keys(byId).length && !newOnes.length) return showMsg('staffBulkMsg', 'En az bir personel ve tutar girin.', 'error');
+  const apply = (cur, amt) => { const m = Object.assign({}, cur || {}); months.forEach((k) => { if (overwrite || m[k] === undefined || m[k] === null || m[k] === '') m[k] = amt; }); return m; };
+  const btn = document.querySelector('#staffBulkModal [data-act="sbSave"]'); btn.disabled = true;
+  try {
+    const jobs = Object.entries(byId).map(([id, amt]) => {
+      const p = allStaffPlan.find((x) => x.id === id);
+      return sb.from('finance_staff_plan').update({ monthly_amounts: apply(p && p.monthly_amounts, amt) }).eq('id', id);
+    });
+    let order = allStaffPlan.length;
+    newOnes.forEach((o) => jobs.push(sb.from('finance_staff_plan').insert({ person_name: o.name, monthly_amounts: apply({}, o.amt), sort_order: order++ })));
+    const res = await Promise.all(jobs);
+    const bad = res.find((r) => r.error); if (bad) throw bad.error;
+    toast(L('toast_saved'));
+    closeModal('staffBulkModal');
+    await loadAdminData();
+  } catch (err) { showMsg('staffBulkMsg', friendlyError(err), 'error'); }
   finally { btn.disabled = false; }
 }
 async function deleteStaffPlan(id) {
