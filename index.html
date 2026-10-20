@@ -4418,8 +4418,8 @@ function closeSidebar() {
 // ---- TEMA
 function getThemePref() { try { return localStorage.getItem('demig_theme') || 'light'; } catch (e) { return 'light'; } }
 function isDarkTheme() { return document.documentElement.classList.contains('dark'); }
-function chartTick() { return isDarkTheme() ? '#A9B3C4' : chartTick(); }
-function chartGrid() { return isDarkTheme() ? '#2B3548' : chartGrid(); }
+function chartTick() { return isDarkTheme() ? '#A9B3C4' : '#64748b'; }
+function chartGrid() { return isDarkTheme() ? '#2B3548' : '#e2e8f0'; }
 function applyTheme() {
   const pref = getThemePref();
   const dark = pref === 'dark' || (pref === 'system' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
