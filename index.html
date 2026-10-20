@@ -2181,7 +2181,7 @@ async function confirmPersonGroup(date, pid) {
 // ---------------------------------------------------------------------
 // Drive'daki Zoom AI to-do listesini içe aktarma
 // ---------------------------------------------------------------------
-let docxImportItems = null, docxParsedAll = null;
+let docxImportItems = null, docxParsedAll = null, docxHtml = null;
 function applyDocxFilter() {
   if (!docxParsedAll) return;
   const st = document.getElementById('driveImportStatus');
@@ -2249,6 +2249,40 @@ function parseDocxTodoHtml(html, fallbackDate) {
   });
   return out;
 }
+// Günün toplantı notları: to-do dışındaki bölümler (Hızlı özet, ayrıntılı notlar vb.)
+function parseDocxNotes(html, fallbackDate) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const fbYear = parseInt(fallbackDate.slice(0, 4), 10);
+  const notes = {}; let date = null, section = '';
+  const wanted = sec => /sonraki ad[ıi]mlar|g[öo]revler|yap[ıi]lacaklar|aksiyon|to-?do/i.test(sec);
+  const txt = el => (el.textContent || '').replace(/\s+/g, ' ').trim();
+  const add = t => { if (date && t) notes[date] = (notes[date] || '') + t + '\n'; };
+  doc.body.querySelectorAll('h1,h2,h3,h4,h5,h6,p,li').forEach(el => {
+    if (el.closest('table')) return;
+    const tag = el.tagName, t = txt(el);
+    if (/^H[1-6]$/.test(tag)) {
+      const lvl = parseInt(tag[1], 10);
+      if (lvl <= 2) { const d = driveParseDate(t, fbYear); if (d) { date = d; section = ''; } }
+      else if (lvl === 3) { section = t; if (!wanted(t)) add('\n' + t); }
+      else if (!wanted(section)) add(t);
+    } else if (tag === 'P') {
+      if (t.length < 90 && driveParseDate(t, fbYear) && /^(\S+\s*,?\s*)?\d{1,2}[ ./]/.test(t)) { date = driveParseDate(t, fbYear); section = ''; }
+      else if (section && !wanted(section)) add(t);
+    } else if (tag === 'LI') { if (section && !wanted(section) && t) add('• ' + t); }
+  });
+  return notes;
+}
+async function importDocxNotes(week) {
+  if (!docxHtml) return '';
+  const text = ((parseDocxNotes(docxHtml, week) || {})[week] || '').replace(/\n{3,}/g, '\n\n').trim().slice(0, 12000);
+  if (text.length < 20) return '';
+  const w = MEETING_WEEKS.find(x => x.date === week); if (!w) return '';
+  const tracks = MEETING_TRACKS[w.type] || [];
+  const free = tracks.find(t => !((meetingRecords[meetingRecordKey(week, t.id)] || {}).action_text || '').trim());
+  if (!free) return ' Toplantı notları dosyada var ama tüm oturumların notu dolu olduğu için yazılmadı.';
+  await updateMeetingField(week, free.id, 'action_text', text);
+  return ` Toplantı notları "${free.time} ${translate(free.labelKey)}" oturumuna yazıldı.`;
+}
 async function handleDocxImport(f) {
   const st = document.getElementById('driveImportStatus');
   docxImportItems = null; docxParsedAll = null;
@@ -2258,6 +2292,7 @@ async function handleDocxImport(f) {
     const buf = await f.arrayBuffer();
     const res = await mammoth.convertToHtml({ arrayBuffer: buf });
     const fb = document.getElementById('driveImportWeekSelect').value;
+    docxHtml = res.value;
     docxParsedAll = parseDocxTodoHtml(res.value, fb);
     applyDocxFilter();
   } catch (e) { console.error(e); st.textContent = 'Word dosyası okunamadı: ' + e.message; }
@@ -2306,7 +2341,7 @@ function handleDriveImportFile(ev) {
   const f = ev.target.files && ev.target.files[0];
   if (!f) return;
   if (/\.docx$/i.test(f.name)) { handleDocxImport(f); return; }
-  docxImportItems = null; docxParsedAll = null;
+  docxImportItems = null; docxParsedAll = null; docxHtml = null;
   const r = new FileReader();
   r.onload = () => { document.getElementById('driveImportText').value = String(r.result || ''); };
   r.readAsText(f);
@@ -2344,6 +2379,8 @@ async function importDriveTodos() {
   const raw = document.getElementById('driveImportText').value;
   if (!supabaseClient) { st.textContent = 'Sunucu bağlantısı yok.'; return; }
   let rows;
+  const noteMsg = docxHtml ? await importDocxNotes(week) : '';
+  if (docxHtml && !(docxImportItems && docxImportItems.length) && noteMsg) { st.textContent = 'Bu tarih için to-do bulunamadı.' + noteMsg; renderMtg(); return; }
   if (docxImportItems && docxImportItems.length) {
     rows = docxImportItems.map(i => { const p = driveFindPerson(i.person); return { week_date: i.date, raw_text: i.text, suggested_person_id: p ? p.id : null, suggested_person_name: p ? p.name : i.person, status: 'pending', source: 'drive_import' }; });
     // aynı gün + aynı metin daha önce eklenmişse atla
@@ -2351,7 +2388,7 @@ async function importDriveTodos() {
     const { data: ex } = await supabaseClient.from('meeting_action_items').select('week_date,raw_text').in('week_date', dates);
     const have = new Set((ex || []).map(e => e.week_date + '|' + e.raw_text));
     const before = rows.length; rows = rows.filter(r => !have.has(r.week_date + '|' + r.raw_text));
-    if (!rows.length) { st.textContent = `${before} maddenin hepsi zaten kayıtlı.`; return; }
+    if (!rows.length) { st.textContent = `${before} maddenin hepsi zaten kayıtlı.` + noteMsg; renderMtg(); return; }
   } else {
     const items = parseDriveTodoLines(raw);
     if (!items.length) { st.textContent = 'İçe aktarılacak madde bulunamadı.'; return; }
@@ -2359,10 +2396,10 @@ async function importDriveTodos() {
   }
   const { error } = await supabaseClient.from('meeting_action_items').insert(rows);
   if (error) { console.error(error); st.textContent = 'Kaydedilemedi: ' + error.message; return; }
-  st.textContent = `${rows.length} madde eklendi (${rows.filter(r => r.suggested_person_id).length} tanesi kişiyle eşleşti). Aşağıdaki panelden onaylayıp atayın.`;
+  st.textContent = `${rows.length} madde eklendi (${rows.filter(r => r.suggested_person_id).length} tanesi kişiyle eşleşti). Onay Bekleyen sekmesinden onaylayıp atayın.` + noteMsg;
   document.getElementById('driveImportText').value = '';
   document.getElementById('driveImportFile').value = '';
-  docxImportItems = null; docxParsedAll = null;
+  docxImportItems = null; docxParsedAll = null; docxHtml = null;
   await renderPendingActionItemsPanel();
 }
 
@@ -4409,14 +4446,47 @@ function buildHistoryRows() {
   rows.sort((a, b) => String(a.event_date).localeCompare(String(b.event_date)));
   return rows.map(l => {
     const p = registeredPeople.find(x => x.id === l.person_id) || { name: l.person_id };
-    return { date: l.event_date, name: p.name, group: GROUP_LABELS[personGroup(p)] || '', event: EVENT_LABELS[l.event] || l.event, note: l.note || '', by: l.created_by || '' };
+    return { id: l.id, pid: l.person_id, ev: l.event, date: l.event_date, name: p.name, group: GROUP_LABELS[personGroup(p)] || '', event: EVENT_LABELS[l.event] || l.event, note: l.note || '', by: l.created_by || '' };
   });
+}
+
+// Durum geçmişinde gerçek ara verme / mezuniyet / başlangıç tarihini (ya da notu) düzelt
+async function editHistoryEntry(key, field, value) {
+  const patch = field === 'date' ? { event_date: value } : { note: value || null };
+  if (field === 'date' && !value) return;
+  let pid, ev;
+  if (key.startsWith('start:')) {
+    pid = key.slice(6);
+    const p = registeredPeople.find(x => x.id === pid);
+    if (!p || field !== 'date') return showMiniToast('Bu kaydın notu düzenlenemez.');
+    p.startDate = value; await persistPerson(p); renderAll(); return showMiniToast('Başlangıç tarihi güncellendi.');
+  }
+  const log = peopleStatusLog.find(l => String(l.id) === key);
+  if (!log) return;
+  if (supabaseClient) {
+    const { error } = await supabaseClient.from('people_status_log').update(patch).eq('id', log.id);
+    if (error) { console.error(error); return showMiniToast('Kaydedilemedi: ' + error.message); }
+  }
+  Object.assign(log, patch);
+  if (field === 'date') {
+    // kişi kartındaki "Ara verdi · tarih" bu kişinin son OFF olayına bağlıdır
+    const p = registeredPeople.find(x => x.id === log.person_id);
+    if (p) {
+      const evs = peopleStatusLog.filter(l => l.person_id === p.id);
+      const lastOff = evs.filter(l => ['pause', 'left', 'graduated'].includes(l.event)).sort((a, b) => String(a.event_date).localeCompare(String(b.event_date))).pop();
+      if (!isActivePerson(p) && lastOff && String(lastOff.id) === key) { p.endDate = value; await persistPerson(p); }
+      if (log.event === 'start') { p.startDate = value; await persistPerson(p); }
+    }
+    renderAll();
+  }
+  showMiniToast(field === 'date' ? 'Tarih güncellendi.' : 'Not güncellendi.');
 }
 
 async function openStatusHistory() {
   await loadStatusLog();
   const rows = buildHistoryRows();
-  document.getElementById('historyBody').innerHTML = rows.map(r => `<tr class="border-b border-slate-800/50"><td class="p-1.5 font-mono whitespace-nowrap">${r.date}</td><td class="p-1.5 font-semibold text-slate-100">${escapeHtml(r.name)}</td><td class="p-1.5 text-slate-400">${escapeHtml(r.group)}</td><td class="p-1.5">${r.event}</td><td class="p-1.5 text-slate-400">${escapeHtml(r.note)}</td><td class="p-1.5 text-slate-500">${escapeHtml(r.by)}</td></tr>`).join('') || '<tr><td colspan="6" class="p-3 text-center text-slate-500">Henüz kayıtlı değişiklik yok.</td></tr>';
+  const key = r => r.id !== undefined && r.id !== null ? String(r.id) : 'start:' + r.pid;
+  document.getElementById('historyBody').innerHTML = rows.map(r => `<tr class="border-b border-slate-800/50"><td class="p-1.5 whitespace-nowrap"><input type="date" value="${escapeHtml(String(r.date || '').slice(0, 10))}" onchange="editHistoryEntry('${key(r)}', 'date', this.value)" title="Gerçek tarihi düzeltmek için değiştirin" class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-[11px] font-mono text-slate-100"></td><td class="p-1.5 font-semibold text-slate-100">${escapeHtml(r.name)}</td><td class="p-1.5 text-slate-400">${escapeHtml(r.group)}</td><td class="p-1.5 whitespace-nowrap">${r.event}</td><td class="p-1.5"><input type="text" value="${escapeHtml(r.note)}" placeholder="not…" onchange="editHistoryEntry('${key(r)}', 'note', this.value)" class="w-full min-w-[110px] bg-transparent border border-transparent hover:border-slate-700 focus:border-indigo-500 rounded px-1.5 py-0.5 text-[11px] text-slate-300"></td><td class="p-1.5 text-slate-500">${escapeHtml(r.by)}</td></tr>`).join('') || '<tr><td colspan="6" class="p-3 text-center text-slate-500">Henüz kayıtlı değişiklik yok.</td></tr>';
   document.getElementById('historyModal').classList.remove('hidden');
   lucide.createIcons();
 }
