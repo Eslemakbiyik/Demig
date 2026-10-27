@@ -5443,22 +5443,104 @@ function mtgPendingTodoLines(date) {
   ups.forEach(u => mtgLines(u.next_text).forEach(l => rows.push({ week_date: date, raw_text: l, suggested_person_id: u.person_id, suggested_person_name: mtgNameOf(u.person_id), status: 'pending', source: 'weekly_update' })));
   return { ups, rows };
 }
-async function mtgUpdSendTodos(date) {
+// Her madde için kişi/oturuma göre hangi ana görevin (Görev / Adım) altına gideceği seçilir.
+// Varsayılan: daha önce o kişi+oturum için seçilen görev → oturuma uyan görev → kişinin etiketli olduğu görev.
+const MTG_TRACK_TASK_HINTS = { model_dev: /reward/i, synthetic_agents: /synthetic|sentetik|conjoint/i, expert_survey: /expert|uzman|qualtrics/i };
+let mtgTodoDraft = null;   // { date, upIds, items: [{ pid, tid, text, ti, on }] }
+function mtgGuessTaskIdx(pid, tid) {
+  try { const saved = localStorage.getItem('demig_todo_task_' + pid + '_' + tid); const i = tasks.findIndex(t => String(t.id) === saved); if (saved && i >= 0) return i; } catch (e) {}
+  const re = MTG_TRACK_TASK_HINTS[tid];
+  if (re) { const i = tasks.findIndex(t => re.test(t.name || '')); if (i >= 0) return i; }
+  const j = tasks.findIndex(t => (t.taggedIds || []).includes(pid) && t.status !== 'Tamamlandı'); if (j >= 0) return j;
+  const k = currentTargetTaskIdx(); return k === null ? 0 : k;
+}
+function mtgUpdSendTodos(date) { mtgOpenTodoModal(date); }
+function mtgOpenTodoModal(date) {
   if (getCurrentPersonId() !== MTG_WA_OWNER) return;
   if (!supabaseClient) { showMiniToast('To-do aktarımı için sunucu bağlantısı gerekiyor.'); return; }
-  const { ups, rows } = mtgPendingTodoLines(date);
-  if (!rows.length) { showMiniToast('Aktarılacak yeni "sıradaki adım" yok. Ekip Güncellemeler sekmesinde "Sıradaki adımlarım" alanını doldurdukça buradan to-do\'ya aktarabilirsin.'); return; }
-  const ti = currentTargetTaskIdx();
-  if (ti === null) { showMiniToast('Önce bir ana görev oluşturun.'); return; }
-  if (!confirm(`${ups.length} kişinin ${rows.length} "sıradaki adım" maddesi, "${tasks[ti].name}" altında ${formatMeetingDate(date)} toplantısının haftalık to-do'ları olarak açılacak ve kişilere bildirim gidecek.\n\nDevam edilsin mi?`)) return;
+  const { ups } = mtgPendingTodoLines(date);
+  if (!ups.length) { showMiniToast('Aktarılacak yeni "sıradaki adım" yok. Ekip Güncellemeler sekmesinde "Sıradaki adımlarım" alanını doldurdukça buradan to-do\'ya aktarabilirsin.'); return; }
+  if (!tasks.length) { showMiniToast('Önce bir ana görev oluşturun.'); return; }
+  const items = [];
+  ups.forEach(u => mtgLines(u.next_text).forEach(l => items.push({ pid: u.person_id, tid: u.track_id, text: l, ti: mtgGuessTaskIdx(u.person_id, u.track_id), on: true })));
+  mtgTodoDraft = { date, upIds: ups.map(u => u.id), items };
+  renderMtgTodoModal();
+}
+function mtgCloseTodoModal() { const m = document.getElementById('mtgTodoModal'); if (m) m.classList.add('hidden'); mtgTodoDraft = null; }
+function mtgTodoSetAll(v) { if (!mtgTodoDraft || v === '') return; mtgTodoDraft.items.forEach(it => { it.ti = +v; }); renderMtgTodoModal(); }
+function renderMtgTodoModal() {
+  const d = mtgTodoDraft; if (!d) return;
+  let m = document.getElementById('mtgTodoModal');
+  if (!m) {
+    m = document.createElement('div'); m.id = 'mtgTodoModal';
+    m.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4';
+    m.style.position = 'fixed';
+    m.addEventListener('click', e => { if (e.target === m) mtgCloseTodoModal(); });
+    document.body.appendChild(m);
+  }
+  m.classList.remove('hidden');
+  const opts = sel => tasks.map((t, i) => `<option value="${i}" ${i === sel ? 'selected' : ''}>${escHtml(t.name)}</option>`).join('');
+  const sel = 'bg-slate-900 border border-slate-700 rounded-md px-1.5 py-1 text-[11px] text-slate-100';
+  const order = []; d.items.forEach(it => { if (!order.includes(it.pid)) order.push(it.pid); });
+  const groups = order.map(pid => {
+    const rows = d.items.map((it, k) => ({ it, k })).filter(x => x.it.pid === pid).map(({ it, k }) => `
+      <div class="flex flex-col md:flex-row md:items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-lg px-2.5 py-2 ${it.on ? '' : 'opacity-50'}">
+        <label class="flex items-center gap-2 flex-1 min-w-0">
+          <input type="checkbox" ${it.on ? 'checked' : ''} onchange="mtgTodoDraft.items[${k}].on=this.checked;renderMtgTodoModal()" class="rounded border-slate-600 shrink-0">
+          <input type="text" value="${escHtml(it.text)}" oninput="mtgTodoDraft.items[${k}].text=this.value" class="flex-1 min-w-0 bg-transparent border-b border-transparent hover:border-slate-700 focus:border-indigo-500 focus:outline-none px-1 py-0.5 text-[11px] text-slate-100">
+        </label>
+        <span class="text-[10px] text-slate-500 shrink-0">${escHtml(MTG_TRACK_SHORT[it.tid] || it.tid)}</span>
+        <select onchange="mtgTodoDraft.items[${k}].ti=+this.value" class="${sel} md:w-56 shrink-0">${opts(it.ti)}</select>
+      </div>`).join('');
+    return `<div class="mb-3"><div class="flex items-center gap-1.5 mb-1.5 text-[11px] font-semibold text-slate-200"><i data-lucide="user" class="w-3 h-3 text-indigo-300"></i>${escHtml(mtgNameOf(pid))}</div><div class="space-y-1.5">${rows}</div></div>`;
+  }).join('');
+  const n = d.items.filter(it => it.on && it.text.trim()).length;
+  m.innerHTML = `<div class="glass rounded-2xl w-full max-w-3xl border border-slate-700 shadow-2xl max-h-[90vh] flex flex-col">
+    <div class="flex items-start justify-between gap-3 px-5 py-4 border-b border-slate-800">
+      <div><h3 class="text-sm font-bold text-slate-100">Sıradaki adımları to-do'ya aktar</h3>
+        <p class="text-[11px] text-slate-400 mt-0.5">${escHtml(formatMeetingDate(d.date))} · Her maddenin hangi görevin altına gideceğini seç; metni düzeltebilir, istemediğinin işaretini kaldırabilirsin.</p></div>
+      <button onclick="mtgCloseTodoModal()" class="text-slate-400 hover:text-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="px-5 pt-3 flex items-center gap-2 text-[11px] text-slate-400">Hepsini şu görevin altına taşı:
+      <select onchange="mtgTodoSetAll(this.value)" class="${sel} max-w-[260px]"><option value="">— seç —</option>${opts(-1)}</select></div>
+    <div class="px-5 py-3 overflow-y-auto flex-1">${groups}</div>
+    <div class="flex items-center justify-between gap-2 px-5 py-3 border-t border-slate-800">
+      <span class="text-[10px] text-slate-500">Seçilenler kişilere haftalık to-do olarak atanır ve bildirim gider; işaretini kaldırdıkların aktarılmaz ve tekrar listelenmez.</span>
+      <div class="flex items-center gap-2">
+        <button onclick="mtgCloseTodoModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">İptal</button>
+        <button id="mtgTodoSubmit" onclick="mtgTodoModalSubmit()" ${n ? '' : 'disabled'} class="px-3.5 py-1.5 ${n ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-slate-700 cursor-not-allowed'} text-white text-[11px] font-semibold rounded-lg">${n} maddeyi aktar</button>
+      </div>
+    </div>
+  </div>`;
+  if (window.lucide) lucide.createIcons();
+}
+async function mtgTodoModalSubmit() {
+  const d = mtgTodoDraft; if (!d) return;
+  const chosen = d.items.filter(it => it.on && it.text.trim());
+  if (!chosen.length) { showMiniToast('Aktarılacak madde seçilmedi.'); return; }
+  const btn = document.getElementById('mtgTodoSubmit'); if (btn) { btn.disabled = true; btn.textContent = 'Aktarılıyor…'; }
+  const rows = chosen.map(it => ({ week_date: d.date, raw_text: it.text.trim(), suggested_person_id: it.pid, suggested_person_name: mtgNameOf(it.pid), status: 'pending', source: 'weekly_update' }));
   const { data, error } = await supabaseClient.from('meeting_action_items').insert(rows).select();
-  if (error) { console.error(error); showMiniToast('To-do oluşturulamadı: ' + error.message); return; }
-  await confirmItemsBulk((data || []).map(item => ({ item, pid: item.suggested_person_id })), true);
-  const now = new Date().toISOString(); const ids = ups.map(u => u.id);
-  const { error: e2 } = await supabaseClient.from('meeting_updates').update({ todos_sent_at: now }).in('id', ids);
+  if (error) { console.error(error); showMiniToast('To-do oluşturulamadı: ' + error.message); if (btn) { btn.disabled = false; btn.textContent = 'Tekrar dene'; } return; }
+  // dönen kayıtları seçilen maddelerle eşleştir (kişi + metin), her birini kendi görevinin altına onayla
+  const used = new Set(); const byTi = {};
+  (data || []).forEach((item, i) => {
+    let k = chosen.findIndex((it, j) => !used.has(j) && it.pid === item.suggested_person_id && it.text.trim() === item.raw_text);
+    if (k < 0) k = i; used.add(k);
+    const it = chosen[k];
+    (byTi[it.ti] = byTi[it.ti] || []).push({ item, pid: it.pid });
+    try { localStorage.setItem('demig_todo_task_' + it.pid + '_' + it.tid, String(tasks[it.ti].id)); } catch (e) {}
+  });
+  const prevTarget = pendingTargetTaskIdx;
+  for (const ti of Object.keys(byTi)) { pendingTargetTaskIdx = +ti; await confirmItemsBulk(byTi[ti], false); }
+  pendingTargetTaskIdx = prevTarget; populateTargetTaskSelects();
+  await flushMeetingNotify();
+  const now = new Date().toISOString();
+  const { error: e2 } = await supabaseClient.from('meeting_updates').update({ todos_sent_at: now }).in('id', d.upIds);
   if (e2) console.error(e2);
-  meetingUpdates.forEach(u => { if (ids.includes(u.id)) u.todos_sent_at = now; }); // liste arada yeniden yüklenmiş olabilir
-  showMiniToast(`${rows.length} to-do oluşturuldu ve kişilere atandı.`);
+  meetingUpdates.forEach(u => { if (d.upIds.includes(u.id)) u.todos_sent_at = now; });
+  mtgCloseTodoModal();
+  showMiniToast(`${chosen.length} to-do oluşturuldu ve kişilere atandı.`);
   renderMtg();
 }
 
@@ -5563,8 +5645,6 @@ function renderMtgReportBody(w) {
   const toolbar = `<div class="flex flex-wrap items-center gap-2 mb-4">
     <button onclick="mtgOpenReportModal('${w.date}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg"><i data-lucide="file-text" class="w-3.5 h-3.5"></i>A4 rapor · Yazdır / PDF</button>
     ${waOwner && pendingPeople ? `<button onclick="mtgCopyText(mtgReminderText(MEETING_WEEKS.find(x => x.date === '${w.date}')), 'Hatırlatma mesajı kopyalandı.')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg"><i data-lucide="bell" class="w-3.5 h-3.5"></i>Hatırlatma mesajını kopyala (${pendingPeople} kişi)</button>` : ''}
-    ${waOwner ? `<span class="hidden sm:block w-px h-5 bg-slate-700 mx-1"></span><label class="inline-flex items-center gap-1.5 text-[10px] text-slate-400">To-do'lar şu görevin altına:
-      <select class="target-task-select bg-slate-900 border border-slate-700 rounded-md px-1.5 py-1 text-[10px] text-slate-100 max-w-[190px]" onchange="setPendingTargetTask(this.value)">${targetTaskOptionsHTML()}</select></label>` : ''}
     ${waOwner ? `<button onclick="mtgUpdSendTodos('${w.date}')" title="${pendTodos ? pendTodos + ' madde aktarılmayı bekliyor' : 'Henüz aktarılacak sıradaki adım yok'}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold rounded-lg"><i data-lucide="list-checks" class="w-3.5 h-3.5"></i>Sıradaki adımları to-do'ya aktar${pendTodos ? ` (${pendTodos})` : ''}</button>` : ''}
   </div>`;
   const wa = !waOwner ? '' : `<div class="rounded-xl border border-slate-700 bg-slate-900/40 p-3.5 mb-4">
