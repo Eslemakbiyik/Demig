@@ -636,6 +636,7 @@
         </div>
         <div class="flex items-center gap-2 flex-wrap">
           <a href="https://sabanciuniv.zoom.us/j/96437394095" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold transition"><i data-lucide="video" class="w-3.5 h-3.5"></i>Zoom'a katıl</a>
+          <button onclick="mtgOpenMyUpdate()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold transition"><i data-lucide="pencil-line" class="w-3.5 h-3.5"></i><span id="mtgMyUpdateLbl">Güncellememi gir</span></button>
           <button onclick="openMeetingModal('mtgScheduleModal')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold transition"><i data-lucide="clock" class="w-3.5 h-3.5"></i>Saat planı</button>
           <button onclick="openMeetingModal('mtgImportModal')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold transition"><i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i>To-do içe aktar</button>
         </div>
@@ -4700,6 +4701,7 @@ async function downloadAIReportPDF() {
 
 function closeAIReportModal() {
   document.getElementById('aiReportModal').classList.add('hidden');
+  const ttl = document.querySelector('#aiReportModal [data-i18n="ai_report_title"]'); if (ttl) ttl.innerText = translate('ai_report_title');
 }
 
 function openSidebar() {
@@ -4929,13 +4931,18 @@ function mtgAddTodo(date) {
 // ---- sekmeler / filtre
 function mtgSetTab(t) { mtgState.tab = t; renderMtg(); }
 function mtgSetFilter(f) { mtgState.filter = f; renderMtg(); }
-function mtgSelect(date, sub) { mtgState.sel = date; if (sub) mtgState.sub = sub; mtgState.tab = 'meetings'; renderMtg(); }
+function mtgSelect(date, sub) {
+  mtgState.sel = date;
+  if (sub) mtgState.sub = sub;
+  else if (date >= todayIso() && mtgState.sub === 'notes') mtgState.sub = 'updates'; // yaklaşan toplantı: önce güncellemeler
+  mtgState.tab = 'meetings'; renderMtg();
+}
 function mtgSetSub(sub) { mtgState.sub = sub; renderMtgDetail(); }
 function mtgSetTrack(id) { mtgState.track = id; renderMtgDetail(); }
 function jumpToMeetingWeek(date) { if (!date) return; mtgState.q = ''; mtgSelect(date, 'tasks'); setTimeout(() => { const el = document.getElementById('mtgRow-' + date); if (el) el.scrollIntoView({ block: 'center' }); }, 60); }
 
 async function renderMeetingsSection() {
-  await loadMeetingRecords();
+  await Promise.all([loadMeetingRecords(), loadMeetingUpdates()]);
   await renderPendingActionItemsPanel(); // sonunda renderMtg() çağrılır
   populateMeetingUploadWeekSelect();
 }
@@ -4956,6 +4963,7 @@ function renderMtg() {
     const v = document.getElementById('mtgView-' + t); if (v) v.classList.toggle('hidden', mtgState.tab !== t);
   });
   ['upcoming', 'past', 'all'].forEach(f => { const b = document.getElementById('mtgFilterBtn-' + f); if (b) b.className = 'flex-1 px-2 py-1.5 transition ' + (mtgState.filter === f ? TAB_ON : 'text-slate-300 hover:bg-slate-700'); });
+  mtgRefreshMyUpdateBtn();
   if (mtgState.tab === 'meetings') {
     renderMtgList();
     const ae = document.activeElement;
@@ -5001,6 +5009,7 @@ function renderMtgList() {
           ${hasNotes ? '<span class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 text-[9px] font-semibold">Not</span>' : ''}
           ${mine.length ? `<span class="px-1.5 py-0.5 rounded bg-slate-700 text-slate-200 text-[9px] font-semibold">${openN}/${mine.length} görev</span>` : ''}
           ${pendN ? `<span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-semibold">${pendN} bekliyor</span>` : ''}
+          ${(meetingUpdatesState === 'ok' || meetingUpdatesState === 'local') && (w.date >= t || mtgPeopleUpdates(w.date).length) ? `<span class="px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 text-[9px] font-semibold">${mtgUpdCountLabel(w)} güncelleme</span>` : ''}
         </div>
       </div>
     </button>`;
@@ -5076,6 +5085,10 @@ function renderMtgDetail() {
           <input type="url" value="${escHtml(rec.notes_link || '')}" placeholder="https://…" onchange="updateMeetingField('${w.date}','${tr.id}','notes_link',this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] text-slate-100"></div>
       </div>
       ${(rec.recording_link || rec.notes_link) ? `<div class="flex gap-2 mt-2 text-[11px]">${rec.recording_link ? `<a href="${escHtml(rec.recording_link)}" target="_blank" rel="noopener" class="text-indigo-400 underline">Kaydı aç</a>` : ''}${rec.notes_link ? `<a href="${escHtml(rec.notes_link)}" target="_blank" rel="noopener" class="text-indigo-400 underline">Notu aç</a>` : ''}</div>` : ''}`;
+  } else if (mtgState.sub === 'updates') {
+    body = renderMtgUpdatesBody(w);
+  } else if (mtgState.sub === 'report') {
+    body = renderMtgReportBody(w);
   } else {
     const peopleOpts = registeredPeople.filter(isAssignable).map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
     const pendHTML = pend.length ? `<div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 mb-3">
@@ -5107,7 +5120,7 @@ function renderMtgDetail() {
           <h3 class="text-base font-bold text-slate-100">${new Date(w.date + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' })}</h3>
           <div class="mt-1 flex items-center gap-2"><span class="px-2 py-0.5 rounded text-[10px] font-bold border ${w.type === 'sub' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'}">${w.type === 'sub' ? 'Subgroup haftası' : 'Full Group haftası'}</span><span class="text-[10px] text-slate-500">17:00–19:00</span></div>
         </div>
-        <div class="flex items-center gap-1 bg-slate-950/60 border border-slate-800 rounded-xl p-1">${tabBtn('notes', 'Notlar')}${tabBtn('tasks', 'Görevler', rows.length + pend.length)}</div>
+        <div class="flex items-center gap-1 bg-slate-950/60 border border-slate-800 rounded-xl p-1 flex-wrap">${tabBtn('updates', 'Güncellemeler', meetingUpdatesState === 'missing' ? '' : mtgUpdCountLabel(w))}${tabBtn('report', 'Gündem & Rapor')}${tabBtn('notes', 'Notlar')}${tabBtn('tasks', 'Görevler', rows.length + pend.length)}</div>
       </div>
     </div>
     <div class="p-5">${body}</div>`;
@@ -5119,6 +5132,424 @@ async function mtgConfirmDate(date) {
   const pairs = items.map(item => ({ item, pid: (document.getElementById('mtgAssignee-' + item.id) || {}).value || item.suggested_person_id })).filter(x => x.pid);
   if (!pairs.length) return;
   await confirmItemsBulk(pairs, true);
+}
+
+// =====================================================================
+// HAFTALIK GÜNCELLEMELER & RAPOR
+// Ekip üyeleri toplantı öncesi güncellemelerini siteden girer (WhatsApp yerine).
+// Girişlerden otomatik olarak: oturum gündemi + WhatsApp mesajı, A4 haftalık rapor
+// ve "sıradaki adımlar"dan haftalık to-do'lar üretilir.
+// Veri: meeting_updates tablosu (meeting_updates.sql → Supabase SQL Editor'de bir kez çalıştırın).
+// =====================================================================
+const MTG_ADMIN_IDS = ['p1', 'p2'];            // gündemi düzenleyen / to-do aktaran yöneticiler
+const MTG_PM_ID = '_pm';                       // yöneticinin düzenlediği WhatsApp metni bu kayıt altında tutulur
+const MTG_AGENDA_TRACK = '_agenda';
+// Hangi oturumdan kim sorumlu (Saat planı ile aynı). full_group = herkes.
+const MEETING_TRACK_MEMBERS = {
+  other_side: ['p9', 'p8'],                    // Zeynep veya Helin
+  expert_survey: ['p6', 'p2'],                 // Ayşenur, Eslem
+  synthetic_agents: ['p4', 'p5'],              // Selim, Sena
+  model_dev: ['p4', 'p8', 'p3', 'p11']         // Selim, Helin, Ahmet, Abdullatif
+};
+const MTG_WHEN_NEEDED = ['other_side', 'model_dev'];   // gündem maddesi gelmezse o hafta yapılmaz
+const MTG_ONLY_PRESENTERS = ['other_side'];            // mesajda yalnızca madde getiren kişi yazılır
+const MTG_TRACK_SHORT = { other_side: 'Other Side Projects', expert_survey: 'Expert Survey', synthetic_agents: 'Synthetic Agents', model_dev: 'Model Development', full_group: 'Genel Toplantı' };
+const MTG_SHORT_NAMES = { p1: 'Tahir Hoca', p2: 'Eslem', p5: 'Sena', p11: 'Abdullatif' };
+const MTG_UPDATE_TEAM = [...new Set(Object.values(MEETING_TRACK_MEMBERS).flat())];
+const MTG_UPDATE_DEADLINE = 'Çarşamba 12:00';
+let meetingUpdates = [];
+let meetingUpdatesState = 'idle';              // ok | missing | error | local
+mtgState.updExtra = {};                        // { tarih: [sonradan eklenen oturumlar] }
+
+function mtgIsAdmin() { return MTG_ADMIN_IDS.includes(getCurrentPersonId()); }
+function mtgShort(pid) { return MTG_SHORT_NAMES[pid] || String(mtgNameOf(pid)).split(' ')[0]; }
+function mtgLines(s) { return String(s || '').split(/\r?\n/).map(l => l.replace(/^\s*(?:[-•*·▪–]\s*|\d{1,2}[.)]\s+)/, '').trim()).filter(Boolean); }
+function mtgUpdatesFor(date) { return meetingUpdates.filter(u => u.week_date === date); }
+function mtgPeopleUpdates(date) { return mtgUpdatesFor(date).filter(u => u.person_id !== MTG_PM_ID); }
+function mtgUpdateTeam() { return MTG_UPDATE_TEAM.filter(pid => { const p = registeredPeople.find(x => x.id === pid); return p && isActivePerson(p); }); }
+function mtgSubmittedSet(date) { return new Set(mtgPeopleUpdates(date).map(u => u.person_id)); }
+function mtgUpdCountLabel(w) { const team = mtgUpdateTeam(); const s = mtgSubmittedSet(w.date); return `${team.filter(p => s.has(p)).length}/${team.length}`; }
+function mtgNextMeetingDate() { const t = todayIso(); const w = MEETING_WEEKS.find(x => x.date >= t); return w ? w.date : (MEETING_WEEKS[MEETING_WEEKS.length - 1] || {}).date; }
+function mtgPrevMeetingDate(date) { return MEETING_WEEKS.map(x => x.date).filter(d => d < date).sort().pop() || null; }
+function mtgShortDate(iso) { return new Date(iso + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }); }
+function mtgStamp(ts) {
+  if (!ts) return '';
+  const d = new Date(ts); const sameDay = d.toDateString() === new Date().toDateString();
+  return sameDay ? d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// Kişinin bu haftaki oturumları: üyesi olduğu oturumlar (+ daha önce kaydettiği / sonradan eklediği).
+// Full Group haftasında oturumu olmayan ekip üyeleri "Genel Toplantı" altına yazar.
+function mtgMyTracks(w, pid) {
+  const tracks = MEETING_TRACKS[w.type] || [];
+  const mine = tracks.filter(t => (MEETING_TRACK_MEMBERS[t.id] || []).includes(pid)).map(t => t.id);
+  if (!mine.length && tracks.some(t => t.id === 'full_group') && MTG_UPDATE_TEAM.includes(pid)) mine.push('full_group');
+  mtgUpdatesFor(w.date).filter(u => u.person_id === pid).forEach(u => { if (!mine.includes(u.track_id)) mine.push(u.track_id); });
+  (mtgState.updExtra[w.date] || []).forEach(id => { if (!mine.includes(id)) mine.push(id); });
+  return tracks.filter(t => mine.includes(t.id));
+}
+
+// ---- veri
+async function loadMeetingUpdates() {
+  if (!supabaseClient) {
+    try { meetingUpdates = JSON.parse(localStorage.getItem('demigproject_updates_v1') || '[]'); } catch (e) { meetingUpdates = []; }
+    meetingUpdatesState = 'local'; return;
+  }
+  const { data, error } = await supabaseClient.from('meeting_updates').select('*').order('updated_at', { ascending: true });
+  if (error) {
+    console.error('Haftalık güncellemeler okunamadı:', error);
+    meetingUpdates = [];
+    meetingUpdatesState = (['42P01', 'PGRST205'].includes(error.code) || /does not exist|schema cache/i.test(error.message || '')) ? 'missing' : 'error';
+    return;
+  }
+  meetingUpdates = data || []; meetingUpdatesState = 'ok';
+}
+function mtgMergeUpdate(row) {
+  const i = meetingUpdates.findIndex(u => (row.id && u.id === row.id) || (u.week_date === row.week_date && u.person_id === row.person_id && u.track_id === row.track_id));
+  if (i >= 0) meetingUpdates[i] = Object.assign({}, meetingUpdates[i], row); else meetingUpdates.push(row);
+}
+async function mtgUpsertUpdate(row) {
+  row.updated_at = new Date().toISOString();
+  if (!supabaseClient) {
+    if (!row.id) { const ex = meetingUpdates.find(u => u.week_date === row.week_date && u.person_id === row.person_id && u.track_id === row.track_id); row.id = ex ? ex.id : 'local' + Date.now(); }
+    mtgMergeUpdate(row); localStorage.setItem('demigproject_updates_v1', JSON.stringify(meetingUpdates)); return true;
+  }
+  const { data, error } = await supabaseClient.from('meeting_updates').upsert(row, { onConflict: 'week_date,person_id,track_id' }).select();
+  if (error) { console.error('Güncelleme kaydedilemedi:', error); showMiniToast('Kaydedilemedi: ' + error.message); return false; }
+  mtgMergeUpdate((data && data[0]) || row); return true;
+}
+async function mtgDeleteUpdateRow(u) {
+  if (supabaseClient) {
+    const { error } = await supabaseClient.from('meeting_updates').delete().eq('id', u.id);
+    if (error) { showMiniToast('Silinemedi: ' + error.message); return false; }
+  }
+  meetingUpdates = meetingUpdates.filter(x => x !== u && x.id !== u.id);
+  if (!supabaseClient) localStorage.setItem('demigproject_updates_v1', JSON.stringify(meetingUpdates));
+  return true;
+}
+
+// ---- kişi formu
+async function mtgUpdSave(date, tid) {
+  const me = getCurrentPersonId();
+  if (!me) { showMiniToast('Güncelleme girmek için giriş yapın.'); return; }
+  const v = k => ((document.getElementById(`mtgUpd-${tid}-${k}`) || {}).value || '').trim();
+  const row = {
+    week_date: date, person_id: me, track_id: tid,
+    done_text: v('done') || null, next_text: v('next') || null, agenda_text: v('agenda') || null, blockers: v('blockers') || null,
+    no_agenda: !!(document.getElementById(`mtgUpd-${tid}-none`) || {}).checked
+  };
+  if (!row.done_text && !row.next_text && !row.agenda_text && !row.blockers && !row.no_agenda) { showMiniToast('Boş güncelleme kaydedilmedi. En az bir alanı doldurun.'); return; }
+  const st = document.getElementById(`mtgUpdSt-${tid}`); if (st) { st.textContent = 'Kaydediliyor…'; st.className = 'text-[10px] font-semibold text-slate-400'; }
+  if (await mtgUpsertUpdate(row)) {
+    const ex = mtgState.updExtra[date]; if (ex) mtgState.updExtra[date] = ex.filter(x => x !== tid);
+    showMiniToast('Güncellemen kaydedildi. Teşekkürler!');
+    renderMtg();
+  } else if (st) { st.textContent = '⚠ Kaydedilemedi'; st.className = 'text-[10px] font-semibold text-red-400'; }
+}
+async function mtgUpdDelete(date, tid) {
+  const me = getCurrentPersonId();
+  const u = mtgUpdatesFor(date).find(x => x.person_id === me && x.track_id === tid); if (!u) return;
+  if (!confirm('Bu oturum için girdiğin güncelleme silinsin mi?')) return;
+  if (await mtgDeleteUpdateRow(u)) renderMtg();
+}
+function mtgUpdAddTrack(date, tid) {
+  if (!tid) return;
+  const ex = mtgState.updExtra[date] = mtgState.updExtra[date] || [];
+  if (!ex.includes(tid)) ex.push(tid);
+  renderMtgDetail();
+}
+function mtgUpdRemoveExtra(date, tid) { mtgState.updExtra[date] = (mtgState.updExtra[date] || []).filter(x => x !== tid); renderMtgDetail(); }
+function mtgOpenMyUpdate() { mtgState.q = ''; mtgSelect(mtgNextMeetingDate(), 'updates'); setTimeout(() => { const el = document.getElementById('mtgRow-' + mtgState.sel); if (el) el.scrollIntoView({ block: 'center' }); }, 60); }
+function mtgRefreshMyUpdateBtn() {
+  const lbl = document.getElementById('mtgMyUpdateLbl'); if (!lbl) return;
+  const d = mtgNextMeetingDate(); const me = getCurrentPersonId();
+  const done = me && mtgSubmittedSet(d).has(me);
+  lbl.textContent = (done ? '✓ Güncellemen girildi · ' : 'Güncellememi gir · ') + mtgShortDate(d);
+}
+
+function mtgSetupNoticeHTML() {
+  if (meetingUpdatesState === 'missing') return `<div class="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-[11px] text-amber-600 leading-relaxed">
+    <b>Güncellemeler tablosu henüz kurulmamış.</b><br>${mtgIsAdmin() ? '<code>meeting_updates.sql</code> dosyasını Supabase &gt; SQL Editor\'de bir kez çalıştırın, ardından sayfayı yenileyin.' : 'Proje yöneticisi kurulumu tamamlayınca bu sekme açılacak.'}</div>`;
+  if (meetingUpdatesState === 'error') return `<div class="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-[11px] text-red-600">Güncellemeler yüklenemedi. Sayfayı yenileyip tekrar deneyin.</div>`;
+  return '';
+}
+
+function mtgUpdCardHTML(w, t, me) {
+  const u = mtgUpdatesFor(w.date).find(x => x.person_id === me && x.track_id === t.id) || {};
+  const needed = MTG_WHEN_NEEDED.includes(t.id);
+  const members = t.id === 'full_group' ? 'Herkes' : (MEETING_TRACK_MEMBERS[t.id] || []).map(mtgShort).join(', ');
+  const isExtra = !u.id && (mtgState.updExtra[w.date] || []).includes(t.id);
+  const ta = (k, label, rows, ph) => `<div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${label}</label>
+    <textarea id="mtgUpd-${t.id}-${k}" rows="${rows}" placeholder="${escHtml(ph)}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-[11px] leading-relaxed text-slate-100 focus:outline-none focus:border-indigo-500">${escHtml(u[k + (k === 'blockers' ? '' : '_text')] || '')}</textarea></div>`;
+  return `<div class="rounded-xl border ${u.id ? 'border-emerald-500/30' : 'border-slate-700'} bg-slate-900/40 p-3.5 mb-3">
+    <div class="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
+      <div class="text-[12px] font-bold text-slate-100"><span class="font-mono text-slate-500 mr-1.5">${t.time.split('–')[0]}</span>${escHtml(MTG_TRACK_SHORT[t.id] || mtgTrackLabel(t))}
+        <span class="text-[10px] font-normal text-slate-400">· ${escHtml(members)}</span>${needed ? ' <span class="ml-1 px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 text-[9px] font-semibold">ihtiyaç halinde</span>' : ''}</div>
+      <span id="mtgUpdSt-${t.id}" class="text-[10px] font-semibold ${u.id ? 'text-emerald-500' : 'text-slate-500'}">${u.id ? '✓ Kaydedildi ' + mtgStamp(u.updated_at) : 'Henüz girilmedi'}</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+      ${ta('done', 'Bu hafta neler yaptım?', 3, 'Örn. Wave 2 eğitimini tamamladım; 25 screening run…')}
+      ${ta('next', 'Sıradaki adımlarım · her satır bir to-do', 3, 'Örn. Sonuçları Abdullatif ile değerlendirmek\nÖrn. 70B modelleri tekrar koşmak')}
+      ${ta('agenda', 'Toplantıda konuşulsun · her satır bir madde', 2, 'Örn. Wave 2 sonuçları')}
+      ${ta('blockers', 'Engel / destek ihtiyacı', 2, 'Örn. HPC erişimi bekleniyor')}
+    </div>
+    <div class="flex items-center justify-between mt-2.5 flex-wrap gap-2">
+      <label class="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer"><input type="checkbox" id="mtgUpd-${t.id}-none" ${u.no_agenda ? 'checked' : ''} class="rounded border-slate-600">${needed ? 'Bu hafta bu oturuma gerek yok' : 'Konuşacak özel maddem yok'}</label>
+      <div class="flex items-center gap-1.5">
+        ${u.todos_sent_at ? '<span class="text-[10px] text-indigo-300" title="Sonraki değişiklikler otomatik aktarılmaz">To-do\'ya aktarıldı</span>' : ''}
+        ${isExtra ? `<button onclick="mtgUpdRemoveExtra('${w.date}','${t.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold rounded-lg">Kaldır</button>` : ''}
+        ${u.id ? `<button onclick="mtgUpdDelete('${w.date}','${t.id}')" class="px-2.5 py-1 border border-rose-500/40 text-rose-600 hover:bg-rose-500/20 text-[11px] font-semibold rounded-lg">Sil</button>` : ''}
+        <button onclick="mtgUpdSave('${w.date}','${t.id}')" class="px-3.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">${u.id ? 'Güncelle' : 'Kaydet'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function mtgTeamStatusHTML(w) {
+  const team = mtgUpdateTeam(); const ups = mtgPeopleUpdates(w.date);
+  const chips = team.map(pid => {
+    const mine = ups.filter(u => u.person_id === pid);
+    if (!mine.length) return `<span class="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-[10px] font-semibold">⏳ ${escHtml(mtgShort(pid))}</span>`;
+    const last = mine.map(u => u.updated_at).sort().pop();
+    return `<span class="px-2 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 text-[10px] font-semibold" title="${escHtml(mine.map(u => MTG_TRACK_SHORT[u.track_id] || u.track_id).join(', '))}">✓ ${escHtml(mtgShort(pid))} <span class="font-normal opacity-70">${escHtml(mtgStamp(last))}</span></span>`;
+  }).join('');
+  const extra = [...new Set(ups.map(u => u.person_id).filter(pid => !team.includes(pid)))].map(pid => `<span class="px-2 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 text-[10px] font-semibold">✓ ${escHtml(mtgShort(pid))}</span>`).join('');
+  return `<div class="mt-5 pt-4 border-t border-slate-800">
+    <div class="flex items-center justify-between mb-2"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ekip durumu · ${mtgUpdCountLabel(w)} girdi</div>
+      <button onclick="mtgSetSub('report')" class="text-[11px] font-semibold text-indigo-400 hover:underline">Gündem ve rapor →</button></div>
+    <div class="flex flex-wrap gap-1.5">${chips}${extra}</div>
+  </div>`;
+}
+
+function renderMtgUpdatesBody(w) {
+  const notice = mtgSetupNoticeHTML(); if (notice) return notice;
+  const me = getCurrentPersonId(); const t = todayIso();
+  const tracks = MEETING_TRACKS[w.type] || [];
+  const intro = `<div class="rounded-xl border border-indigo-500/30 bg-indigo-500/5 px-3.5 py-2.5 mb-4 text-[11px] text-slate-300 leading-relaxed">
+    ${w.date < t ? '<b class="text-slate-100">Bu toplantı geçti.</b> Girişler arşivde duruyor; eksik kalanı yine de ekleyebilirsin.' : `<b class="text-slate-100">Güncellemeni toplantıdan önce gir</b> (son: ${MTG_UPDATE_DEADLINE}).`}
+    Yaptıkların rapora, sıradaki adımların to-do listene, "konuşulsun" maddelerin toplantı gündemine aktarılır.</div>`;
+  if (!me) return intro + '<div class="text-center text-[11px] text-slate-500 py-8">Güncelleme girmek için profilinin ekip listesindeki bir kişiyle eşleşmesi gerekiyor.</div>' + mtgTeamStatusHTML(w);
+
+  // açık görevlerim (bu toplantıya kadar atanmış, tamamlanmamış)
+  const myOpen = meetingRows().filter(r => r.pid === me && r.status !== 'Tamamlandı' && r.date <= w.date).sort((a, b) => b.date.localeCompare(a.date));
+  const openHTML = myOpen.length ? `<div class="mb-4">
+    <div class="flex items-center justify-between mb-1.5"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Açık görevlerim (${myOpen.length})</div><span class="text-[10px] text-slate-500">Durumları buradan güncelle; tamamlananlar rapora işlenir.</span></div>
+    <div class="space-y-1.5">${myOpen.slice(0, 8).map(r => mtgTaskRowHTML(r, todoCanEdit([me]))).join('')}</div>
+    ${myOpen.length > 8 ? `<button onclick="mtgSetTab('tasks')" class="mt-1.5 text-[11px] font-semibold text-indigo-400 hover:underline">+${myOpen.length - 8} görev daha · Görev Listesi</button>` : ''}
+  </div>` : '';
+
+  const mine = mtgMyTracks(w, me);
+  const others = tracks.filter(x => !mine.some(m => m.id === x.id));
+  const cards = mine.length ? mine.map(x => mtgUpdCardHTML(w, x, me)).join('') : '<div class="text-[11px] text-slate-500 mb-3">Bu hafta sana atanmış bir oturum yok. Gündem maddesi eklemek istediğin oturumu aşağıdan seç.</div>';
+  const addHTML = others.length ? `<div class="flex items-center gap-1.5 text-[11px] text-slate-400">
+    Başka bir oturuma madde ekle:
+    <select id="mtgUpdAddSel" class="bg-slate-900 border border-slate-700 rounded-md px-1.5 py-1 text-[11px] text-slate-100">${others.map(x => `<option value="${x.id}">${x.time.split('–')[0]} · ${escHtml(MTG_TRACK_SHORT[x.id] || mtgTrackLabel(x))}</option>`).join('')}</select>
+    <button onclick="mtgUpdAddTrack('${w.date}', document.getElementById('mtgUpdAddSel').value)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-md">Ekle</button></div>` : '';
+  return intro + openHTML + `<div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Güncellemem · ${escHtml(formatMeetingDate(w.date))}</div>` + cards + addHTML + mtgTeamStatusHTML(w);
+}
+
+// ---- gündem + WhatsApp mesajı
+function mtgAgenda(w) {
+  const ups = mtgPeopleUpdates(w.date);
+  return (MEETING_TRACKS[w.type] || []).map(t => {
+    const tUps = ups.filter(u => u.track_id === t.id);
+    const items = [];
+    tUps.forEach(u => mtgLines(u.agenda_text).forEach(l => { if (!items.some(x => x.toLocaleLowerCase('tr-TR') === l.toLocaleLowerCase('tr-TR'))) items.push(l); }));
+    const needed = MTG_WHEN_NEEDED.includes(t.id);
+    let people = MEETING_TRACK_MEMBERS[t.id] || [];
+    if (MTG_ONLY_PRESENTERS.includes(t.id)) people = people.filter(pid => tUps.some(u => u.person_id === pid && mtgLines(u.agenda_text).length));
+    return {
+      t, start: t.time.split('–')[0], label: MTG_TRACK_SHORT[t.id] || mtgTrackLabel(t),
+      names: t.id === 'full_group' ? 'Herkes' : people.map(mtgShort).join(', '),
+      items, needed, active: !needed || items.length > 0
+    };
+  });
+}
+function mtgAutoWhatsApp(w) {
+  const blocks = mtgAgenda(w).filter(a => a.active).map(a => {
+    const head = `${a.start} | ${a.label}${a.names ? ` (${a.names})` : ''}`;
+    const body = !a.items.length ? 'Gündem: Son durum güncellemeleri' : a.items.length === 1 ? 'Gündem: ' + a.items[0] : 'Gündem:\n' + a.items.join('\n');
+    return head + '\n' + body;
+  });
+  return 'Selamlar,\nBugünkü toplantı gündemlerimiz ve saatleri 🙂\n\n' + blocks.join('\n\n');
+}
+function mtgAgendaOverride(date) { return meetingUpdates.find(u => u.week_date === date && u.person_id === MTG_PM_ID && u.track_id === MTG_AGENDA_TRACK); }
+function mtgWhatsAppText(w) { const o = mtgAgendaOverride(w.date); return (o && o.agenda_text) || mtgAutoWhatsApp(w); }
+async function mtgCopyText(text, okMsg) {
+  try { await navigator.clipboard.writeText(text); }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (_) {} ta.remove(); }
+  showMiniToast(okMsg || 'Kopyalandı.');
+}
+function mtgWaCopy(date) {
+  const w = MEETING_WEEKS.find(x => x.date === date); if (!w) return;
+  const ta = document.getElementById('mtgWaText');
+  mtgCopyText(ta ? ta.value : mtgWhatsAppText(w), 'Gündem mesajı kopyalandı — WhatsApp grubuna yapıştırabilirsin.');
+}
+async function mtgWaSave(date) {
+  if (!mtgIsAdmin()) return;
+  const ta = document.getElementById('mtgWaText'); if (!ta) return;
+  if (await mtgUpsertUpdate({ week_date: date, person_id: MTG_PM_ID, track_id: MTG_AGENDA_TRACK, agenda_text: ta.value })) { showMiniToast('Gündem mesajı kaydedildi.'); renderMtgDetail(); }
+}
+async function mtgWaReset(date) {
+  const o = mtgAgendaOverride(date);
+  if (o && await mtgDeleteUpdateRow(o)) { showMiniToast('Mesaj güncel girişlerden yeniden oluşturuldu.'); }
+  renderMtgDetail();
+}
+function mtgReminderText(w) {
+  const s = mtgSubmittedSet(w.date);
+  const pending = mtgUpdateTeam().filter(pid => !s.has(pid)).map(mtgShort);
+  const link = location.origin + location.pathname;
+  return `Selamlar, ${mtgShortDate(w.date)} toplantısı için güncellemelerinizi siteye girebilir misiniz? 🙏\n` +
+    `Toplantılar › ${formatMeetingDate(w.date)} › Güncellemeler (son: ${MTG_UPDATE_DEADLINE})\n${link}` +
+    (pending.length ? `\nBekleyenler: ${pending.join(', ')}` : '');
+}
+
+// ---- sıradaki adımlar → haftalık to-do
+function mtgPendingTodoLines(date) {
+  const ups = mtgPeopleUpdates(date).filter(u => !u.todos_sent_at && mtgLines(u.next_text).length);
+  const rows = [];
+  ups.forEach(u => mtgLines(u.next_text).forEach(l => rows.push({ week_date: date, raw_text: l, suggested_person_id: u.person_id, suggested_person_name: mtgNameOf(u.person_id), status: 'pending', source: 'weekly_update' })));
+  return { ups, rows };
+}
+async function mtgUpdSendTodos(date) {
+  if (!mtgIsAdmin()) return;
+  if (!supabaseClient) { showMiniToast('To-do aktarımı için sunucu bağlantısı gerekiyor.'); return; }
+  const { ups, rows } = mtgPendingTodoLines(date);
+  if (!rows.length) { showMiniToast('Aktarılacak yeni "sıradaki adım" yok.'); return; }
+  const ti = currentTargetTaskIdx();
+  if (ti === null) { showMiniToast('Önce bir ana görev oluşturun.'); return; }
+  if (!confirm(`${ups.length} kişinin ${rows.length} "sıradaki adım" maddesi, "${tasks[ti].name}" altında ${formatMeetingDate(date)} toplantısının haftalık to-do'ları olarak açılacak ve kişilere bildirim gidecek.\n\nDevam edilsin mi?`)) return;
+  const { data, error } = await supabaseClient.from('meeting_action_items').insert(rows).select();
+  if (error) { console.error(error); showMiniToast('To-do oluşturulamadı: ' + error.message); return; }
+  await confirmItemsBulk((data || []).map(item => ({ item, pid: item.suggested_person_id })), true);
+  const now = new Date().toISOString(); const ids = ups.map(u => u.id);
+  const { error: e2 } = await supabaseClient.from('meeting_updates').update({ todos_sent_at: now }).in('id', ids);
+  if (e2) console.error(e2);
+  meetingUpdates.forEach(u => { if (ids.includes(u.id)) u.todos_sent_at = now; }); // liste arada yeniden yüklenmiş olabilir
+  showMiniToast(`${rows.length} to-do oluşturuldu ve kişilere atandı.`);
+  renderMtg();
+}
+
+// ---- haftalık rapor (A4 · aiReportModal ile yazdır / PDF)
+function mtgReportHTML(w) {
+  const E = escHtml;
+  const team = mtgUpdateTeam(); const ups = mtgPeopleUpdates(w.date); const sub = mtgSubmittedSet(w.date);
+  const pending = team.filter(pid => !sub.has(pid));
+  const agenda = mtgAgenda(w);
+  const t = todayIso();
+  const allRows = meetingRows();
+  const open = allRows.filter(r => r.status !== 'Tamamlandı' && r.date <= w.date);
+  const prev = mtgPrevMeetingDate(w.date);
+  const prevRows = prev ? allRows.filter(r => r.date === prev) : [];
+  const prevDone = prevRows.filter(r => r.status === 'Tamamlandı').length;
+  const blockers = ups.filter(u => (u.blockers || '').trim());
+  const agendaCount = agenda.reduce((n, a) => n + (a.active ? a.items.length : 0), 0);
+  const multi = s => mtgLines(s).map(l => E(l)).join('<br>') || '<span class="muted">—</span>';
+  const stCls = r => r.status === 'Tamamlandı' ? 'b-done' : (r.due && r.due < t ? 'b-late' : 'b-prog');
+  let n = 0; const h = s => `<h2>${++n}. ${s}</h2>`;
+
+  const agendaRows = agenda.map(a => `<tr><td style="white-space:nowrap">${E(a.t.time)}</td><td><b>${E(a.label)}</b></td><td>${E(a.names || '—')}</td><td>${a.active ? (a.items.length ? a.items.map(E).join('<br>') : 'Son durum güncellemeleri') : '<span class="muted">Bu hafta yapılmıyor (madde gelmedi)</span>'}</td></tr>`).join('');
+
+  const tracks = MEETING_TRACKS[w.type] || [];
+  const known = new Set(tracks.map(x => x.id));
+  const trackBlocks = tracks.concat(ups.some(u => !known.has(u.track_id)) ? [{ id: '__other', time: '', labelKey: '' }] : []).map(tr => {
+    const tUps = ups.filter(u => tr.id === '__other' ? !known.has(u.track_id) : u.track_id === tr.id);
+    const expected = tr.id === 'full_group' || tr.id === '__other' ? [] : (MEETING_TRACK_MEMBERS[tr.id] || []).filter(pid => team.includes(pid));
+    const missing = expected.filter(pid => !tUps.some(u => u.person_id === pid) && !sub.has(pid));
+    if (!tUps.length && !missing.length) return '';
+    const label = tr.id === '__other' ? 'Diğer' : (MTG_TRACK_SHORT[tr.id] || mtgTrackLabel(tr));
+    const full = tUps.filter(u => (u.done_text || u.next_text || u.blockers || '').trim());
+    const light = tUps.filter(u => !full.includes(u)).map(u => {
+      const ag = mtgLines(u.agenda_text);
+      return `${E(mtgShort(u.person_id))}: ${ag.length ? 'gündem maddesi getirdi (' + ag.map(E).join('; ') + ')' : 'bu hafta özel madde yok'}`;
+    });
+    const body = (full.length ? `<table><thead><tr><th style="width:15%">Kişi</th><th>Yaptıkları</th><th>Sıradaki adımlar</th><th style="width:20%">Engel / destek</th></tr></thead><tbody>${full.map(u => `<tr><td><b>${E(mtgShort(u.person_id))}</b></td><td>${multi(u.done_text)}</td><td>${multi(u.next_text)}</td><td>${multi(u.blockers)}</td></tr>`).join('')}</tbody></table>` : '')
+      + (light.length ? `<div style="font-size:10.5px;margin-top:4px">${light.join(' · ')}</div>` : '');
+    return `<div class="task"><div class="task-head"><h3>${tr.time ? E(tr.time.split('–')[0]) + ' · ' : ''}${E(label)}</h3><span class="muted" style="font-size:10px">${E(tr.id === 'full_group' ? 'Herkes' : (MEETING_TRACK_MEMBERS[tr.id] || []).map(mtgShort).join(', '))}</span></div>
+      ${body}${missing.length ? `<div class="muted" style="font-size:10px;margin-top:4px">Güncelleme bekleniyor: ${E(missing.map(mtgShort).join(', '))}</div>` : ''}</div>`;
+  }).join('');
+
+  const olderOpen = open.filter(r => !prev || r.date < prev);
+  const openSorted = olderOpen.slice().sort((a, b) => mtgNameOf(a.pid).localeCompare(mtgNameOf(b.pid), 'tr') || a.date.localeCompare(b.date));
+  const openRows = openSorted.map(r => `<tr><td>${E(r.pid ? mtgShort(r.pid) : 'Atanmamış')}</td><td>${E(r.text)}</td><td style="white-space:nowrap">${E(mtgShortDate(r.date))}</td><td class="${stCls(r)}">${E(r.status)}${r.due && r.due < t ? ' · gecikmiş' : ''}</td></tr>`).join('');
+  const prevRowsHTML = prevRows.slice().sort((a, b) => mtgNameOf(a.pid).localeCompare(mtgNameOf(b.pid), 'tr')).map(r => `<tr><td>${E(r.pid ? mtgShort(r.pid) : 'Atanmamış')}</td><td>${E(r.text)}</td><td class="${stCls(r)}">${E(r.status)}</td></tr>`).join('');
+  const now = new Date();
+
+  return `<div class="rpt-page">
+    <div style="display:flex;align-items:center;gap:14px;border-bottom:3px solid #1E3A66;padding-bottom:10px">
+      <img src="${DEMIG_LOGO_DATA_URI}" alt="DEMIG" style="height:46px;width:auto">
+      <div style="flex:1"><h1>DEMIG Haftalık Toplantı Raporu</h1>
+        <div class="muted" style="font-size:11px">${E(new Date(w.date + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }))} · ${w.type === 'sub' ? 'Subgroup' : 'Full Group'} haftası · 17:00–19:00</div></div>
+    </div>
+    <table style="margin-top:8px"><tbody>
+      <tr><td style="width:22%"><b>Raporlama dönemi</b></td><td>${prev ? E(mtgShortDate(prev)) + ' – ' : ''}${E(mtgShortDate(w.date))}</td><td style="width:20%"><b>Hazırlayan</b></td><td>${E(currentUser ? currentUser.name : '-')}</td></tr>
+      <tr><td><b>Güncelleme girişi</b></td><td>${team.filter(p => sub.has(p)).length}/${team.length} kişi</td><td><b>Oluşturulma</b></td><td>${now.toLocaleDateString('tr-TR')} ${now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}</td></tr>
+    </tbody></table>
+
+    ${h('Özet')}
+    <div class="kpis">
+      <div class="kpi"><b>${team.filter(p => sub.has(p)).length}/${team.length}</b><span>Güncelleme giren</span></div>
+      <div class="kpi"><b>${agendaCount}</b><span>Gündem maddesi</span></div>
+      <div class="kpi"><b>${open.length}</b><span>Açık to-do</span></div>
+      <div class="kpi"><b>${prev ? prevDone + '/' + prevRows.length : '—'}</b><span>Geçen toplantının görevleri tamam</span></div>
+    </div>
+    <p style="font-size:11px;margin:0">${pending.length ? `Güncelleme bekleniyor: <b>${E(pending.map(mtgShort).join(', '))}</b>.` : 'Ekibin tamamı güncellemesini girdi.'}${blockers.length ? ` Destek ihtiyacı bildiren: ${E([...new Set(blockers.map(u => mtgShort(u.person_id)))].join(', '))}.` : ''}</p>
+
+    ${h('Toplantı Gündemi')}
+    <table><thead><tr><th style="width:13%">Saat</th><th style="width:20%">Oturum</th><th style="width:22%">Katılımcılar</th><th>Gündem</th></tr></thead><tbody>${agendaRows}</tbody></table>
+
+    ${h('Ekip Bazında İlerleme')}
+    ${trackBlocks || '<p class="muted">Bu toplantı için henüz güncelleme girilmedi.</p>'}
+
+    ${blockers.length ? h('Engeller ve Destek İhtiyaçları') + `<table><thead><tr><th style="width:18%">Kişi</th><th style="width:22%">Oturum</th><th>Engel / destek</th></tr></thead><tbody>${blockers.map(u => `<tr><td>${E(mtgShort(u.person_id))}</td><td>${E(MTG_TRACK_SHORT[u.track_id] || u.track_id)}</td><td>${multi(u.blockers)}</td></tr>`).join('')}</tbody></table>` : ''}
+
+    ${h('To-Do Takibi')}
+    ${prev && prevRows.length ? `<div style="font-size:11px;font-weight:700;margin:2px 0">Geçen toplantıdan (${E(mtgShortDate(prev))}) çıkan görevler · ${prevDone}/${prevRows.length} tamamlandı</div><table><thead><tr><th style="width:15%">Kişi</th><th>Görev</th><th style="width:18%">Durum</th></tr></thead><tbody>${prevRowsHTML}</tbody></table>` : ''}
+    ${openRows ? `<div style="font-size:11px;font-weight:700;margin:10px 0 2px">${prev ? 'Daha önceki toplantılardan açık kalanlar' : 'Açık to-do\'lar'}</div><table><thead><tr><th style="width:15%">Kişi</th><th>Görev</th><th style="width:12%">Toplantı</th><th style="width:18%">Durum</th></tr></thead><tbody>${openRows}</tbody></table>` : ''}
+    ${!(prev && prevRows.length) && !openRows ? '<p class="muted">Takip edilen to-do yok.</p>' : ''}
+
+    <div class="sign"><span>Hazırlayan: ${E(currentUser ? currentUser.name : 'Proje Yönetimi')}</span><span class="muted">DEMIG · demigproject · ${now.getFullYear()}</span></div>
+  </div>`;
+}
+function mtgOpenReportModal(date) {
+  const w = MEETING_WEEKS.find(x => x.date === date); if (!w) return;
+  const box = document.getElementById('aiReportContainer');
+  box.innerHTML = mtgReportHTML(w); box.className = 'rpt';
+  const lbl = document.getElementById('reportCutoffLabel'); if (lbl) lbl.innerText = formatMeetingDate(date) + ' · ' + (w.type === 'sub' ? 'Subgroup' : 'Full Group') + ' haftası';
+  const ttl = document.querySelector('#aiReportModal [data-i18n="ai_report_title"]'); if (ttl) ttl.innerText = 'Haftalık Toplantı Raporu';
+  document.getElementById('aiReportModal').classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderMtgReportBody(w) {
+  const notice = mtgSetupNoticeHTML(); if (notice) return notice;
+  const admin = mtgIsAdmin();
+  const override = mtgAgendaOverride(w.date);
+  const text = mtgWhatsAppText(w);
+  const pendTodos = mtgPendingTodoLines(w.date).rows.length;
+  const s = mtgSubmittedSet(w.date); const pendingPeople = mtgUpdateTeam().filter(pid => !s.has(pid)).length;
+  const toolbar = `<div class="flex flex-wrap items-center gap-2 mb-4">
+    <button onclick="mtgOpenReportModal('${w.date}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg"><i data-lucide="file-text" class="w-3.5 h-3.5"></i>A4 rapor · Yazdır / PDF</button>
+    ${admin && pendingPeople ? `<button onclick="mtgCopyText(mtgReminderText(MEETING_WEEKS.find(x => x.date === '${w.date}')), 'Hatırlatma mesajı kopyalandı.')" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg"><i data-lucide="bell" class="w-3.5 h-3.5"></i>Hatırlatma mesajını kopyala (${pendingPeople} kişi)</button>` : ''}
+    ${admin && pendTodos ? `<span class="hidden sm:block w-px h-5 bg-slate-700 mx-1"></span><label class="inline-flex items-center gap-1.5 text-[10px] text-slate-400">To-do'lar şu görevin altına:
+      <select class="target-task-select bg-slate-900 border border-slate-700 rounded-md px-1.5 py-1 text-[10px] text-slate-100 max-w-[190px]" onchange="setPendingTargetTask(this.value)">${targetTaskOptionsHTML()}</select></label>` : ''}
+    ${admin ? `<button onclick="mtgUpdSendTodos('${w.date}')" ${pendTodos ? '' : 'disabled'} class="inline-flex items-center gap-1.5 px-3 py-1.5 ${pendTodos ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-slate-800 text-slate-500 cursor-not-allowed'} text-[11px] font-semibold rounded-lg"><i data-lucide="list-checks" class="w-3.5 h-3.5"></i>Sıradaki adımları to-do'ya aktar${pendTodos ? ` (${pendTodos})` : ''}</button>` : ''}
+  </div>`;
+  const wa = `<div class="rounded-xl border border-slate-700 bg-slate-900/40 p-3.5 mb-4">
+    <div class="flex items-center justify-between gap-2 mb-2 flex-wrap">
+      <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Gündem mesajı · WhatsApp ${override ? '<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 text-[9px] normal-case tracking-normal">elle düzenlendi</span>' : '<span class="ml-1 normal-case tracking-normal font-normal text-slate-500">girişlerden otomatik</span>'}</div>
+      <div class="flex items-center gap-1.5">
+        ${admin && override ? `<button onclick="mtgWaReset('${w.date}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold rounded-lg">Girişlerden yeniden oluştur</button>` : ''}
+        ${admin ? `<button onclick="mtgWaSave('${w.date}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">Kaydet</button>` : ''}
+        <button onclick="mtgWaCopy('${w.date}')" class="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-semibold rounded-lg"><i data-lucide="copy" class="w-3 h-3"></i>Kopyala</button>
+      </div>
+    </div>
+    ${admin
+      ? `<textarea id="mtgWaText" rows="${Math.min(22, text.split('\n').length + 1)}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-[11.5px] leading-relaxed text-slate-100 font-mono focus:outline-none focus:border-indigo-500">${escHtml(text)}</textarea>
+         <div class="text-[10px] text-slate-500 mt-1">Metni düzenleyip kaydedebilirsin. Yeni girişler gelince "Girişlerden yeniden oluştur" ile güncelle.</div>`
+      : `<pre class="whitespace-pre-wrap text-[11.5px] leading-relaxed text-slate-100 font-mono">${escHtml(text)}</pre>`}
+  </div>`;
+  return toolbar + wa + `<div class="rpt" style="background:#fff;border:1px solid #C3C9D2;border-radius:12px;overflow:hidden">${mtgReportHTML(w)}</div>`;
 }
 
 function renderMtgTasks() {
