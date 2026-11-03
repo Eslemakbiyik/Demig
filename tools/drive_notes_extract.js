@@ -57,6 +57,7 @@ const __demigPayload = {
   meetings: __demigMeetings.map(m => ({ ...m, sections: m.sections.filter(s => s.lines.length && !/^(konular|görevler)$/i.test(s.title)) })),
   agenda: window.__DEMIG_AGENDA || []
 };
+window.__demigPayload = __demigPayload;   // otomasyon notların metnini buradan okuyabilir (ör. devreden gündem için)
 const __demigSummary = { since: __demigSince, meetings: __demigPayload.meetings.map(m => ({ date: m.date, sections: m.sections.length, tasks: m.tasks.length })), agenda: __demigPayload.agenda.length };
 if (!window.__DEMIG_NO_NAV) {
   const enc = btoa(unescape(encodeURIComponent(JSON.stringify(__demigPayload))));
