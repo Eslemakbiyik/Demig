@@ -5486,7 +5486,19 @@ function mtgPendingTodoLines(date) {
 // Varsayılan: daha önce o kişi+oturum için seçilen görev → oturuma uyan görev → kişinin etiketli olduğu görev.
 const MTG_TRACK_TASK_HINTS = { model_dev: /reward/i, synthetic_agents: /synthetic|sentetik|conjoint/i, expert_survey: /expert|uzman|qualtrics/i };
 let mtgTodoDraft = null;   // { date, upIds, items: [{ pid, tid, text, ti, on }] }
-function mtgGuessTaskIdx(pid, tid) {
+// Görev metnine göre ana görev önerisi (sıra önemli: ilk eşleşen kazanır)
+const MTG_TEXT_TASK_HINTS = [
+  [/synthetic|sentetik|ablation|outline|taslağ|hoffman|sumaktoyo|persona/i, /^6\. synthetic/i],
+  [/icpsr|ipoll|gesis/i, /^1\.3 /],
+  [/ocr|pdf|gemini|gss|stata|range not verified|dosya düzen|tüm sorularını çek|scrap/i, /^1\.2 /],
+  [/arif|soru giriş|üyelik|database|arayüzünü yap/i, /^1\.5 /],
+  [/öğrenci|soru yazdır|kötü soru|prompt|paraphrase|yazılma süres/i, /^3\.1 /],
+  [/mae|kuantizasyon|fine-?tun|cs makale|paper structure|skor arayüz|loss|wave/i, /^4\.1 /],
+  [/metot|expert|uzman|lit taram/i, /^2\.1 /],
+  [/anket listesi|kategorilendir|online kaynak/i, /^1\.1 /]
+];
+function mtgGuessTaskIdx(pid, tid, text) {
+  if (text) for (const [re, tre] of MTG_TEXT_TASK_HINTS) if (re.test(text)) { const i = tasks.findIndex(t => tre.test(t.name || '')); if (i >= 0) return i; }
   try { const saved = localStorage.getItem('demig_todo_task_' + pid + '_' + tid); const i = tasks.findIndex(t => String(t.id) === saved); if (saved && i >= 0) return i; } catch (e) {}
   const re = MTG_TRACK_TASK_HINTS[tid];
   if (re) { const i = tasks.findIndex(t => re.test(t.name || '')); if (i >= 0) return i; }
@@ -5505,8 +5517,8 @@ function mtgOpenTodoModal(date) {
   if (!ups.length && !pend.length) { showMiniToast('Bu toplantı için aktarılacak görev yok. Notlardan gelen görevler ve ekibin "Sıradaki adımlarım" girişleri burada toplanır.'); return; }
   if (!tasks.length) { showMiniToast('Önce bir ana görev oluşturun.'); return; }
   const items = [];
-  pend.forEach(i => { const pid = i.suggested_person_id || ''; const tid = pid ? mtgHomeTrack(pid) : ''; items.push({ kind: 'pend', id: i.id, src: i.source === 'weekly_update' ? 'Güncelleme' : 'Toplantı notu', pid, tid, text: i.raw_text || '', orig: i.raw_text || '', ti: mtgGuessTaskIdx(pid, tid), on: !!pid }); });
-  ups.forEach(u => mtgLines(u.next_text).forEach(l => items.push({ kind: 'upd', src: 'Güncelleme', pid: u.person_id, tid: u.track_id, text: l, ti: mtgGuessTaskIdx(u.person_id, u.track_id), on: true })));
+  pend.forEach(i => { const pid = i.suggested_person_id || ''; const tid = pid ? mtgHomeTrack(pid) : ''; items.push({ kind: 'pend', id: i.id, src: i.source === 'weekly_update' ? 'Güncelleme' : 'Toplantı notu', pid, tid, text: i.raw_text || '', orig: i.raw_text || '', ti: mtgGuessTaskIdx(pid, tid, i.raw_text), on: !!pid }); });
+  ups.forEach(u => mtgLines(u.next_text).forEach(l => items.push({ kind: 'upd', src: 'Güncelleme', pid: u.person_id, tid: u.track_id, text: l, ti: mtgGuessTaskIdx(u.person_id, u.track_id, l), on: true })));
   mtgTodoDraft = { date, upIds: ups.map(u => u.id), items };
   renderMtgTodoModal();
 }
@@ -5514,7 +5526,7 @@ function mtgCloseTodoModal() { const m = document.getElementById('mtgTodoModal')
 function mtgTodoSetAll(v) { if (!mtgTodoDraft || v === '') return; mtgTodoDraft.items.forEach(it => { it.ti = +v; }); renderMtgTodoModal(); }
 function mtgTodoSetPerson(k, pid) {
   const it = mtgTodoDraft && mtgTodoDraft.items[k]; if (!it) return;
-  it.pid = pid; if (it.kind === 'pend') { it.tid = pid ? mtgHomeTrack(pid) : ''; it.ti = mtgGuessTaskIdx(pid, it.tid); }
+  it.pid = pid; if (it.kind === 'pend') { it.tid = pid ? mtgHomeTrack(pid) : ''; it.ti = mtgGuessTaskIdx(pid, it.tid, it.text); }
   if (!pid) it.on = false; else if (!it.on) it.on = true;
   renderMtgTodoModal();
 }
