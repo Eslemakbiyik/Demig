@@ -5729,12 +5729,14 @@ function mtgFindPersonLoose(who) {
   const f = mtgFold(w), people = registeredPeople.filter(isAssignable);
   return people.find(p => mtgFold(p.name) === f) || people.find(p => mtgFold(p.name).split(' ')[0] === f.split(' ')[0]) || null;
 }
-function mtgDriveTrackFor(w, text) {
+function mtgDriveTrackFor(w, text, noFallback) {
   const ids = (MEETING_TRACKS[w.type] || []).map(t => t.id);
   if (w.type === 'extra') return ids[0];
   for (const [re, id] of MTG_NOTE_TRACK_RULES) if (re.test(text || '')) { if (ids.includes(id)) return id; if (ids.includes('full_group')) return 'full_group'; }
-  return ids[0];
+  return noFallback ? null : ids[0];
 }
+// Bölüm önce başlığına göre yönlendirilir; başlık bir şey söylemiyorsa ilk satırına bakılır.
+function mtgDriveRoute(w, title, lines) { return mtgDriveTrackFor(w, title, true) || mtgDriveTrackFor(w, title + ' ' + ((lines || [])[0] || '')); }
 function mtgDecodeDrivePayload(enc) {
   try { return JSON.parse(decodeURIComponent(escape(atob(enc)))); } catch (e) { console.error('Drive içe aktarma verisi okunamadı:', e); return null; }
 }
@@ -5783,7 +5785,7 @@ async function mtgDriveImportRun() {
     m.sections.forEach(sec => {
       if (/^hızlı özet$/i.test(sec.title)) push(firstTid, sec.title, sec.lines);
       else if (/^kararlar$/i.test(sec.title)) { const g = {}; sec.lines.forEach(l => { const tid = mtgDriveTrackFor(w, l); (g[tid] = g[tid] || []).push(l); }); Object.keys(g).forEach(tid => push(tid, 'Kararlar', g[tid])); }
-      else push(mtgDriveTrackFor(w, sec.title + ' ' + sec.lines.slice(0, 2).join(' ')), sec.title, sec.lines);
+      else push(mtgDriveRoute(w, sec.title, sec.lines), sec.title, sec.lines);
     });
     const link = payload.docUrl + (m.headingId ? '#heading=' + m.headingId : '');
     for (const tid of Object.keys(byTrack)) {
