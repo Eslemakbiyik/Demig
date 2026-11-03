@@ -4835,6 +4835,14 @@ function mtgEnsureExtraDates(dates) {
   });
   if (added) MEETING_WEEKS.sort((a, b) => a.date.localeCompare(b.date));
 }
+// Ara toplantıda, o tarihe başka bir oturum adıyla kaydedilmiş notlar da gösterilir (ör. eski Word aktarımı).
+function mtgTracksOf(w) {
+  const base = MEETING_TRACKS[w.type] || [];
+  if (w.type !== 'extra') return base;
+  const all = [...MEETING_TRACKS.sub, ...MEETING_TRACKS.full];
+  const extra = all.filter((t, i) => all.findIndex(x => x.id === t.id) === i && meetingRecords[meetingRecordKey(w.date, t.id)]);
+  return base.concat(extra.map(t => ({ ...t, time: '' })));
+}
 function mtgTypeName(w) { return w.type === 'sub' ? 'Subgroup' : w.type === 'extra' ? 'Ara toplantı' : 'Full Group'; }
 
 function meetingRecordKey(weekDate, trackId) {
@@ -4909,7 +4917,7 @@ function openMeetingModal(id) { document.getElementById(id).classList.remove('hi
 function closeMeetingModal(id) { document.getElementById(id).classList.add('hidden'); }
 
 function mtgWeekday(iso, long) { return new Date(iso + 'T12:00:00').toLocaleDateString('tr-TR', { weekday: long ? 'long' : 'short' }); }
-function mtgTrackHasNotes(date, w) { return (MEETING_TRACKS[w.type] || []).some(t => { const r = meetingRecords[meetingRecordKey(date, t.id)]; return r && (r.action_text || r.notes_link || r.recording_link); }); }
+function mtgTrackHasNotes(date, w) { return mtgTracksOf(w).some(t => { const r = meetingRecords[meetingRecordKey(date, t.id)]; return r && (r.action_text || r.notes_link || r.recording_link); }); }
 function mtgTrackLabel(t) { return translate(t.labelKey); }
 function mtgNameOf(id) { return (registeredPeople.find(p => p.id === id) || {}).name || (id ? id : 'Atanmamış'); }
 
@@ -5077,7 +5085,7 @@ function renderMtgDetail() {
   const box = document.getElementById('mtgDetail'); if (!box) return;
   const w = MEETING_WEEKS.find(x => x.date === mtgState.sel);
   if (!w) { box.innerHTML = '<div class="p-10 text-center text-xs text-slate-500">Soldan bir toplantı seçin.</div>'; return; }
-  const tracks = MEETING_TRACKS[w.type] || [];
+  const tracks = mtgTracksOf(w);
   if (w.type === 'extra' && (mtgState.sub === 'updates' || mtgState.sub === 'report')) mtgState.sub = 'notes';
   if (!tracks.some(t => t.id === mtgState.track)) {
     const withNotes = tracks.find(t => (meetingRecords[meetingRecordKey(w.date, t.id)] || {}).action_text);
