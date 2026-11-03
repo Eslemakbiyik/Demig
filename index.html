@@ -6024,12 +6024,15 @@ function mtgDecisions() {
   const out = [];
   Object.values(meetingRecords || {}).forEach(r => {
     const lines = String(r.action_text || '').split(/\r?\n/).map(x => x.trim());
-    let inK = false;
+    let inK = false, inDrive = false;
     lines.forEach(l => {
+      if (/^── Drive toplantı notu/.test(l)) { inDrive = true; inK = false; return; }
+      if (l === '── /Drive ──') { inDrive = false; inK = false; return; }
       if (/^kararlar$/i.test(l)) { inK = true; return; }
       if (inK && /^[•\-*·]\s+/.test(l)) { out.push({ date: r.week_date, track: r.track_id, text: l.replace(/^[•\-*·]\s+/, '') }); return; }
       if (inK && l) inK = false;
-      const k = l.match(/^(?:[•\-*·]\s+)?karar\s*[:—–-]\s*(.+)$/i);
+      // elle yazılan notlarda "Karar: ..." satırları (Drive notlarında yalnızca Kararlar bölümü sayılır; "Karar: ..." orada bölüm başlığıdır)
+      const k = !inDrive && l.match(/^(?:[•\-*·]\s+)?karar\s*[:—–-]\s*(.+)$/i);
       if (k) out.push({ date: r.week_date, track: r.track_id, text: k[1] });
     });
   });
