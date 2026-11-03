@@ -62,7 +62,7 @@ await (async () => {
   const __demigSummary = { since: __demigSince, meetings: __demigPayload.meetings.map(m => ({ date: m.date, sections: m.sections.length, tasks: m.tasks.length })), agenda: __demigPayload.agenda.length };
   if (!window.__DEMIG_NO_NAV) {
     const enc = btoa(unescape(encodeURIComponent(JSON.stringify(__demigPayload))));
-    setTimeout(() => { location.href = __demigSite + '#drive-import=' + enc; }, 50);
+    setTimeout(() => { location.href = __demigSite + '?v=' + Date.now() + '#drive-import=' + enc; }, 50);   // ?v: sitenin önbellekteki eski sürümü açılmasın
   }
   return __demigSummary;
 })()
