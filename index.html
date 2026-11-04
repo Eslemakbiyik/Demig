@@ -5286,7 +5286,7 @@ async function mtgDeleteUpdateRow(u) {
 
 // ---- kişi formu (kişi kendi adına; yönetici — Tahir Hoca / Eslem — herkes adına)
 function mtgCanEditFor(pid) { const me = getCurrentPersonId(); return !!me && (pid === me || mtgIsAdmin()); }
-function mtgSetUpdView(v) { mtgState.updView = v; renderMtgDetail(); const d = document.getElementById('mtgDetail'); if (d) d.scrollTop = 0; }
+function mtgSetUpdView(v) { if (!mtgIsAdmin() && v !== 'me' && v !== 'team') return; mtgState.updView = v; renderMtgDetail(); const d = document.getElementById('mtgDetail'); if (d) d.scrollTop = 0; }
 function mtgOpenUpdatesFor(date, view) { mtgState.updView = view; mtgSelect(date, 'updates'); }
 async function mtgUpdSave(date, tid, pid) {
   const me = getCurrentPersonId(); pid = pid || me;
@@ -5396,7 +5396,7 @@ function mtgTeamStatusHTML(w) {
   const extra = [...new Set(ups.map(u => u.person_id).filter(pid => !team.includes(pid)))].map(pid => chip(pid, true, '')).join('');
   return `<div class="mt-5 pt-4 border-t border-slate-800">
     <div class="flex items-center justify-between mb-2"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ekip durumu · ${mtgUpdCountLabel(w)} girdi</div>
-      ${admin ? `<button onclick="mtgSetUpdView('team')" class="text-[11px] font-semibold text-indigo-400 hover:underline">Ekip özeti →</button>` : `<button onclick="mtgSetSub('report')" class="text-[11px] font-semibold text-indigo-400 hover:underline">Gündem ve rapor →</button>`}</div>
+      <button onclick="mtgSetUpdView('team')" class="text-[11px] font-semibold text-indigo-400 hover:underline">Herkesin girdiklerini gör →</button></div>
     <div class="flex flex-wrap gap-1.5">${chips}${extra}</div>
   </div>`;
 }
@@ -5414,6 +5414,9 @@ function mtgCarriedHTML(w) {
 function mtgUpdViewBarHTML(w, view) {
   const me = getCurrentPersonId(), team = mtgUpdateTeam(), sub = mtgSubmittedSet(w.date);
   const seg = (id, label) => `<button onclick="mtgSetUpdView('${id}')" class="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition ${view === id ? TAB_ON : TAB_OFF}">${label}</button>`;
+  if (!mtgIsAdmin()) return `<div class="flex flex-wrap items-center gap-2 mb-4">
+    <div class="inline-flex items-center gap-0.5 bg-slate-950/60 border border-slate-800 rounded-xl p-1">${seg('me', `Benim güncellemem${sub.has(me) ? ' ✓' : ''}`)}${seg('team', `Ekip özeti · ${mtgUpdCountLabel(w)}`)}</div>
+    <span class="text-[10px] text-slate-500">Ekip özetinde herkesin bu hafta girdiklerini görebilirsin.</span></div>`;
   const other = view !== 'team' && view !== 'me' ? view : '';
   return `<div class="flex flex-wrap items-center gap-2 mb-4">
     <div class="inline-flex items-center gap-0.5 bg-slate-950/60 border border-slate-800 rounded-xl p-1">
@@ -5429,9 +5432,11 @@ function mtgUpdViewBarHTML(w, view) {
 // Ekip özeti: herkesin bu toplantı için girdiği güncellemeler tek ekranda (yönetici)
 function mtgUpdTeamOverviewHTML(w) {
   const team = mtgUpdateTeam(), ups = mtgPeopleUpdates(w.date), sub = mtgSubmittedSet(w.date), t = todayIso();
+  const admin = mtgIsAdmin(), me = getCurrentPersonId();
   const people = team.concat([...new Set(ups.map(u => u.person_id).filter(p => !team.includes(p)))]);
   const rows = meetingRows();
-  const order = people.slice().sort((a, b) => (sub.has(a) - sub.has(b)) || mtgShort(a).localeCompare(mtgShort(b), 'tr'));   // bekleyenler önce
+  // yöneticide bekleyenler önce (tamamlatmak için), üyede girilenler önce (okumak için)
+  const order = people.slice().sort((a, b) => (admin ? (sub.has(a) - sub.has(b)) : (sub.has(b) - sub.has(a))) || mtgShort(a).localeCompare(mtgShort(b), 'tr'));
   const field = (label, txt, extra) => { const ls = mtgLines(txt); return ls.length ? `<div><div class="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">${label}${extra || ''}</div><ul class="list-disc pl-4 text-[11px] text-slate-200 space-y-0.5">${ls.map(l => `<li>${escHtml(l)}</li>`).join('')}</ul></div>` : ''; };
   const card = pid => {
     const mine = ups.filter(u => u.person_id === pid);
@@ -5443,13 +5448,14 @@ function mtgUpdTeamOverviewHTML(w) {
       const inner = [field('Yaptıkları', u.done_text), field('Sıradaki adımları', u.next_text, u.todos_sent_at ? ' <span class="mchip mchip-info normal-case tracking-normal">to-do\'ya aktarıldı</span>' : ''), field('Toplantıda konuşulsun', u.agenda_text), field('Engel / destek', u.blockers)].filter(Boolean).join('');
       return `<div class="mt-2.5 pt-2.5 border-t border-slate-800/70 first:border-t-0 first:pt-0"><div class="text-[10.5px] font-semibold text-slate-300 mb-1.5">${escHtml(tr ? (MTG_TRACK_SHORT[tr.id] || mtgTrackLabel(tr)) : mtgTrackName(u.track_id))}${u.no_agenda ? ' <span class="mchip mchip-mute ml-1">özel madde yok</span>' : ''}</div>${inner ? `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">${inner}</div>` : ''}</div>`;
     }).join('') : `<div class="text-[11px] text-slate-500 mt-1.5">${tracks.length ? 'Oturumları: ' + tracks.map(x => escHtml(MTG_TRACK_SHORT[x.id] || mtgTrackLabel(x))).join(', ') + '. ' : ''}Henüz güncelleme girmedi.</div>`;
-    return `<div class="rounded-xl border ${mine.length ? 'border-slate-800' : 'border-amber-500/30'} bg-slate-900/40 p-3.5 mb-2.5">
+    return `<div class="rounded-xl border ${pid === me ? 'border-indigo-500/40' : (mine.length || !admin) ? 'border-slate-800' : 'border-amber-500/30'} bg-slate-900/40 p-3.5 mb-2.5">
       <div class="flex items-center justify-between gap-2 flex-wrap">
         <div class="flex items-center gap-2 flex-wrap"><span class="text-[12px] font-bold text-slate-100">${escHtml(mtgNameOf(pid))}</span>${status}
           ${open.length ? `<button onclick="mtgState.tf.person='${pid}';mtgState.tf.quick='';mtgState.tf.status='__open';mtgState.page=0;mtgSetTab('tasks')" class="mchip ${late ? 'mchip-bad' : 'mchip-mute'}">${open.length} açık görev${late ? ` · ${late} geciken` : ''}</button>` : ''}</div>
         <div class="flex items-center gap-1.5">
-          <button onclick="mtgAddTodoFor('${w.date}','${pid}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">+ Görev ekle</button>
-          <button onclick="mtgSetUpdView('${pid}')" class="px-3 py-1 ${mine.length ? 'bg-slate-800 hover:bg-slate-700 text-slate-200' : 'bg-indigo-600 hover:bg-indigo-500 text-white'} text-[11px] font-semibold rounded-lg">${mine.length ? 'Düzenle' : 'Adına gir'}</button>
+          ${admin ? `<button onclick="mtgAddTodoFor('${w.date}','${pid}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">+ Görev ekle</button>
+          <button onclick="mtgSetUpdView('${pid === me && MTG_UPDATE_TEAM.includes(me) ? 'me' : pid}')" class="px-3 py-1 ${mine.length ? 'bg-slate-800 hover:bg-slate-700 text-slate-200' : 'bg-indigo-600 hover:bg-indigo-500 text-white'} text-[11px] font-semibold rounded-lg">${mine.length ? 'Düzenle' : (pid === me ? 'Gir' : 'Adına gir')}</button>`
+          : (pid === me ? `<button onclick="mtgSetUpdView('me')" class="px-3 py-1 ${mine.length ? 'bg-slate-800 hover:bg-slate-700 text-slate-200' : 'bg-indigo-600 hover:bg-indigo-500 text-white'} text-[11px] font-semibold rounded-lg">${mine.length ? 'Düzenle' : 'Güncellememi gir'}</button>` : '')}
         </div>
       </div>
       ${body}
@@ -5458,7 +5464,7 @@ function mtgUpdTeamOverviewHTML(w) {
   const pendingN = people.filter(p => !sub.has(p)).length;
   const coord = getCurrentPersonId() === MTG_WA_OWNER;
   return `<div class="flex items-center justify-between gap-2 flex-wrap mb-3">
-      <div class="text-[11px] text-slate-400">${w.date < t ? 'Bu toplantı geçti; girişler arşivde.' : `Son giriş: ${MTG_UPDATE_DEADLINE}.`} ${pendingN ? `<b class="text-slate-200">${pendingN} kişi</b> henüz girmedi. WhatsApp'tan ya da toplantıda gelen bilgileri "Adına gir" ile ekleyebilirsin.` : 'Herkes girdi.'}</div>
+      <div class="text-[11px] text-slate-400">${w.date < t ? 'Bu toplantı geçti; girişler arşivde.' : `Son giriş: ${MTG_UPDATE_DEADLINE}.`} ${pendingN ? `<b class="text-slate-200">${pendingN} kişi</b> henüz girmedi.${admin ? ' WhatsApp\'tan ya da toplantıda gelen bilgileri "Adına gir" ile ekleyebilirsin.' : ''}` : 'Herkes girdi.'}</div>
       <div class="flex items-center gap-1.5">
         ${coord && pendingN ? `<button onclick="mtgCopyText(mtgReminderText(MEETING_WEEKS.find(x => x.date === '${w.date}')), 'Hatırlatma mesajı kopyalandı.')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">Hatırlatma mesajı</button>` : ''}
         <button onclick="mtgSetSub('report')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">Gündem & Rapor →</button>
@@ -5500,7 +5506,11 @@ function renderMtgUpdatesBody(w) {
   const notice = mtgSetupNoticeHTML(); if (notice) return notice;
   const me = getCurrentPersonId();
   if (!me) return '<div class="text-center text-[11px] text-slate-500 py-8">Güncelleme girmek için profilinin ekip listesindeki bir kişiyle eşleşmesi gerekiyor.</div>' + mtgTeamStatusHTML(w);
-  if (!mtgIsAdmin()) return mtgUpdPersonHTML(w, me, false);
+  if (!mtgIsAdmin()) {
+    const view = mtgState.updView === 'team' || mtgState.updView === 'me' ? mtgState.updView : (mtgSubmittedSet(w.date).has(me) || !MTG_UPDATE_TEAM.includes(me) ? 'team' : 'me');
+    const bar = MTG_UPDATE_TEAM.includes(me) ? mtgUpdViewBarHTML(w, view) : '';
+    return bar + (view === 'team' ? mtgUpdTeamOverviewHTML(w) : mtgUpdPersonHTML(w, me, false));
+  }
   let view = mtgState.updView || 'team';
   if (view === 'me' && !MTG_UPDATE_TEAM.includes(me)) view = 'team';
   const bar = mtgUpdViewBarHTML(w, view);
