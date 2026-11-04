@@ -5240,7 +5240,7 @@ function mtgMyTracks(w, pid) {
   const mine = tracks.filter(t => (MEETING_TRACK_MEMBERS[t.id] || []).includes(pid)).map(t => t.id);
   if (!mine.length && tracks.some(t => t.id === 'full_group') && MTG_UPDATE_TEAM.includes(pid)) mine.push('full_group');
   mtgUpdatesFor(w.date).filter(u => u.person_id === pid).forEach(u => { if (!mine.includes(u.track_id)) mine.push(u.track_id); });
-  (mtgState.updExtra[w.date] || []).forEach(id => { if (!mine.includes(id)) mine.push(id); });
+  (mtgState.updExtra[w.date + '|' + pid] || []).forEach(id => { if (!mine.includes(id)) mine.push(id); });
   return tracks.filter(t => mine.includes(t.id));
 }
 
@@ -5284,42 +5284,58 @@ async function mtgDeleteUpdateRow(u) {
   return true;
 }
 
-// ---- kişi formu
-async function mtgUpdSave(date, tid) {
-  const me = getCurrentPersonId();
+// ---- kişi formu (kişi kendi adına; yönetici — Tahir Hoca / Eslem — herkes adına)
+function mtgCanEditFor(pid) { const me = getCurrentPersonId(); return !!me && (pid === me || mtgIsAdmin()); }
+function mtgSetUpdView(v) { mtgState.updView = v; renderMtgDetail(); const d = document.getElementById('mtgDetail'); if (d) d.scrollTop = 0; }
+function mtgOpenUpdatesFor(date, view) { mtgState.updView = view; mtgSelect(date, 'updates'); }
+async function mtgUpdSave(date, tid, pid) {
+  const me = getCurrentPersonId(); pid = pid || me;
   if (!me) { showMiniToast('Güncelleme girmek için giriş yapın.'); return; }
+  if (!mtgCanEditFor(pid)) { showMiniToast('Başkası adına yalnızca yöneticiler güncelleme girebilir.'); return; }
   const v = k => ((document.getElementById(`mtgUpd-${tid}-${k}`) || {}).value || '').trim();
   const row = {
-    week_date: date, person_id: me, track_id: tid,
+    week_date: date, person_id: pid, track_id: tid,
     done_text: v('done') || null, next_text: v('next') || null, agenda_text: v('agenda') || null, blockers: v('blockers') || null,
     no_agenda: !!(document.getElementById(`mtgUpd-${tid}-none`) || {}).checked
   };
   if (!row.done_text && !row.next_text && !row.agenda_text && !row.blockers && !row.no_agenda) { showMiniToast('Boş güncelleme kaydedilmedi. En az bir alanı doldurun.'); return; }
   const st = document.getElementById(`mtgUpdSt-${tid}`); if (st) { st.textContent = 'Kaydediliyor…'; st.className = 'text-[10px] font-semibold text-slate-400'; }
   if (await mtgUpsertUpdate(row)) {
-    const ex = mtgState.updExtra[date]; if (ex) mtgState.updExtra[date] = ex.filter(x => x !== tid);
-    showMiniToast('Güncellemen kaydedildi. Teşekkürler!');
+    const key = date + '|' + pid, ex = mtgState.updExtra[key]; if (ex) mtgState.updExtra[key] = ex.filter(x => x !== tid);
+    showMiniToast(pid === me ? 'Güncellemen kaydedildi. Teşekkürler!' : `${mtgShort(pid)} adına kaydedildi.`);
     renderMtg();
   } else if (st) { st.textContent = '⚠ Kaydedilemedi'; st.className = 'text-[10px] font-semibold text-red-400'; }
 }
-async function mtgUpdDelete(date, tid) {
-  const me = getCurrentPersonId();
-  const u = mtgUpdatesFor(date).find(x => x.person_id === me && x.track_id === tid); if (!u) return;
-  if (!confirm('Bu oturum için girdiğin güncelleme silinsin mi?')) return;
+async function mtgUpdDelete(date, tid, pid) {
+  const me = getCurrentPersonId(); pid = pid || me;
+  if (!mtgCanEditFor(pid)) return;
+  const u = mtgUpdatesFor(date).find(x => x.person_id === pid && x.track_id === tid); if (!u) return;
+  if (!confirm(pid === me ? 'Bu oturum için girdiğin güncelleme silinsin mi?' : `${mtgShort(pid)} için bu oturumdaki güncelleme silinsin mi?`)) return;
   if (await mtgDeleteUpdateRow(u)) renderMtg();
 }
-function mtgUpdAddTrack(date, tid) {
-  if (!tid) return;
-  const ex = mtgState.updExtra[date] = mtgState.updExtra[date] || [];
+function mtgUpdAddTrack(date, tid, pid) {
+  if (!tid) return; pid = pid || getCurrentPersonId();
+  const key = date + '|' + pid, ex = mtgState.updExtra[key] = mtgState.updExtra[key] || [];
   if (!ex.includes(tid)) ex.push(tid);
   renderMtgDetail();
 }
-function mtgUpdRemoveExtra(date, tid) { mtgState.updExtra[date] = (mtgState.updExtra[date] || []).filter(x => x !== tid); renderMtgDetail(); }
-function mtgOpenMyUpdate() { mtgState.q = ''; mtgSelect(mtgNextMeetingDate(), 'updates'); setTimeout(() => { const el = document.getElementById('mtgRow-' + mtgState.sel); if (el) el.scrollIntoView({ block: 'center' }); }, 60); }
+function mtgUpdRemoveExtra(date, tid, pid) { const key = date + '|' + (pid || getCurrentPersonId()); mtgState.updExtra[key] = (mtgState.updExtra[key] || []).filter(x => x !== tid); renderMtgDetail(); }
+// yönetici başkası adına doğrudan to-do ekler (bildirim gönderilmez)
+function mtgAddTodoFor(date, pid) {
+  mtgAddTodo(date);
+  document.querySelectorAll('.weekly-todo-person-checkbox').forEach(cb => { cb.checked = cb.value === pid; });
+}
+function mtgOpenMyUpdate() {
+  mtgState.q = '';
+  if (mtgIsAdmin()) mtgState.updView = 'team';
+  mtgSelect(mtgNextMeetingDate(), 'updates');
+  setTimeout(() => { const el = document.getElementById('mtgRow-' + mtgState.sel); if (el) el.scrollIntoView({ block: 'center' }); }, 60);
+}
 function mtgRefreshMyUpdateBtn() {
   const lbl = document.getElementById('mtgMyUpdateLbl'); if (!lbl) return;
-  const btnEl = lbl.closest('button'); if (btnEl) btnEl.style.display = MTG_UPDATE_TEAM.includes(getCurrentPersonId()) ? '' : 'none';
-  const d = mtgNextMeetingDate(); const me = getCurrentPersonId();
+  const me = getCurrentPersonId(), admin = mtgIsAdmin(), d = mtgNextMeetingDate();
+  const btnEl = lbl.closest('button'); if (btnEl) btnEl.style.display = (admin || MTG_UPDATE_TEAM.includes(me)) ? '' : 'none';
+  if (admin) { const w = MEETING_WEEKS.find(x => x.date === d); lbl.textContent = `Ekip güncellemeleri · ${mtgShortDate(d)}${w ? ' (' + mtgUpdCountLabel(w) + ')' : ''}`; return; }
   const done = me && mtgSubmittedSet(d).has(me);
   lbl.textContent = (done ? '✓ Güncellemen girildi · ' : 'Güncellememi gir · ') + mtgShortDate(d);
 }
@@ -5331,87 +5347,166 @@ function mtgSetupNoticeHTML() {
   return '';
 }
 
-function mtgUpdCardHTML(w, t, me) {
-  const u = mtgUpdatesFor(w.date).find(x => x.person_id === me && x.track_id === t.id) || {};
+function mtgUpdCardHTML(w, t, pid, onBehalf) {
+  const u = mtgUpdatesFor(w.date).find(x => x.person_id === pid && x.track_id === t.id) || {};
   const needed = MTG_WHEN_NEEDED.includes(t.id);
   const members = t.id === 'full_group' ? 'Herkes' : (MEETING_TRACK_MEMBERS[t.id] || []).map(mtgShort).join(', ');
-  const isExtra = !u.id && (mtgState.updExtra[w.date] || []).includes(t.id);
+  const isExtra = !u.id && (mtgState.updExtra[w.date + '|' + pid] || []).includes(t.id);
   const prevD = mtgPrevMeetingDate(w.date);
-  const prevU = prevD ? (meetingUpdates.find(x => x.week_date === prevD && x.person_id === me && x.track_id === t.id && (x.next_text || '').trim()) || meetingUpdates.find(x => x.week_date === prevD && x.person_id === me && (x.next_text || '').trim())) : null;
-  const planHTML = prevU ? `<div class="rounded-lg bg-slate-900/60 border border-slate-800 px-3 py-2 mb-2.5"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${escHtml(mtgShortDate(prevD))} toplantısında planladıkların</div><ul class="list-disc pl-4 text-[11px] text-slate-200 space-y-0.5">${mtgLines(prevU.next_text).map(l => `<li>${escHtml(l)}</li>`).join('')}</ul><div class="text-[10px] text-slate-500 mt-1">Bunlardan hangilerini yaptığını "Bu hafta neler yaptım?" alanına yazabilirsin.</div></div>` : '';
+  const prevU = prevD ? (meetingUpdates.find(x => x.week_date === prevD && x.person_id === pid && x.track_id === t.id && (x.next_text || '').trim()) || meetingUpdates.find(x => x.week_date === prevD && x.person_id === pid && (x.next_text || '').trim())) : null;
+  const L = onBehalf
+    ? { plan: 'planladıkları', done: 'Bu hafta neler yaptı?', next: 'Sıradaki adımları · her satır bir to-do', hint: 'Yaptıklarını "Bu hafta neler yaptı?" alanına yazabilirsin.' }
+    : { plan: 'planladıkların', done: 'Bu hafta neler yaptım?', next: 'Sıradaki adımlarım · her satır bir to-do', hint: 'Bunlardan hangilerini yaptığını "Bu hafta neler yaptım?" alanına yazabilirsin.' };
+  const planHTML = prevU ? `<div class="rounded-lg bg-slate-900/60 border border-slate-800 px-3 py-2 mb-2.5"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${escHtml(mtgShortDate(prevD))} toplantısında ${L.plan}</div><ul class="list-disc pl-4 text-[11px] text-slate-200 space-y-0.5">${mtgLines(prevU.next_text).map(l => `<li>${escHtml(l)}</li>`).join('')}</ul><div class="text-[10px] text-slate-500 mt-1">${L.hint}</div></div>` : '';
   const ta = (k, label, rows, ph) => `<div><label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${label}</label>
     <textarea id="mtgUpd-${t.id}-${k}" rows="${rows}" placeholder="${escHtml(ph)}" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-[11px] leading-relaxed text-slate-100 focus:outline-none focus:border-indigo-500">${escHtml(u[k + (k === 'blockers' ? '' : '_text')] || '')}</textarea></div>`;
   return `<div class="rounded-xl border ${u.id ? 'border-emerald-500/30' : 'border-slate-700'} bg-slate-900/40 p-3.5 mb-3">
     <div class="flex items-center justify-between gap-2 mb-2.5 flex-wrap">
-      <div class="text-[12px] font-bold text-slate-100"><span class="font-mono text-slate-500 mr-1.5">${t.time.split('–')[0]}</span>${escHtml(MTG_TRACK_SHORT[t.id] || mtgTrackLabel(t))}
-        <span class="text-[10px] font-normal text-slate-400">· ${escHtml(members)}</span>${needed ? ' <span class="ml-1 px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 text-[9px] font-semibold">ihtiyaç halinde</span>' : ''}</div>
-      <span id="mtgUpdSt-${t.id}" class="text-[10px] font-semibold ${u.id ? 'text-emerald-500' : 'text-slate-500'}">${u.id ? '✓ Kaydedildi ' + mtgStamp(u.updated_at) : 'Henüz girilmedi'}</span>
+      <div class="text-[12px] font-bold text-slate-100">${t.time ? `<span class="font-mono text-slate-500 mr-1.5">${t.time.split('–')[0]}</span>` : ''}${escHtml(MTG_TRACK_SHORT[t.id] || mtgTrackLabel(t))}
+        <span class="text-[10px] font-normal text-slate-400">· ${escHtml(members)}</span>${needed ? ' <span class="mchip mchip-warn ml-1">ihtiyaç halinde</span>' : ''}</div>
+      <span id="mtgUpdSt-${t.id}" class="text-[10px] font-semibold ${u.id ? 'mtxt-ok' : 'text-slate-500'}">${u.id ? '✓ Kaydedildi ' + mtgStamp(u.updated_at) : 'Henüz girilmedi'}</span>
     </div>
     ${planHTML}
     <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-      ${ta('done', 'Bu hafta neler yaptım?', 3, 'Örn. Wave 2 eğitimini tamamladım; 25 screening run…')}
-      ${ta('next', 'Sıradaki adımlarım · her satır bir to-do', 3, 'Örn. Sonuçları Abdullatif ile değerlendirmek\nÖrn. 70B modelleri tekrar koşmak')}
+      ${ta('done', L.done, 3, 'Örn. Wave 2 eğitimi tamamlandı; 25 screening run…')}
+      ${ta('next', L.next, 3, 'Örn. Sonuçları Abdullatif ile değerlendirmek\nÖrn. 70B modelleri tekrar koşmak')}
       ${ta('agenda', 'Toplantıda konuşulsun · her satır bir madde', 2, 'Örn. Wave 2 sonuçları')}
       ${ta('blockers', 'Engel / destek ihtiyacı', 2, 'Örn. HPC erişimi bekleniyor')}
     </div>
     <div class="flex items-center justify-between mt-2.5 flex-wrap gap-2">
-      <label class="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer"><input type="checkbox" id="mtgUpd-${t.id}-none" ${u.no_agenda ? 'checked' : ''} class="rounded border-slate-600">${needed ? 'Bu hafta bu oturuma gerek yok' : 'Konuşacak özel maddem yok'}</label>
+      <label class="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer"><input type="checkbox" id="mtgUpd-${t.id}-none" ${u.no_agenda ? 'checked' : ''} class="rounded border-slate-600">${needed ? 'Bu hafta bu oturuma gerek yok' : 'Konuşacak özel madde yok'}</label>
       <div class="flex items-center gap-1.5">
-        ${u.todos_sent_at ? '<span class="text-[10px] text-indigo-300" title="Sonraki değişiklikler otomatik aktarılmaz">To-do\'ya aktarıldı</span>' : ''}
-        ${isExtra ? `<button onclick="mtgUpdRemoveExtra('${w.date}','${t.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold rounded-lg">Kaldır</button>` : ''}
-        ${u.id ? `<button onclick="mtgUpdDelete('${w.date}','${t.id}')" class="px-2.5 py-1 border border-rose-500/40 text-rose-600 hover:bg-rose-500/20 text-[11px] font-semibold rounded-lg">Sil</button>` : ''}
-        <button onclick="mtgUpdSave('${w.date}','${t.id}')" class="px-3.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">${u.id ? 'Güncelle' : 'Kaydet'}</button>
+        ${u.todos_sent_at ? '<span class="mchip mchip-info" title="Sonraki değişiklikler otomatik aktarılmaz">To-do\'ya aktarıldı</span>' : ''}
+        ${isExtra ? `<button onclick="mtgUpdRemoveExtra('${w.date}','${t.id}','${pid}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-semibold rounded-lg">Kaldır</button>` : ''}
+        ${u.id ? `<button onclick="mtgUpdDelete('${w.date}','${t.id}','${pid}')" class="px-2.5 py-1 border border-rose-500/40 text-rose-600 hover:bg-rose-500/20 text-[11px] font-semibold rounded-lg">Sil</button>` : ''}
+        <button onclick="mtgUpdSave('${w.date}','${t.id}','${pid}')" class="px-3.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold rounded-lg">${u.id ? 'Güncelle' : 'Kaydet'}</button>
       </div>
     </div>
   </div>`;
 }
 
 function mtgTeamStatusHTML(w) {
-  const team = mtgUpdateTeam(); const ups = mtgPeopleUpdates(w.date);
-  const chips = team.map(pid => {
-    const mine = ups.filter(u => u.person_id === pid);
-    if (!mine.length) return `<span class="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-400 text-[10px] font-semibold">⏳ ${escHtml(mtgShort(pid))}</span>`;
-    const last = mine.map(u => u.updated_at).sort().pop();
-    return `<span class="px-2 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 text-[10px] font-semibold" title="${escHtml(mine.map(u => MTG_TRACK_SHORT[u.track_id] || u.track_id).join(', '))}">✓ ${escHtml(mtgShort(pid))} <span class="font-normal opacity-70">${escHtml(mtgStamp(last))}</span></span>`;
-  }).join('');
-  const extra = [...new Set(ups.map(u => u.person_id).filter(pid => !team.includes(pid)))].map(pid => `<span class="px-2 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 text-[10px] font-semibold">✓ ${escHtml(mtgShort(pid))}</span>`).join('');
+  const team = mtgUpdateTeam(); const ups = mtgPeopleUpdates(w.date); const admin = mtgIsAdmin();
+  const chip = (pid, ok, extra) => {
+    const cls = ok ? 'mchip mchip-ok' : 'mchip mchip-mute';
+    const label = `${ok ? '✓' : '⏳'} ${escHtml(mtgShort(pid))}${extra ? ` <span class="font-normal opacity-70">${escHtml(extra)}</span>` : ''}`;
+    return admin ? `<button onclick="mtgSetUpdView('${pid}')" title="${ok ? 'Girişini aç' : 'Adına gir'}" class="${cls}">${label}</button>` : `<span class="${cls}">${label}</span>`;
+  };
+  const chips = team.map(pid => { const mine = ups.filter(u => u.person_id === pid); return chip(pid, mine.length, mine.length ? mtgStamp(mine.map(u => u.updated_at).sort().pop()) : ''); }).join('');
+  const extra = [...new Set(ups.map(u => u.person_id).filter(pid => !team.includes(pid)))].map(pid => chip(pid, true, '')).join('');
   return `<div class="mt-5 pt-4 border-t border-slate-800">
     <div class="flex items-center justify-between mb-2"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ekip durumu · ${mtgUpdCountLabel(w)} girdi</div>
-      <button onclick="mtgSetSub('report')" class="text-[11px] font-semibold text-indigo-400 hover:underline">Gündem ve rapor →</button></div>
+      ${admin ? `<button onclick="mtgSetUpdView('team')" class="text-[11px] font-semibold text-indigo-400 hover:underline">Ekip özeti →</button>` : `<button onclick="mtgSetSub('report')" class="text-[11px] font-semibold text-indigo-400 hover:underline">Gündem ve rapor →</button>`}</div>
     <div class="flex flex-wrap gap-1.5">${chips}${extra}</div>
   </div>`;
 }
 
-function renderMtgUpdatesBody(w) {
-  const notice = mtgSetupNoticeHTML(); if (notice) return notice;
-  const me = getCurrentPersonId(); const t = todayIso();
+function mtgCarriedHTML(w) {
   const tracks = MEETING_TRACKS[w.type] || [];
-  const intro = `<div class="rounded-xl border border-indigo-500/30 bg-indigo-500/5 px-3.5 py-2.5 mb-4 text-[11px] text-slate-300 leading-relaxed">
-    ${w.date < t ? '<b class="text-slate-100">Bu toplantı geçti.</b> Girişler arşivde duruyor; eksik kalanı yine de ekleyebilirsin.' : `<b class="text-slate-100">Güncellemeni toplantıdan önce gir</b> (son: ${MTG_UPDATE_DEADLINE}).`}
-    Yaptıkların rapora, sıradaki adımların to-do listene, "konuşulsun" maddelerin toplantı gündemine aktarılır.</div>`;
-  if (!me) return intro + '<div class="text-center text-[11px] text-slate-500 py-8">Güncelleme girmek için profilinin ekip listesindeki bir kişiyle eşleşmesi gerekiyor.</div>' + mtgTeamStatusHTML(w);
-
-  // açık görevlerim (bu toplantıya kadar atanmış, tamamlanmamış)
-  const myOpen = meetingRows().filter(r => r.pid === me && r.status !== 'Tamamlandı' && r.date <= w.date).sort((a, b) => b.date.localeCompare(a.date));
-  const openHTML = myOpen.length ? `<div class="mb-4">
-    <div class="flex items-center justify-between mb-1.5"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Açık görevlerim (${myOpen.length})</div><span class="text-[10px] text-slate-500">Durumları buradan güncelle; tamamlananlar rapora işlenir.</span></div>
-    <div class="space-y-1.5">${myOpen.slice(0, 8).map(r => mtgTaskRowHTML(r, todoCanEdit([me]))).join('')}</div>
-    ${myOpen.length > 8 ? `<button onclick="mtgSetTab('tasks')" class="mt-1.5 text-[11px] font-semibold text-indigo-400 hover:underline">+${myOpen.length - 8} görev daha · Görev Listesi</button>` : ''}
-  </div>` : '';
-
   const carried = mtgNotesAgenda(w.date).filter(u => mtgLines(u.agenda_text).length);
-  const carriedHTML = carried.length ? `<div class="rounded-xl border border-slate-700 bg-slate-900/40 px-3.5 py-2.5 mb-4">
+  return carried.length ? `<div class="rounded-xl border border-slate-700 bg-slate-900/40 px-3.5 py-2.5 mb-4">
     <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Toplantı notlarından bu toplantıya devredenler</div>
     ${carried.map(u => { const tr = tracks.find(x => x.id === u.track_id); return `<div class="text-[11px] text-slate-200 mb-1"><b>${escHtml(tr ? (MTG_TRACK_SHORT[tr.id] || mtgTrackLabel(tr)) : u.track_id)}:</b> ${mtgLines(u.agenda_text).map(escHtml).join(' · ')}${u.done_text ? ` <span class="text-slate-500">(${escHtml(u.done_text)})</span>` : ''}</div>`; }).join('')}
   </div>` : '';
-  const mine = mtgMyTracks(w, me);
+}
+
+// yönetici görünüm seçici: Ekip özeti · Benim güncellemem · Kişi adına gir
+function mtgUpdViewBarHTML(w, view) {
+  const me = getCurrentPersonId(), team = mtgUpdateTeam(), sub = mtgSubmittedSet(w.date);
+  const seg = (id, label) => `<button onclick="mtgSetUpdView('${id}')" class="px-3 py-1.5 rounded-lg text-[11px] font-semibold transition ${view === id ? TAB_ON : TAB_OFF}">${label}</button>`;
+  const other = view !== 'team' && view !== 'me' ? view : '';
+  return `<div class="flex flex-wrap items-center gap-2 mb-4">
+    <div class="inline-flex items-center gap-0.5 bg-slate-950/60 border border-slate-800 rounded-xl p-1">
+      ${seg('team', `Ekip özeti · ${mtgUpdCountLabel(w)}`)}${MTG_UPDATE_TEAM.includes(me) ? seg('me', 'Benim güncellemem') : ''}
+    </div>
+    <label class="inline-flex items-center gap-1.5 text-[11px] text-slate-400">Kişi adına gir:
+      <select onchange="if(this.value)mtgSetUpdView(this.value)" class="bg-slate-900 border ${other ? 'border-indigo-500' : 'border-slate-700'} rounded-lg px-2 py-1.5 text-[11px] text-slate-100">
+        <option value="">— kişi seç —</option>${team.filter(p => p !== me).map(p => `<option value="${p}" ${p === other ? 'selected' : ''}>${sub.has(p) ? '✓' : '⏳'} ${escHtml(mtgNameOf(p))}</option>`).join('')}
+      </select></label>
+  </div>`;
+}
+
+// Ekip özeti: herkesin bu toplantı için girdiği güncellemeler tek ekranda (yönetici)
+function mtgUpdTeamOverviewHTML(w) {
+  const team = mtgUpdateTeam(), ups = mtgPeopleUpdates(w.date), sub = mtgSubmittedSet(w.date), t = todayIso();
+  const people = team.concat([...new Set(ups.map(u => u.person_id).filter(p => !team.includes(p)))]);
+  const rows = meetingRows();
+  const order = people.slice().sort((a, b) => (sub.has(a) - sub.has(b)) || mtgShort(a).localeCompare(mtgShort(b), 'tr'));   // bekleyenler önce
+  const field = (label, txt, extra) => { const ls = mtgLines(txt); return ls.length ? `<div><div class="text-[9.5px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">${label}${extra || ''}</div><ul class="list-disc pl-4 text-[11px] text-slate-200 space-y-0.5">${ls.map(l => `<li>${escHtml(l)}</li>`).join('')}</ul></div>` : ''; };
+  const card = pid => {
+    const mine = ups.filter(u => u.person_id === pid);
+    const tracks = mtgMyTracks(w, pid);
+    const open = rows.filter(r => r.pid === pid && r.status !== 'Tamamlandı'), late = open.filter(mtgIsOverdue).length;
+    const status = mine.length ? `<span class="mchip mchip-ok">✓ Girdi · ${escHtml(mtgStamp(mine.map(u => u.updated_at).sort().pop()))}</span>` : `<span class="mchip mchip-mute">⏳ Bekleniyor</span>`;
+    const body = mine.length ? mine.map(u => {
+      const tr = (MEETING_TRACKS[w.type] || []).find(x => x.id === u.track_id);
+      const inner = [field('Yaptıkları', u.done_text), field('Sıradaki adımları', u.next_text, u.todos_sent_at ? ' <span class="mchip mchip-info normal-case tracking-normal">to-do\'ya aktarıldı</span>' : ''), field('Toplantıda konuşulsun', u.agenda_text), field('Engel / destek', u.blockers)].filter(Boolean).join('');
+      return `<div class="mt-2.5 pt-2.5 border-t border-slate-800/70 first:border-t-0 first:pt-0"><div class="text-[10.5px] font-semibold text-slate-300 mb-1.5">${escHtml(tr ? (MTG_TRACK_SHORT[tr.id] || mtgTrackLabel(tr)) : mtgTrackName(u.track_id))}${u.no_agenda ? ' <span class="mchip mchip-mute ml-1">özel madde yok</span>' : ''}</div>${inner ? `<div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2">${inner}</div>` : ''}</div>`;
+    }).join('') : `<div class="text-[11px] text-slate-500 mt-1.5">${tracks.length ? 'Oturumları: ' + tracks.map(x => escHtml(MTG_TRACK_SHORT[x.id] || mtgTrackLabel(x))).join(', ') + '. ' : ''}Henüz güncelleme girmedi.</div>`;
+    return `<div class="rounded-xl border ${mine.length ? 'border-slate-800' : 'border-amber-500/30'} bg-slate-900/40 p-3.5 mb-2.5">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-2 flex-wrap"><span class="text-[12px] font-bold text-slate-100">${escHtml(mtgNameOf(pid))}</span>${status}
+          ${open.length ? `<button onclick="mtgState.tf.person='${pid}';mtgState.tf.quick='';mtgState.tf.status='__open';mtgState.page=0;mtgSetTab('tasks')" class="mchip ${late ? 'mchip-bad' : 'mchip-mute'}">${open.length} açık görev${late ? ` · ${late} geciken` : ''}</button>` : ''}</div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="mtgAddTodoFor('${w.date}','${pid}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">+ Görev ekle</button>
+          <button onclick="mtgSetUpdView('${pid}')" class="px-3 py-1 ${mine.length ? 'bg-slate-800 hover:bg-slate-700 text-slate-200' : 'bg-indigo-600 hover:bg-indigo-500 text-white'} text-[11px] font-semibold rounded-lg">${mine.length ? 'Düzenle' : 'Adına gir'}</button>
+        </div>
+      </div>
+      ${body}
+    </div>`;
+  };
+  const pendingN = people.filter(p => !sub.has(p)).length;
+  const coord = getCurrentPersonId() === MTG_WA_OWNER;
+  return `<div class="flex items-center justify-between gap-2 flex-wrap mb-3">
+      <div class="text-[11px] text-slate-400">${w.date < t ? 'Bu toplantı geçti; girişler arşivde.' : `Son giriş: ${MTG_UPDATE_DEADLINE}.`} ${pendingN ? `<b class="text-slate-200">${pendingN} kişi</b> henüz girmedi. WhatsApp'tan ya da toplantıda gelen bilgileri "Adına gir" ile ekleyebilirsin.` : 'Herkes girdi.'}</div>
+      <div class="flex items-center gap-1.5">
+        ${coord && pendingN ? `<button onclick="mtgCopyText(mtgReminderText(MEETING_WEEKS.find(x => x.date === '${w.date}')), 'Hatırlatma mesajı kopyalandı.')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">Hatırlatma mesajı</button>` : ''}
+        <button onclick="mtgSetSub('report')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">Gündem & Rapor →</button>
+      </div>
+    </div>` + mtgCarriedHTML(w) + order.map(card).join('');
+}
+
+// Türkçe isim ekleri: Helin'in, Sena'nın, Ayşenur'un · Helin'e, Sena'ya
+function mtgLastVowel(n) { const m = String(n).toLocaleLowerCase('tr-TR').match(/[aeıioöuü](?=[^aeıioöuü]*$)/); return m ? m[0] : 'e'; }
+function mtgGen(n) { const v = { a: 'ı', ı: 'ı', e: 'i', i: 'i', o: 'u', u: 'u', ö: 'ü', ü: 'ü' }[mtgLastVowel(n)]; return n + "'" + (/[aeıioöuü]$/i.test(n) ? 'n' : '') + v + 'n'; }
+function mtgDat(n) { const v = /[aıou]/.test(mtgLastVowel(n)) ? 'a' : 'e'; return n + "'" + (/[aeıioöuü]$/i.test(n) ? 'y' : '') + v; }
+// Tek kişinin formu (kendisi ya da yönetici onun adına)
+function mtgUpdPersonHTML(w, pid, onBehalf) {
+  const t = todayIso(), tracks = MEETING_TRACKS[w.type] || [], name = mtgShort(pid);
+  const banner = onBehalf ? `<div class="rounded-xl border border-indigo-500/40 bg-indigo-500/10 px-3.5 py-2.5 mb-4 flex items-center justify-between gap-2 flex-wrap">
+      <div class="text-[11px] text-slate-200"><b>${escHtml(mtgNameOf(pid))}</b> adına görüntülüyor ve düzenliyorsun. Kaydettiklerin ${escHtml(mtgGen(name))} güncellemesi olarak görünür.</div>
+      <button onclick="mtgSetUpdView('team')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">← Ekip özeti</button></div>` : '';
+  const intro = onBehalf ? '' : `<div class="rounded-xl border border-indigo-500/30 bg-indigo-500/5 px-3.5 py-2.5 mb-4 text-[11px] text-slate-300 leading-relaxed">
+    ${w.date < t ? '<b class="text-slate-100">Bu toplantı geçti.</b> Girişler arşivde duruyor; eksik kalanı yine de ekleyebilirsin.' : `<b class="text-slate-100">Güncellemeni toplantıdan önce gir</b> (son: ${MTG_UPDATE_DEADLINE}).`}
+    Yaptıkların rapora, sıradaki adımların to-do listene, "konuşulsun" maddelerin toplantı gündemine aktarılır.</div>`;
+  const open = meetingRows().filter(r => r.pid === pid && r.status !== 'Tamamlandı' && r.date <= w.date).sort((a, b) => (mtgIsOverdue(b) - mtgIsOverdue(a)) || b.date.localeCompare(a.date));
+  const openHTML = `<div class="mb-4">
+    <div class="flex items-center justify-between mb-1.5 gap-2 flex-wrap"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${onBehalf ? 'Açık görevleri' : 'Açık görevlerim'} (${open.length})</div>
+      <div class="flex items-center gap-2">${onBehalf ? `<button onclick="mtgAddTodoFor('${w.date}','${pid}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg">+ ${escHtml(name)} için görev ekle</button>` : '<span class="text-[10px] text-slate-500">Durumları buradan güncelle; tamamlananlar rapora işlenir.</span>'}</div></div>
+    ${open.length ? `<div class="space-y-1.5">${open.slice(0, 8).map(r => mtgTaskRowHTML(r, todoCanEdit([pid]))).join('')}</div>
+    ${open.length > 8 ? `<button onclick="mtgState.tf.person='${pid}';mtgState.tf.quick='';mtgState.page=0;mtgSetTab('tasks')" class="mt-1.5 text-[11px] font-semibold text-indigo-400 hover:underline">+${open.length - 8} görev daha · Görevler</button>` : ''}` : '<div class="text-[11px] text-slate-500">Açık görev yok.</div>'}
+  </div>`;
+  const mine = mtgMyTracks(w, pid);
   const others = tracks.filter(x => !mine.some(m => m.id === x.id));
-  const cards = mine.length ? mine.map(x => mtgUpdCardHTML(w, x, me)).join('') : '<div class="text-[11px] text-slate-500 mb-3">Bu hafta sana atanmış bir oturum yok. Gündem maddesi eklemek istediğin oturumu aşağıdan seç.</div>';
+  const cards = mine.length ? mine.map(x => mtgUpdCardHTML(w, x, pid, onBehalf)).join('') : `<div class="text-[11px] text-slate-500 mb-3">Bu hafta ${onBehalf ? escHtml(mtgDat(name)) : 'sana'} atanmış bir oturum yok. Gündem maddesi eklemek için aşağıdan oturum seç.</div>`;
   const addHTML = others.length ? `<div class="flex items-center gap-1.5 text-[11px] text-slate-400">
     Başka bir oturuma madde ekle:
     <select id="mtgUpdAddSel" class="bg-slate-900 border border-slate-700 rounded-md px-1.5 py-1 text-[11px] text-slate-100">${others.map(x => `<option value="${x.id}">${x.time.split('–')[0]} · ${escHtml(MTG_TRACK_SHORT[x.id] || mtgTrackLabel(x))}</option>`).join('')}</select>
-    <button onclick="mtgUpdAddTrack('${w.date}', document.getElementById('mtgUpdAddSel').value)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-md">Ekle</button></div>` : '';
-  return intro + carriedHTML + openHTML + `<div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Güncellemem · ${escHtml(formatMeetingDate(w.date))}</div>` + cards + addHTML + mtgTeamStatusHTML(w);
+    <button onclick="mtgUpdAddTrack('${w.date}', document.getElementById('mtgUpdAddSel').value, '${pid}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold rounded-md">Ekle</button></div>` : '';
+  return banner + intro + (onBehalf ? '' : mtgCarriedHTML(w)) + openHTML + `<div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">${onBehalf ? escHtml(mtgGen(name)) + ' güncellemesi' : 'Güncellemem'} · ${escHtml(formatMeetingDate(w.date))}</div>` + cards + addHTML + mtgTeamStatusHTML(w);
+}
+
+function renderMtgUpdatesBody(w) {
+  const notice = mtgSetupNoticeHTML(); if (notice) return notice;
+  const me = getCurrentPersonId();
+  if (!me) return '<div class="text-center text-[11px] text-slate-500 py-8">Güncelleme girmek için profilinin ekip listesindeki bir kişiyle eşleşmesi gerekiyor.</div>' + mtgTeamStatusHTML(w);
+  if (!mtgIsAdmin()) return mtgUpdPersonHTML(w, me, false);
+  let view = mtgState.updView || 'team';
+  if (view === 'me' && !MTG_UPDATE_TEAM.includes(me)) view = 'team';
+  const bar = mtgUpdViewBarHTML(w, view);
+  if (view === 'team') return bar + mtgUpdTeamOverviewHTML(w);
+  if (view === 'me') return bar + mtgUpdPersonHTML(w, me, false);
+  return bar + mtgUpdPersonHTML(w, view, true);
 }
 
 // ---- gündem + WhatsApp mesajı
@@ -6108,8 +6203,8 @@ function renderMtgWeek() {
   const rows = meetingRows(), overdue = rows.filter(mtgIsOverdue);
   const steps = [
     { state: missing.length ? (sub.size ? 'warn' : 'todo') : 'done', title: `Ekip güncellemeleri · ${team.length - missing.length}/${team.length}`,
-      detail: missing.length ? `Bekleyenler: ${missing.map(p => `<b>${escHtml(mtgShort(p))}</b>`).join(', ')} · son giriş ${MTG_UPDATE_DEADLINE}` : 'Herkes güncellemesini girdi.',
-      actions: (missing.length ? mtgBtn('Hatırlatma mesajını kopyala', `mtgCopyText(mtgReminderText(MEETING_WEEKS.find(x => x.date === '${d}')), 'Hatırlatma mesajı kopyalandı.')`) : '') + mtgBtn('Güncellemeleri aç', `mtgSelect('${d}','updates')`) },
+      detail: missing.length ? `Bekleyenler (tıkla, adına gir): ${missing.map(p => `<button onclick="mtgOpenUpdatesFor('${d}','${p}')" class="mchip mchip-mute">${escHtml(mtgShort(p))}</button>`).join(' ')} · son giriş ${MTG_UPDATE_DEADLINE}` : 'Herkes güncellemesini girdi.',
+      actions: (missing.length ? mtgBtn('Hatırlatma mesajını kopyala', `mtgCopyText(mtgReminderText(MEETING_WEEKS.find(x => x.date === '${d}')), 'Hatırlatma mesajı kopyalandı.')`) : '') + mtgBtn('Ekip güncellemeleri', `mtgOpenUpdatesFor('${d}','team')`, true) },
     { state: pendN ? 'warn' : 'done', title: `Onay bekleyen görevler · ${pendN}`,
       detail: pendN ? groups.map(g => `${escHtml(mtgShortDate(g.date))}: ${g.items.length}`).join(' · ') + ' — kişi, ana görev ve son tarihi kontrol edip ata.' : 'Bekleyen görev yok.',
       actions: groups.slice(0, 3).map(g => mtgBtn(`${escHtml(mtgShortDate(g.date))} · aktar`, `mtgOpenTodoModal('${g.date}')`, true)).join('') },
@@ -6195,7 +6290,7 @@ function renderMtgSummary() {
           <span class="text-[11px] text-slate-300 w-8 text-right">${o.open}</span><span class="text-[11px] w-6 text-right ${o.late ? 'mtxt-bad font-bold' : 'text-slate-500'}">${o.late}</span></button>`).join('') : '<div class="text-[11px] text-slate-500">Açık görev yok.</div>'}
       </div>
       <div class="glass rounded-2xl shadow-xl p-4">
-        <div class="flex items-center justify-between mb-2"><div class="text-[12px] font-bold text-slate-100">Sıradaki toplantı · ${w ? escHtml(mtgShortDate(d)) + ' (' + escHtml(mtgRelDay(d)) + ')' : '—'}</div>${w ? `<button onclick="mtgOpenReportModal('${d}')" class="text-[11px] font-semibold text-indigo-400 hover:underline">A4 rapor →</button>` : ''}</div>
+        <div class="flex items-center justify-between mb-2"><div class="text-[12px] font-bold text-slate-100">Sıradaki toplantı · ${w ? escHtml(mtgShortDate(d)) + ' (' + escHtml(mtgRelDay(d)) + ')' : '—'}</div>${w ? `<div class="flex items-center gap-3"><button onclick="mtgOpenUpdatesFor('${d}','team')" class="text-[11px] font-semibold text-indigo-400 hover:underline">Ekip güncellemeleri (${escHtml(mtgUpdCountLabel(w))}) →</button><button onclick="mtgOpenReportModal('${d}')" class="text-[11px] font-semibold text-indigo-400 hover:underline">A4 rapor →</button></div>` : ''}</div>
         ${agenda.length ? agenda.map(a => `<div class="py-1.5 border-t border-slate-800 first:border-t-0"><div class="text-[11px] font-semibold text-slate-100">${escHtml(a.t.time.split('–')[0] || '')} ${escHtml(a.label)}</div>${a.items.length ? `<div class="text-[11px] text-slate-300 mt-0.5">${a.items.map(escHtml).join(' · ')}</div>` : ''}${a.todoLine ? `<div class="text-[10px] text-slate-500 mt-0.5">${escHtml(a.todoLine)}</div>` : ''}</div>`).join('') : '<div class="text-[11px] text-slate-500">Henüz gündem maddesi yok.</div>'}
         ${blockers.length ? `<div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-3 mb-1">Engeller</div>${blockers.map(u => `<div class="text-[11px] text-slate-200"><b>${escHtml(mtgShort(u.person_id))}:</b> ${mtgLines(u.blockers).map(escHtml).join(' · ')}</div>`).join('')}` : ''}
       </div>
