@@ -4043,21 +4043,60 @@ async function moveAssignedTodoTask(id, val) {
   await refreshMeetingTodoViews();
   showMiniToast('Görev "' + tasks[ti].name + '" başlığı altına alındı.');
 }
-function assignedProgressHTML(items) {
-  const by = new Map(); let none = { n: 0, d: 0, g: 0, b: 0 };
-  items.forEach(i => {
-    const k = i.tw ? i.tw.ti : -1;
-    const o = k < 0 ? none : (by.get(k) || by.set(k, { n: 0, d: 0, g: 0, b: 0 }).get(k));
-    o.n++; if (i.status === 'Tamamlandı') o.d++; else if (i.status === 'Devam Ediyor') o.g++; else o.b++;
-  });
-  const row = (label, o, warn) => `<div class="flex items-center gap-2 text-[10px]">
-      <span class="w-[220px] max-w-[45%] truncate ${warn ? 'text-amber-300' : 'text-slate-200'}" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
-      <div class="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden flex min-w-[80px]">
-        <div style="width:${o.d / o.n * 100}%" class="bg-emerald-500"></div><div style="width:${o.g / o.n * 100}%" class="bg-amber-500"></div></div>
-      <span class="text-slate-400 whitespace-nowrap"><b class="text-emerald-300">${o.d}</b> tamam · <b class="text-amber-300">${o.g}</b> devam · ${o.b} başlamadı <span class="text-slate-500">(${o.n})</span></span></div>`;
-  const rows = [...by.keys()].sort((a, b) => a - b).map(k => row(tasks[k].name, by.get(k), false));
-  if (none.n) rows.push(row('Başlığa bağlı değil (eski atamalar)', none, true));
-  return rows.length ? `<details open class="bg-slate-800/40 border border-slate-700/70 rounded-lg"><summary class="cursor-pointer list-none px-3 py-2 text-[11px] font-semibold text-slate-200 flex items-center gap-1.5"><i data-lucide="line-chart" class="w-3 h-3 text-emerald-300"></i>Timeline başlıklarına göre ilerleme</summary><div class="px-3 pb-2.5 space-y-1.5">${rows.join('')}</div></details>` : '';
+function stageSchedule(t) {
+  // zamana göre durum: geçen süre % ile (task.progress / yoksa görevlerin tamamlanma oranı) karşılaştırılır
+  const today = new Date().toISOString().slice(0, 10);
+  if (!t || !t.startDate || !t.endDate) return null;
+  const s0 = new Date(t.startDate + 'T00:00:00Z').getTime(), e0 = new Date(t.endDate + 'T00:00:00Z').getTime(), n0 = new Date(today + 'T00:00:00Z').getTime();
+  const exp = e0 <= s0 ? 100 : Math.max(0, Math.min(100, Math.round((n0 - s0) / (e0 - s0) * 100)));
+  const act = t.status === 'Tamamlandı' ? 100 : Math.max(0, Math.min(100, Number(t.progress) || 0));
+  let label, cls;
+  if (t.status === 'Tamamlandı' || act >= 100) { label = 'Tamamlandı'; cls = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'; }
+  else if (n0 < s0) { label = 'Henüz başlamadı'; cls = 'bg-slate-700/50 text-slate-300 border-slate-600'; }
+  else if (n0 > e0) { label = 'Süresi geçti'; cls = 'bg-rose-500/15 text-rose-300 border-rose-500/30'; }
+  else if (act - exp >= 10) { label = 'İleride'; cls = 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'; }
+  else if (exp - act >= 10) { label = 'Geride'; cls = 'bg-amber-500/15 text-amber-300 border-amber-500/30'; }
+  else { label = 'Zamanında'; cls = 'bg-sky-500/15 text-sky-300 border-sky-500/30'; }
+  return { exp, act, label, cls, start: t.startDate, end: t.endDate };
+}
+function assignedMiniRowHTML(it, nameOf) {
+  const canAct = todoCanEdit([it.pid]); const done = it.status === 'Tamamlandı';
+  return `<div class="flex flex-col md:flex-row md:items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-md px-2 py-1.5 ${done ? 'opacity-60' : ''}">
+    <div class="text-[10px] text-slate-400 whitespace-nowrap md:w-[150px]">${formatMeetingDate(it.date)} · <span class="text-slate-300">${escapeHtml(nameOf(it.pid))}</span></div>
+    <div class="flex-1 min-w-0 text-[11px] text-slate-100 ${done ? 'line-through' : ''}">${escapeHtml(it.text)}</div>
+    <div class="flex items-center gap-1.5 shrink-0 flex-wrap">
+      <select ${canAct ? '' : 'disabled'} onchange="setMeetingTodoStatus('${it.id}', this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-1 text-[10px] text-slate-100">${TODO_STATUSES.map(x => `<option ${x === it.status ? 'selected' : ''}>${x}</option>`).join('')}</select>
+      ${assignedTaskSelectHTML(it, canAct)}
+      <button onclick="openAssignedTodo('${it.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold rounded-md">Aç</button>
+    </div></div>`;
+}
+function assignedProgressHTML(items, cid, nameOf) {
+  const by = new Map(); const none = [];
+  items.forEach(i => { if (i.tw) { if (!by.has(i.tw.ti)) by.set(i.tw.ti, []); by.get(i.tw.ti).push(i); } else none.push(i); });
+  const count = list => ({ n: list.length, d: list.filter(i => i.status === 'Tamamlandı').length, g: list.filter(i => i.status === 'Devam Ediyor').length });
+  const block = (key, title, sub, list, sched, warn) => {
+    const o = count(list); const open = list.filter(i => i.status !== 'Tamamlandı'), doneL = list.filter(i => i.status === 'Tamamlandı');
+    const k = 'as:' + cid + ':' + key; const kd = k + ':done';
+    return `<details ${pendingOpenKeys.has(k) ? 'open' : ''} ontoggle="togglePendingGroup('${k}', this.open)" class="bg-slate-800/40 border border-slate-700/70 rounded-lg group/s">
+      <summary class="cursor-pointer list-none px-3 py-2 flex flex-col gap-1.5">
+        <div class="flex items-center gap-2 flex-wrap">
+          <i data-lucide="chevron-right" class="w-3 h-3 text-slate-400 transition-transform group-open/s:rotate-90"></i>
+          <span class="text-[11px] font-semibold ${warn ? 'text-amber-300' : 'text-slate-100'}">${escapeHtml(title)}</span>
+          ${sub ? `<span class="text-[9px] text-slate-500">${escapeHtml(sub)}</span>` : ''}
+          ${sched ? `<span class="px-1.5 py-0.5 rounded-full border text-[9px] font-bold ${sched.cls}">${sched.label}</span>` : ''}
+          <span class="ml-auto text-[10px] text-slate-400"><b class="text-emerald-300">${o.d}</b>/${o.n} tamam${o.g ? ` · <b class="text-amber-300">${o.g}</b> devam` : ''}</span>
+        </div>
+        <div class="h-1.5 rounded-full bg-slate-800 overflow-hidden flex"><div style="width:${o.d / o.n * 100}%" class="bg-emerald-500/80"></div><div style="width:${o.g / o.n * 100}%" class="bg-amber-500/80"></div></div>
+        ${sched ? `<div class="text-[9px] text-slate-500">Süre %${sched.exp} geçti · İş ilerlemesi %${sched.act} · ${sched.start.slice(5).split('-').reverse().join('.')} → ${sched.end.slice(5).split('-').reverse().join('.')}</div>` : ''}
+      </summary>
+      <div class="px-3 pb-2.5 space-y-1.5">
+        ${open.length ? open.map(i => assignedMiniRowHTML(i, nameOf)).join('') : '<p class="text-[10px] text-slate-500">Açık görev yok.</p>'}
+        ${doneL.length ? `<details ${pendingOpenKeys.has(kd) ? 'open' : ''} ontoggle="togglePendingGroup('${kd}', this.open)"><summary class="cursor-pointer text-[10px] text-slate-400 hover:text-slate-200 py-1">Tamamlananlar (${doneL.length})</summary><div class="space-y-1.5">${doneL.map(i => assignedMiniRowHTML(i, nameOf)).join('')}</div></details>` : ''}
+      </div></details>`;
+  };
+  const rows = [...by.keys()].sort((a, b) => a - b).map(k => { const t = tasks[k]; return block('t' + k, t.name, t.id || '', by.get(k), stageSchedule(t), false); });
+  if (none.length) rows.push(block('none', 'Başlığa bağlı değil (eski atamalar)', 'Başlık seçerek ilgili aşamaya alın', none, null, true));
+  return rows.length ? `<div class="space-y-1.5"><div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1">Aşamalar (tıklayınca görevleri açılır)</div>${rows.join('')}</div>` : '';
 }
 async function removeTwinOf(mid) {
   const tw = findTwin(mid);
@@ -4134,13 +4173,14 @@ function renderAssignedTodosPanel(cid) {
         </select>
         ${done ? `<button onclick="assignedShowDone['${cid}']=!assignedShowDone['${cid}'];renderAssignedTodosPanel('${cid}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold rounded-md">${showDone ? 'Tamamlananları gizle' : `Tamamlananları göster (${done})`}</button>` : ''}
       </div>
-      ${assignedProgressHTML(items)}
+      ${assignedProgressHTML(items, cid, nameOf)}
       ${!vis.length ? '<p class="text-[11px] text-slate-400 px-1 py-1">Açık görev yok. Tamamlananlar kapalı.</p>' : ''}
       ${legacy ? `<div class="flex items-center gap-2 flex-wrap text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
         <span>${legacy} eski atama henüz haftalık görev formuna çevrilmedi.</span>
         <select class="target-task-select bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-100 max-w-[220px]" onchange="setPendingTargetTask(this.value)">${targetTaskOptionsHTML()}</select>
         <button onclick="convertLegacyTodos()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-semibold rounded-md">Haftalık göreve çevir</button>
       </div>` : ''}
+      <details ${pendingOpenKeys.has('pp:' + cid) ? 'open' : ''} ontoggle="togglePendingGroup('pp:${cid}', this.open)" class="rounded-lg"><summary class="cursor-pointer list-none text-[10px] font-bold text-slate-400 uppercase tracking-wider px-1 py-1.5 hover:text-slate-200">Kişiye göre görünüm (${shown.length} kişi)</summary><div class="space-y-2 pt-1">
       ${shown.map(pid => {
         const mine = vis.filter(i => i.pid === pid);
         const canAct = todoCanEdit([pid]);
@@ -4171,6 +4211,7 @@ function renderAssignedTodosPanel(cid) {
           </div>
         </details>`;
       }).join('')}
+      </div></details>
     </div>
   </details>`;
 }
