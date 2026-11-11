@@ -4016,6 +4016,49 @@ async function setMeetingTodoStatus(id, val) {
   if (it.tw) { it.tw.w.status = val; await persistTask(tasks[it.tw.ti]); await refreshMeetingTodoViews(); return; }
   if (await persistMeetingItemFields(it.m, { todo_status: val })) await refreshMeetingTodoViews();
 }
+function assignedTaskSelectHTML(it, canAct) {
+  const cur = it.tw ? it.tw.ti : -1;
+  const groups = {};
+  tasks.forEach((t, i) => { (groups[t.module || 'Diğer'] = groups[t.module || 'Diğer'] || []).push(i); });
+  const opts = Object.keys(groups).map(g => `<optgroup label="${escapeHtml(g)}">${groups[g].map(i => `<option value="${i}" ${i === cur ? 'selected' : ''}>${escapeHtml(tasks[i].name)}</option>`).join('')}</optgroup>`).join('');
+  return `<select ${canAct ? '' : 'disabled'} onchange="moveAssignedTodoTask('${it.id}', this.value)" title="Bu görev hangi timeline başlığı altında?" class="bg-slate-800 border ${cur < 0 ? 'border-amber-500/50 text-amber-300' : 'border-slate-700 text-indigo-300'} rounded-md px-1 py-0.5 text-[9px] max-w-[190px]">${cur < 0 ? '<option value="" selected>Başlık seç…</option>' : ''}${opts}</select>`;
+}
+async function moveAssignedTodoTask(id, val) {
+  const it = assignedList().find(x => String(x.id) === String(id)); if (!it || val === '') return;
+  const ti = parseInt(val, 10); if (!tasks[ti]) return;
+  if (it.tw) {
+    if (it.tw.ti === ti) return;
+    const from = tasks[it.tw.ti]; const w = it.tw.w;
+    from.weeklyTodos = from.weeklyTodos.filter(x => x !== w);
+    ensureWeeklyTodos(tasks[ti]); tasks[ti].weeklyTodos.push(w); sortWeeklyTodos(tasks[ti]);
+    await persistTask(from); await persistTask(tasks[ti]);
+  } else {
+    const m = it.m;
+    await createWeeklyFromMeeting(m, m.confirmed_person_id, ti);
+    const tw = findTwin(m.id);
+    if (tw && m.todo_status) tw.w.status = m.todo_status;
+    if (tw && m.comments && m.comments.length) tw.w.comments = m.comments;
+    await persistTask(tasks[ti]);
+  }
+  await refreshMeetingTodoViews();
+  showMiniToast('Görev "' + tasks[ti].name + '" başlığı altına alındı.');
+}
+function assignedProgressHTML(items) {
+  const by = new Map(); let none = { n: 0, d: 0, g: 0, b: 0 };
+  items.forEach(i => {
+    const k = i.tw ? i.tw.ti : -1;
+    const o = k < 0 ? none : (by.get(k) || by.set(k, { n: 0, d: 0, g: 0, b: 0 }).get(k));
+    o.n++; if (i.status === 'Tamamlandı') o.d++; else if (i.status === 'Devam Ediyor') o.g++; else o.b++;
+  });
+  const row = (label, o, warn) => `<div class="flex items-center gap-2 text-[10px]">
+      <span class="w-[220px] max-w-[45%] truncate ${warn ? 'text-amber-300' : 'text-slate-200'}" title="${escapeHtml(label)}">${escapeHtml(label)}</span>
+      <div class="flex-1 h-2 rounded-full bg-slate-800 overflow-hidden flex min-w-[80px]">
+        <div style="width:${o.d / o.n * 100}%" class="bg-emerald-500"></div><div style="width:${o.g / o.n * 100}%" class="bg-amber-500"></div></div>
+      <span class="text-slate-400 whitespace-nowrap"><b class="text-emerald-300">${o.d}</b> tamam · <b class="text-amber-300">${o.g}</b> devam · ${o.b} başlamadı <span class="text-slate-500">(${o.n})</span></span></div>`;
+  const rows = [...by.keys()].sort((a, b) => a - b).map(k => row(tasks[k].name, by.get(k), false));
+  if (none.n) rows.push(row('Başlığa bağlı değil (eski atamalar)', none, true));
+  return rows.length ? `<details open class="bg-slate-800/40 border border-slate-700/70 rounded-lg"><summary class="cursor-pointer list-none px-3 py-2 text-[11px] font-semibold text-slate-200 flex items-center gap-1.5"><i data-lucide="line-chart" class="w-3 h-3 text-emerald-300"></i>Timeline başlıklarına göre ilerleme</summary><div class="px-3 pb-2.5 space-y-1.5">${rows.join('')}</div></details>` : '';
+}
 async function removeTwinOf(mid) {
   const tw = findTwin(mid);
   if (tw) { tasks[tw.ti].weeklyTodos = tasks[tw.ti].weeklyTodos.filter(x => x !== tw.w); await persistTask(tasks[tw.ti]); }
@@ -4091,6 +4134,7 @@ function renderAssignedTodosPanel(cid) {
         </select>
         ${done ? `<button onclick="assignedShowDone['${cid}']=!assignedShowDone['${cid}'];renderAssignedTodosPanel('${cid}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold rounded-md">${showDone ? 'Tamamlananları gizle' : `Tamamlananları göster (${done})`}</button>` : ''}
       </div>
+      ${assignedProgressHTML(items)}
       ${!vis.length ? '<p class="text-[11px] text-slate-400 px-1 py-1">Açık görev yok. Tamamlananlar kapalı.</p>' : ''}
       ${legacy ? `<div class="flex items-center gap-2 flex-wrap text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
         <span>${legacy} eski atama henüz haftalık görev formuna çevrilmedi.</span>
@@ -4114,7 +4158,7 @@ function renderAssignedTodosPanel(cid) {
           <div class="px-3 pb-2.5 space-y-1.5">
             ${mine.map(it => `
             <div class="flex flex-col md:flex-row md:items-center gap-2 bg-slate-900/60 border border-slate-800 rounded-md p-2 ${it.status === 'Tamamlandı' ? 'opacity-60' : ''}">
-              <div class="flex flex-col whitespace-nowrap"><span class="text-[10px] text-slate-400">${formatMeetingDate(it.date)}</span>${it.taskName ? `<span class="text-[9px] text-indigo-300 max-w-[140px] truncate" title="${escapeHtml(it.taskName)}">${escapeHtml(it.taskName)}</span>` : ''}</div>
+              <div class="flex flex-col whitespace-nowrap"><span class="text-[10px] text-slate-400">${formatMeetingDate(it.date)}</span>${assignedTaskSelectHTML(it, canAct)}</div>
               <div class="flex-1 min-w-0 text-[11px] text-slate-100 ${it.status === 'Tamamlandı' ? 'line-through' : ''}">${escapeHtml(it.text)}${it.comments.length ? ` <span class="text-[10px] text-slate-400">💬${it.comments.length}</span>` : ''}</div>
               <div class="flex items-center gap-1.5 shrink-0">
                 <select ${canAct ? '' : 'disabled'} onchange="setMeetingTodoStatus('${it.id}', this.value)" class="bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-1 text-[10px] text-slate-100">${TODO_STATUSES.map(x => `<option ${x === it.status ? 'selected' : ''}>${x}</option>`).join('')}</select>
