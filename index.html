@@ -4168,7 +4168,8 @@ function renderAssignedTodosPanel(cid) {
   const items = assignedList().sort((a, b) => String(b.date).localeCompare(String(a.date)));
   if (!items.length) { box.innerHTML = ''; return; }
   const initKey = 'init:' + cid;
-  if (!pendingOpenKeys.has(initKey)) { pendingOpenKeys.add(initKey); if (assignedOuterDefault[cid]) pendingOpenKeys.add('A:' + cid); }
+  const firstInit = !pendingOpenKeys.has(initKey);
+  if (firstInit) { pendingOpenKeys.add(initKey); if (assignedOuterDefault[cid]) pendingOpenKeys.add('A:' + cid); }
   const nameOf = id => (registeredPeople.find(p => p.id === id) || {}).name || id || '—';
   const showDone = !!assignedShowDone[cid];
   const done = items.filter(i => i.status === 'Tamamlandı').length;
@@ -4176,6 +4177,7 @@ function renderAssignedTodosPanel(cid) {
   const pids = [...new Set(vis.map(i => i.pid))].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'tr'));
   const flt = assignedTodoFilter[cid] || '';
   const shown = flt ? pids.filter(x => x === flt) : pids;
+  if (firstInit) { pendingOpenKeys.add('pp:' + cid); pids.forEach(x => pendingOpenKeys.add('ap:' + cid + ':' + x)); }   // kişi grupları ilk açılışta açık gelir
   const legacy = legacyConfirmed().length;
   const outerKey = 'A:' + cid;
   box.innerHTML = `<details ${pendingOpenKeys.has(outerKey) ? 'open' : ''} ontoggle="togglePendingGroup('${outerKey}', this.open)" class="glass rounded-2xl shadow-xl border border-slate-800 group">
