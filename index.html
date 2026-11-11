@@ -3898,6 +3898,7 @@ function goToTodoSource() {
 // (Haftalık Görev formundaki tüm alanlar: sorumlu, tarih, öncelik, durum, link, açıklama).
 // =====================================================================
 const assignedTodoFilter = {};
+const assignedShowDone = {};
 const assignedOuterDefault = { assignedTodosTasksPanel: true, assignedTodosMeetingsPanel: false };
 let pendingTargetTaskIdx = null;
 
@@ -4040,7 +4041,7 @@ async function deleteMeetingTodo(id, fromDetail) {
   }
 }
 async function bulkMeetingTodos(pid, mode) {
-  const list = assignedList().filter(x => x.pid === pid);
+  const list = assignedList().filter(x => x.pid === pid && x.status !== 'Tamamlandı');   // tamamlananlar kapalı kalır, toplu işleme girmez
   if (!list.length) return;
   const person = (registeredPeople.find(p => p.id === pid) || {}).name || pid;
   const msg = mode === 'delete' ? `${person} kişisinin ${list.length} görevi silinsin mi?` : `${person} kişisinin ${list.length} görevi atamadan çıkarılıp "Onay Bekliyor" listesine alınsın mı?`;
@@ -4067,17 +4068,19 @@ function renderAssignedTodosPanel(cid) {
   const initKey = 'init:' + cid;
   if (!pendingOpenKeys.has(initKey)) { pendingOpenKeys.add(initKey); if (assignedOuterDefault[cid]) pendingOpenKeys.add('A:' + cid); }
   const nameOf = id => (registeredPeople.find(p => p.id === id) || {}).name || id || '—';
-  const pids = [...new Set(items.map(i => i.pid))].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'tr'));
+  const showDone = !!assignedShowDone[cid];
+  const done = items.filter(i => i.status === 'Tamamlandı').length;
+  const vis = showDone ? items : items.filter(i => i.status !== 'Tamamlandı');   // tamamlananlar listeden kalkar
+  const pids = [...new Set(vis.map(i => i.pid))].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'tr'));
   const flt = assignedTodoFilter[cid] || '';
   const shown = flt ? pids.filter(x => x === flt) : pids;
-  const done = items.filter(i => i.status === 'Tamamlandı').length;
   const legacy = legacyConfirmed().length;
   const outerKey = 'A:' + cid;
   box.innerHTML = `<details ${pendingOpenKeys.has(outerKey) ? 'open' : ''} ontoggle="togglePendingGroup('${outerKey}', this.open)" class="glass rounded-2xl shadow-xl border border-slate-800 group">
     <summary class="cursor-pointer list-none flex items-center justify-between gap-2 px-5 py-3.5">
       <span class="text-xs font-bold text-slate-100 flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-emerald-400"></i>Toplantıdan Atanan Görevler
-        <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">${items.length}</span>
-        <span class="text-[10px] font-normal text-slate-400">${done} tamamlandı</span></span>
+        <span class="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">${items.length - done}</span>
+        <span class="text-[10px] font-normal text-slate-400">${done} tamamlandı (kapalı)</span></span>
       <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180"></i>
     </summary>
     <div class="px-5 pb-5 space-y-2">
@@ -4086,14 +4089,16 @@ function renderAssignedTodosPanel(cid) {
         <select onchange="assignedTodoFilter['${cid}']=this.value;renderAssignedTodosPanel('${cid}')" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-100">
           <option value="">Tüm Kişiler (grup)</option>${pids.map(x => `<option value="${x}" ${x === flt ? 'selected' : ''}>${escapeHtml(nameOf(x))}</option>`).join('')}
         </select>
+        ${done ? `<button onclick="assignedShowDone['${cid}']=!assignedShowDone['${cid}'];renderAssignedTodosPanel('${cid}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold rounded-md">${showDone ? 'Tamamlananları gizle' : `Tamamlananları göster (${done})`}</button>` : ''}
       </div>
+      ${!vis.length ? '<p class="text-[11px] text-slate-400 px-1 py-1">Açık görev yok. Tamamlananlar kapalı.</p>' : ''}
       ${legacy ? `<div class="flex items-center gap-2 flex-wrap text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
         <span>${legacy} eski atama henüz haftalık görev formuna çevrilmedi.</span>
         <select class="target-task-select bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-slate-100 max-w-[220px]" onchange="setPendingTargetTask(this.value)">${targetTaskOptionsHTML()}</select>
         <button onclick="convertLegacyTodos()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-semibold rounded-md">Haftalık göreve çevir</button>
       </div>` : ''}
       ${shown.map(pid => {
-        const mine = items.filter(i => i.pid === pid);
+        const mine = vis.filter(i => i.pid === pid);
         const canAct = todoCanEdit([pid]);
         const pKey = 'ap:' + cid + ':' + pid;
         return `<details ${pendingOpenKeys.has(pKey) ? 'open' : ''} ontoggle="togglePendingGroup('${pKey}', this.open)" class="bg-slate-800/50 border border-slate-700/70 rounded-lg group/p">
