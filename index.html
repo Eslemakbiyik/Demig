@@ -4177,7 +4177,6 @@ function renderAssignedTodosPanel(cid) {
   const pids = [...new Set(vis.map(i => i.pid))].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'tr'));
   const flt = assignedTodoFilter[cid] || '';
   const shown = flt ? pids.filter(x => x === flt) : pids;
-  if (firstInit) { pendingOpenKeys.add('pp:' + cid); pids.forEach(x => pendingOpenKeys.add('ap:' + cid + ':' + x)); }   // kişi grupları ilk açılışta açık gelir
   const legacy = legacyConfirmed().length;
   const outerKey = 'A:' + cid;
   box.innerHTML = `<details ${pendingOpenKeys.has(outerKey) ? 'open' : ''} ontoggle="togglePendingGroup('${outerKey}', this.open)" class="glass rounded-2xl shadow-xl border border-slate-800 group">
