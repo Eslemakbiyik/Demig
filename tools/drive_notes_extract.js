@@ -27,8 +27,11 @@ await (async () => {
     if (el.tagName === 'H1' || el.tagName === 'H2') {
       const t = __demigTxt(el);
       const mm = t.toLocaleLowerCase('tr-TR').match(/^(\d{1,2})\s+([a-zçğıöşü]+)\s+(\d{4})/);
+      const isDate = !!(mm && __demigMonths[mm[2]]);
+      // Tarihsiz H2 ("Hızlı özet", "Konular", "Kararlar", "Görevler" Başlık 2 yazılmışsa) toplantıyı bitirmez, alt bölüm sayılır
+      if (!isDate && el.tagName === 'H2' && __m) { __sec = { title: t, lines: [] }; __m.sections.push(__sec); return; }
       __m = null; __sec = null;
-      if (mm && __demigMonths[mm[2]]) {
+      if (isDate) {
         const date = `${mm[3]}-${String(__demigMonths[mm[2]]).padStart(2, '0')}-${mm[1].padStart(2, '0')}`;
         if (date >= __demigSince) { __m = { date, title: t, headingId: el.id || null, sections: [], tasks: [], source: '' }; __demigMeetings.push(__m); }
       }
