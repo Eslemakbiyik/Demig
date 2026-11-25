@@ -5685,10 +5685,27 @@ function mtgTodoTrack(w, r) {
   if (!weekTracks.includes(tid)) tid = weekTracks.includes('full_group') ? 'full_group' : null;
   return tid;
 }
+// Saat kaydırma: baştaki oturumlar yapılmıyorsa ilk yapılan oturum kendi saatinde kalır (yukarı çekilmez);
+// aradaki bir oturum yapılmıyorsa sonraki oturumlar boşluk kalmayacak şekilde öne kaydırılır.
+function mtgShiftTimes(list) {
+  const toMin = s => { const m = /^(\d{1,2}):(\d{2})$/.exec((s || '').trim()); return m ? +m[1] * 60 + +m[2] : null; };
+  const fmt = n => String(Math.floor(n / 60)).padStart(2, '0') + ':' + String(n % 60).padStart(2, '0');
+  let cursor = null;
+  list.forEach(a => {
+    a.time = a.t.time;
+    const [s, e] = (a.t.time || '').split('–'), st = toMin(s), en = toMin(e);
+    if (!a.active || st == null || en == null) return;
+    const start = cursor != null && cursor < st ? cursor : st;
+    a.time = fmt(start) + '–' + fmt(start + (en - st));
+    a.start = fmt(start);
+    cursor = start + (en - st);
+  });
+  return list;
+}
 function mtgAgenda(w) {
   const ups = mtgPeopleUpdates(w.date);
   const todos = mtgRecentOpenTodos(w);
-  return (MEETING_TRACKS[w.type] || []).map(t => {
+  return mtgShiftTimes((MEETING_TRACKS[w.type] || []).map(t => {
     const tUps = ups.filter(u => u.track_id === t.id);
     const items = [];
     const addItem = l => { if (!items.some(x => x.toLocaleLowerCase('tr-TR') === l.toLocaleLowerCase('tr-TR'))) items.push(l); };
@@ -5707,12 +5724,12 @@ function mtgAgenda(w) {
       items, todoLine, todoCount: tTodos.length, needed: MTG_WHEN_NEEDED.includes(t.id),
       active: t.id === 'full_group' || items.length > 0 || tTodos.length > 0
     };
-  });
+  }));
 }
 function mtgAutoWhatsApp(w) {
   const blocks = mtgAgenda(w).filter(a => a.active).map(a => {
     const lines = a.items.concat(a.todoLine ? [a.todoLine] : []);
-    const head = `${a.t.time} | ${a.label}${a.names ? ` (${a.names})` : ''}`;
+    const head = `${a.time} | ${a.label}${a.names ? ` (${a.names})` : ''}`;
     const body = !lines.length ? 'Gündem: Son durum güncellemeleri' : lines.length === 1 ? 'Gündem: ' + lines[0] : 'Gündem:\n' + lines.join('\n');
     return head + '\n' + body;
   });
@@ -5929,7 +5946,7 @@ function mtgReportHTML(w) {
   const stCls = r => r.status === 'Tamamlandı' ? 'b-done' : (r.due && r.due < t ? 'b-late' : 'b-prog');
   let n = 0; const h = s => `<h2>${++n}. ${s}</h2>`;
 
-  const agendaRows = agenda.map(a => `<tr><td style="white-space:nowrap">${E(a.t.time)}</td><td><b>${E(a.label)}</b></td><td>${E(a.names || '—')}</td><td>${a.active ? (a.items.length || a.todoLine ? a.items.map(E).concat(a.todoLine ? [`<span class="muted">${E(a.todoLine)}</span>`] : []).join('<br>') : 'Son durum güncellemeleri') : '<span class="muted">Bu hafta yapılmıyor (gündem maddesi ve açık to-do yok)</span>'}</td></tr>`).join('');
+  const agendaRows = agenda.map(a => `<tr><td style="white-space:nowrap">${E(a.time)}</td><td><b>${E(a.label)}</b></td><td>${E(a.names || '—')}</td><td>${a.active ? (a.items.length || a.todoLine ? a.items.map(E).concat(a.todoLine ? [`<span class="muted">${E(a.todoLine)}</span>`] : []).join('<br>') : 'Son durum güncellemeleri') : '<span class="muted">Bu hafta yapılmıyor (gündem maddesi ve açık to-do yok)</span>'}</td></tr>`).join('');
 
   const tracks = MEETING_TRACKS[w.type] || [];
   const known = new Set(tracks.map(x => x.id));
@@ -6362,7 +6379,7 @@ function renderMtgWeek() {
       detail: pendN ? groups.map(g => `${escHtml(mtgShortDate(g.date))}: ${g.items.length}`).join(' · ') + ' — kişi, ana görev ve son tarihi kontrol edip ata.' : 'Bekleyen görev yok.',
       actions: groups.slice(0, 3).map(g => mtgBtn(`${escHtml(mtgShortDate(g.date))} · aktar`, `mtgOpenTodoModal('${g.date}')`, true)).join('') },
     { state: itemsN ? 'done' : 'todo', title: `Gündem · ${agenda.length} oturum, ${itemsN} madde`,
-      detail: agenda.length ? agenda.map(a => `<b>${escHtml(a.t.time.split('–')[0] || '')} ${escHtml(a.label)}</b>${a.items.length ? ': ' + a.items.slice(0, 2).map(escHtml).join(' · ') + (a.items.length > 2 ? ` +${a.items.length - 2}` : '') : (a.todoLine ? ': ' + escHtml(a.todoLine) : '')}`).join('<br>') : 'Henüz gündem maddesi yok; ekip güncellemeleri geldikçe dolar.',
+      detail: agenda.length ? agenda.map(a => `<b>${escHtml(a.time.split('–')[0] || '')} ${escHtml(a.label)}</b>${a.items.length ? ': ' + a.items.slice(0, 2).map(escHtml).join(' · ') + (a.items.length > 2 ? ` +${a.items.length - 2}` : '') : (a.todoLine ? ': ' + escHtml(a.todoLine) : '')}`).join('<br>') : 'Henüz gündem maddesi yok; ekip güncellemeleri geldikçe dolar.',
       actions: mtgBtn('Gündem & Rapor', `mtgSelect('${d}','report')`) },
     { state: sent ? 'done' : 'todo', title: 'Gündem mesajı (WhatsApp)',
       detail: sent ? `Gönderildi olarak işaretlendi · ${escHtml(mtgStamp(sent))}` : `Toplantı günü sabah gruba gönder. ${mtgAgendaOverride(d) ? 'Elle düzenlenmiş metin kullanılacak.' : 'Metin girişlerden otomatik oluşur.'}`,
@@ -6444,7 +6461,7 @@ function renderMtgSummary() {
       </div>
       <div class="glass rounded-2xl shadow-xl p-4">
         <div class="flex items-center justify-between mb-2"><div class="text-[12px] font-bold text-slate-100">Sıradaki toplantı · ${w ? escHtml(mtgShortDate(d)) + ' (' + escHtml(mtgRelDay(d)) + ')' : '—'}</div>${w ? `<div class="flex items-center gap-3"><button onclick="mtgOpenUpdatesFor('${d}','team')" class="text-[11px] font-semibold text-indigo-400 hover:underline">Ekip güncellemeleri (${escHtml(mtgUpdCountLabel(w))}) →</button><button onclick="mtgOpenReportModal('${d}')" class="text-[11px] font-semibold text-indigo-400 hover:underline">A4 rapor →</button></div>` : ''}</div>
-        ${agenda.length ? agenda.map(a => `<div class="py-1.5 border-t border-slate-800 first:border-t-0"><div class="text-[11px] font-semibold text-slate-100">${escHtml(a.t.time.split('–')[0] || '')} ${escHtml(a.label)}</div>${a.items.length ? `<div class="text-[11px] text-slate-300 mt-0.5">${a.items.map(escHtml).join(' · ')}</div>` : ''}${a.todoLine ? `<div class="text-[10px] text-slate-500 mt-0.5">${escHtml(a.todoLine)}</div>` : ''}</div>`).join('') : '<div class="text-[11px] text-slate-500">Henüz gündem maddesi yok.</div>'}
+        ${agenda.length ? agenda.map(a => `<div class="py-1.5 border-t border-slate-800 first:border-t-0"><div class="text-[11px] font-semibold text-slate-100">${escHtml(a.time.split('–')[0] || '')} ${escHtml(a.label)}</div>${a.items.length ? `<div class="text-[11px] text-slate-300 mt-0.5">${a.items.map(escHtml).join(' · ')}</div>` : ''}${a.todoLine ? `<div class="text-[10px] text-slate-500 mt-0.5">${escHtml(a.todoLine)}</div>` : ''}</div>`).join('') : '<div class="text-[11px] text-slate-500">Henüz gündem maddesi yok.</div>'}
         ${blockers.length ? `<div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-3 mb-1">Engeller</div>${blockers.map(u => `<div class="text-[11px] text-slate-200"><b>${escHtml(mtgShort(u.person_id))}:</b> ${mtgLines(u.blockers).map(escHtml).join(' · ')}</div>`).join('')}` : ''}
       </div>
     </div>`;
